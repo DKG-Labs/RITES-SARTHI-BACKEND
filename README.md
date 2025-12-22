@@ -17,12 +17,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Java version
+     - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
-          java-version: '8'
-          distribution: 'microsoft'
+          java-version: '17'
+          distribution: 'temurin'
 
       - name: Build with Maven
         run: mvn clean install
