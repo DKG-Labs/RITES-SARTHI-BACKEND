@@ -57,7 +57,8 @@ jobs:
         with:
           app-name: 'SarthiBackendService'
           slot-name: 'Production'
-          package: 'app.jar'
+          package: '*.jar'
+
 
 
 
