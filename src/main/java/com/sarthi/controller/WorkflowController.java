@@ -15,7 +15,6 @@ public class WorkflowController {
     WorkflowService workflowService;
 
 
-
     @PostMapping("/initiateWorkflow")
     public ResponseEntity<Object> initiateWorkflow(@RequestParam String requestId, @RequestParam String workflowName, @RequestParam Integer createdBy,  @RequestParam String pincode)  {
         return new ResponseEntity<Object>(ResponseBuilder.getSuccessResponse(workflowService.initiateWorkflow(requestId, createdBy, workflowName, pincode)), HttpStatus.OK);

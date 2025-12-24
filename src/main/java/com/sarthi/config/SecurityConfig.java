@@ -24,6 +24,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/login",
+                                "/api/vendor/poData",
                                 "/sarthi-backend/api/auth",
                                 "/sarthi-backend/api/auth/login",
                                 "/sarthi-backend/api/auth",

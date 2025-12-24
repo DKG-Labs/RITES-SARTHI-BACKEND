@@ -1,0 +1,147 @@
+package com.sarthi.service.Impl;
+
+import com.sarthi.entity.PoHeader;
+import com.sarthi.entity.PoItem;
+import com.sarthi.repository.PoHeaderRepository;
+import com.sarthi.repository.PoItemRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class PoPersistService {
+
+    @Autowired
+    private PoHeaderRepository headerRepo;
+    @Autowired
+    private PoItemRepository itemRepo;
+
+    private static final DateTimeFormatter PO_DT_FMT =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter TS_FMT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
+
+    @Transactional
+    public void savePo(Map<String, Object> data) {
+
+        Map<String, Object> hdrMap = (Map<String, Object>) data.get("PoHdr");
+        List<Map<String, Object>> itemList =
+                (List<Map<String, Object>>) data.get("PoDtl");
+
+        if (hdrMap == null) {
+            throw new RuntimeException("PoHdr missing in response");
+        }
+
+        String poKey = (String) hdrMap.get("CASE_NO");
+
+        if (headerRepo.existsByPoKey(poKey)) {
+            return; // already saved
+        }
+
+        PoHeader header = buildPoHeader(hdrMap);
+        headerRepo.save(header);
+
+        if (itemList != null) {
+            for (Map<String, Object> m : itemList) {
+                PoItem item = buildPoItem(m, header);
+                itemRepo.save(item);
+            }
+        }
+    }
+
+
+    private PoHeader buildPoHeader(Map<String, Object> m) {
+
+        PoHeader h = new PoHeader();
+
+        h.setPoKey((String) m.get("CASE_NO"));
+        h.setPoNo((String) m.get("PO_NO"));
+        h.setL5PoNo((String) m.get("L5NO_PO"));
+        h.setRlyCd((String) m.get("RLY_CD"));
+        h.setRlyShortName((String) m.get("RLY_SHORTNAME"));
+
+        h.setPurchaserCode((String) m.get("IMMS_PURCHASER_CODE"));
+        h.setPurchaserDetail((String) m.get("IMMS_PURCHASER_DETAIL"));
+
+        h.setVendorCode((String) m.get("IMMS_VENDOR_CODE"));
+        h.setVendorDetails((String) m.get("VENDOR_DETAILS"));
+        h.setFirmDetails((String) m.get("FIRM_DETAILS"));
+
+        h.setStockNonStock((String) m.get("STOCK_NONSTOCK"));
+        h.setRlyNonRly((String) m.get("RLY_NONRLY"));
+        h.setPoOrLetter((String) m.get("PO_OR_LETTER"));
+
+        h.setPoStatus((String) m.get("PO_STATUS"));
+        h.setInspectingAgency((String) m.get("INSPECTING_AGENCY"));
+        h.setPdfPath((String) m.get("PO_PDF_PATH"));
+
+        if (m.get("PO_DT") != null)
+            h.setPoDate(LocalDateTime.parse(m.get("PO_DT").toString(), PO_DT_FMT));
+
+        if (m.get("RECV_DT") != null)
+            h.setReceivedDate(LocalDateTime.parse(m.get("RECV_DT").toString(), TS_FMT));
+
+        h.setSourceSystem("CRIS");
+        return h;
+    }
+
+
+    private PoItem buildPoItem(Map<String, Object> m, PoHeader header) {
+
+        PoItem i = new PoItem();
+        i.setPoHeader(header);
+
+        i.setCaseNo((String) m.get("CASE_NO"));
+        i.setItemSrNo((String) m.get("ITEM_SRNO"));
+        i.setPlNo((String) m.get("PL_NO"));
+        i.setItemDesc((String) m.get("ITEM_DESC"));
+
+        i.setConsigneeCd((String) m.get("CONSIGNEE_CD"));
+        i.setImmsConsigneeCd((String) m.get("IMMS_CONSIGNEE_CD"));
+        i.setImmsConsigneeName((String) m.get("IMMS_CONSIGNEE_NAME"));
+        i.setConsigneeDetail((String) m.get("CONSIGNEE_DETAIL"));
+
+        i.setUomCd((String) m.get("UOM_CD"));
+        i.setUom((String) m.get("UOM"));
+
+        if (m.get("QTY") != null)
+            i.setQty(Integer.parseInt(m.get("QTY").toString()));
+
+        if (m.get("QTY_CANCELLED") != null)
+            i.setQtyCancelled(Integer.parseInt(m.get("QTY_CANCELLED").toString()));
+
+        i.setRate(bd(m.get("RATE")));
+        i.setBasicValue(bd(m.get("BASIC_VALUE")));
+        i.setSalesTaxPercent(bd(m.get("SALES_TAX_PER")));
+        i.setSalesTax(bd(m.get("SALES_TAX")));
+        i.setDiscountType((String) m.get("DISCOUNT_TYPE"));
+        i.setDiscountPercent(bd(m.get("DISCOUNT_PER")));
+        i.setDiscount(bd(m.get("DISCOUNT")));
+        i.setValue(bd(m.get("VALUE")));
+
+        if (m.get("DELV_DT") != null)
+            i.setDeliveryDate(LocalDateTime.parse(m.get("DELV_DT").toString(), PO_DT_FMT));
+
+        if (m.get("EXT_DELV_DT") != null)
+            i.setExtendedDeliveryDate(LocalDateTime.parse(m.get("EXT_DELV_DT").toString(), PO_DT_FMT));
+
+        if (m.get("DATETIME") != null)
+            i.setCrisTimestamp(LocalDateTime.parse(m.get("DATETIME").toString(), TS_FMT));
+
+        i.setAllocation((String) m.get("ALLOCATION"));
+        i.setUserId((String) m.get("USER_ID"));
+
+        i.setSourceSystem("CRIS");
+        return i;
+    }
+
+    private BigDecimal bd(Object o) {
+        return o == null ? null : new BigDecimal(o.toString());
+    }
+}
