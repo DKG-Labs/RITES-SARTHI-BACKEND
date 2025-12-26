@@ -1,6 +1,11 @@
 package com.sarthi.controller.rawmaterial;
 
+import com.sarthi.dto.IcDtos.InspectionCallRequestDto;
+import com.sarthi.dto.IcDtos.RmInspectionDetailsRequestDto;
 import com.sarthi.dto.rawmaterial.*;
+import com.sarthi.dto.vendorDtos.VendorPoHeaderResponseDto;
+import com.sarthi.entity.rawmaterial.InspectionCall;
+import com.sarthi.service.InspectionCallService;
 import com.sarthi.service.rawmaterial.RawMaterialInspectionService;
 import com.sarthi.util.APIResponse;
 import com.sarthi.util.ResponseBuilder;
@@ -32,6 +37,9 @@ public class RawMaterialInspectionController {
     private static final Logger logger = LoggerFactory.getLogger(RawMaterialInspectionController.class);
 
     private final RawMaterialInspectionService rmService;
+
+    @Autowired
+    private InspectionCallService inspectionCallService;
 
     @Autowired
     public RawMaterialInspectionController(RawMaterialInspectionService rmService) {
@@ -127,5 +135,21 @@ public class RawMaterialInspectionController {
         RmHeatQuantityDto heat = rmService.getHeatQuantityById(heatId);
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(heat), HttpStatus.OK);
     }
+
+
+
+
+    @PostMapping("/inspectionCall")
+    public ResponseEntity<Object> createInspectionCall(@RequestBody InspectionCallRequestDto icRequest,
+                                                     @RequestBody  RmInspectionDetailsRequestDto rmRequest) {
+
+      InspectionCall ic =  inspectionCallService.createInspectionCall(icRequest, rmRequest);
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(ic), HttpStatus.OK);
+
+
+    }
+
+
+
 }
 

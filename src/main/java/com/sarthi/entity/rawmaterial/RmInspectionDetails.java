@@ -8,129 +8,71 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * Entity: rm_inspection_details
- * Raw Material specific inspection details - maps to existing database schema.
- *
- * Relationships:
- * - One-to-One with InspectionCall (child side via ic_id)
- * - One-to-Many with RmHeatQuantity (via rm_detail_id)
- */
 @Entity
 @Table(name = "rm_inspection_details")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode(exclude = {"inspectionCall", "rmHeatQuantities"})
-@ToString(exclude = {"inspectionCall", "rmHeatQuantities"})
 public class RmInspectionDetails {
 
     @Id
-    @Column(name = "id")
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    /* ==================== Parent Reference ==================== */
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ic_id")
-    @JsonIgnore
+    // ---- RELATION ----
+    @OneToOne
+    @JoinColumn(name = "ic_id", nullable = false)
     private InspectionCall inspectionCall;
 
-    /* ==================== Item Details ==================== */
-
-    @Column(name = "item_description")
+    // ---- ITEM DETAILS ----
+    @Column(columnDefinition = "TEXT")
     private String itemDescription;
 
-    @Column(name = "item_quantity")
     private Integer itemQuantity;
 
-    @Column(name = "consignee_zonal_railway")
     private String consigneeZonalRailway;
 
-    @Column(name = "heat_numbers")
+    @Column(columnDefinition = "TEXT")
     private String heatNumbers;
 
-    /* ==================== TC Details ==================== */
-
-    @Column(name = "tc_number")
     private String tcNumber;
+    private LocalDate tcDate;
+    private BigDecimal tcQuantity;
 
-    @Column(name = "tc_date")
-    private String tcDate;
-
-    @Column(name = "tc_quantity")
-    private Double tcQuantity;
-
-    /* ==================== Manufacturer/Supplier ==================== */
-
-    @Column(name = "manufacturer")
     private String manufacturer;
-
-    @Column(name = "supplier_name")
     private String supplierName;
 
-    @Column(name = "supplier_address")
+    @Column(columnDefinition = "TEXT")
     private String supplierAddress;
 
-    /* ==================== Invoice Details ==================== */
-
-    @Column(name = "invoice_number")
     private String invoiceNumber;
+    private LocalDate invoiceDate;
 
-    @Column(name = "invoice_date")
-    private String invoiceDate;
-
-    /* ==================== Sub PO Details ==================== */
-
-    @Column(name = "sub_po_number")
     private String subPoNumber;
+    private LocalDate subPoDate;
+    private Integer subPoQty;
 
-    @Column(name = "sub_po_date")
-    private String subPoDate;
-
-    @Column(name = "sub_po_qty")
-    private String subPoQty;
-
-    /* ==================== Quantity Details ==================== */
-
-    @Column(name = "total_offered_qty_mt")
-    private Double totalOfferedQtyMt;
-
-    @Column(name = "offered_qty_erc")
+    private BigDecimal totalOfferedQtyMt;
     private Integer offeredQtyErc;
 
-    @Column(name = "unit_of_measurement")
     private String unitOfMeasurement;
 
-    /* ==================== Rate Details ==================== */
+    private BigDecimal rateOfMaterial;
+    private BigDecimal rateOfGst;
+    private BigDecimal baseValuePo;
+    private BigDecimal totalPo;
 
-    @Column(name = "rate_of_material")
-    private String rateOfMaterial;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    @Column(name = "rate_of_gst")
-    private String rateOfGst;
+    // ---- CHILD TABLES ----
+    @OneToMany(mappedBy = "rmInspectionDetails", cascade = CascadeType.ALL)
+    private List<RmHeatQuantity> heatQuantities;
 
-    @Column(name = "base_value_po")
-    private String baseValuePo;
-
-    @Column(name = "total_po")
-    private String totalPo;
-
-    /* ==================== Audit Fields ==================== */
-
-    @Column(name = "created_at")
-    private String createdAt;
-
-    @Column(name = "updated_at")
-    private String updatedAt;
-
-    /* ==================== Relationships ==================== */
-
-    /** One-to-Many: Heat-wise quantity breakdown */
-    @OneToMany(mappedBy = "rmInspectionDetails", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<RmHeatQuantity> rmHeatQuantities = new ArrayList<>();
+    @OneToMany(mappedBy = "rmInspectionDetails", cascade = CascadeType.ALL)
+    private List<RmChemicalAnalysis> chemicalAnalysisList;
 }
 

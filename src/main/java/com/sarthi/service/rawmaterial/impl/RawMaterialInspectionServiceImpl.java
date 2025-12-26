@@ -81,7 +81,7 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
     @Override
     public RmInspectionDetailsDto getRmDetailsByCallId(Integer inspectionCallId) {
         logger.info("Fetching RM details for call ID: {}", inspectionCallId);
-        return rmDetailsRepository.findByIcId(inspectionCallId)
+        return rmDetailsRepository.findByIcId(Long.valueOf(inspectionCallId))
                 .map(this::mapToDetailsDto)
                 .orElse(null);
     }
@@ -112,14 +112,14 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
      */
     private InspectionCallDto mapToCallDto(InspectionCall entity) {
         InspectionCallDto dto = InspectionCallDto.builder()
-                .id(entity.getId())
+                .id(Math.toIntExact(entity.getId()))
                 .icNumber(entity.getIcNumber())
                 .poNo(entity.getPoNo())
                 .poSerialNo(entity.getPoSerialNo())
                 .typeOfCall(entity.getTypeOfCall())
                 .status(entity.getStatus())
-                .desiredInspectionDate(entity.getDesiredInspectionDate())
-                .actualInspectionDate(entity.getActualInspectionDate())
+                .desiredInspectionDate(String.valueOf(entity.getDesiredInspectionDate()))
+                .actualInspectionDate(String.valueOf(entity.getActualInspectionDate()))
                 .placeOfInspection(entity.getPlaceOfInspection())
                 .companyId(entity.getCompanyId())
                 .companyName(entity.getCompanyName())
@@ -129,8 +129,8 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
                 .remarks(entity.getRemarks())
                 .createdBy(entity.getCreatedBy())
                 .updatedBy(entity.getUpdatedBy())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
+                .createdAt(String.valueOf(entity.getCreatedAt()))
+                .updatedAt(String.valueOf(entity.getUpdatedAt()))
                 .build();
 
         // Add RM inspection details if available
@@ -150,8 +150,8 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
         // Add RM details and heat quantities if available
         if (entity.getRmInspectionDetails() != null) {
             RmInspectionDetails rmDetails = entity.getRmInspectionDetails();
-            if (rmDetails.getRmHeatQuantities() != null) {
-                List<RmHeatQuantityDto> heatDtos = rmDetails.getRmHeatQuantities()
+            if (rmDetails.getHeatQuantities() != null) {
+                List<RmHeatQuantityDto> heatDtos = rmDetails.getHeatQuantities()
                         .stream()
                         .map(this::mapToHeatDto)
                         .collect(Collectors.toList());
@@ -167,32 +167,32 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
      */
     private RmInspectionDetailsDto mapToDetailsDto(RmInspectionDetails entity) {
         return RmInspectionDetailsDto.builder()
-                .id(entity.getId())
-                .icId(entity.getInspectionCall() != null ? entity.getInspectionCall().getId() : null)
+                .id(Math.toIntExact(entity.getId()))
+                .icId(Math.toIntExact(entity.getInspectionCall() != null ? entity.getInspectionCall().getId() : null))
                 .itemDescription(entity.getItemDescription())
                 .itemQuantity(entity.getItemQuantity() != null ? entity.getItemQuantity().toString() : null)
                 .consigneeZonalRailway(entity.getConsigneeZonalRailway())
                 .heatNumbers(entity.getHeatNumbers())
                 .tcNumber(entity.getTcNumber())
-                .tcDate(entity.getTcDate())
+                .tcDate(String.valueOf(entity.getTcDate()))
                 .tcQuantity(entity.getTcQuantity() != null ? entity.getTcQuantity().toString() : null)
                 .manufacturer(entity.getManufacturer())
                 .supplierName(entity.getSupplierName())
                 .supplierAddress(entity.getSupplierAddress())
                 .invoiceNumber(entity.getInvoiceNumber())
-                .invoiceDate(entity.getInvoiceDate())
+                .invoiceDate(String.valueOf(entity.getInvoiceDate()))
                 .subPoNumber(entity.getSubPoNumber())
-                .subPoDate(entity.getSubPoDate())
-                .subPoQty(entity.getSubPoQty())
+                .subPoDate(String.valueOf(entity.getSubPoDate()))
+                .subPoQty(String.valueOf(entity.getSubPoQty()))
                 .totalOfferedQtyMt(entity.getTotalOfferedQtyMt() != null ? entity.getTotalOfferedQtyMt().toString() : null)
                 .offeredQtyErc(entity.getOfferedQtyErc() != null ? entity.getOfferedQtyErc().toString() : null)
                 .unitOfMeasurement(entity.getUnitOfMeasurement())
-                .rateOfMaterial(entity.getRateOfMaterial())
-                .rateOfGst(entity.getRateOfGst())
-                .baseValuePo(entity.getBaseValuePo())
-                .totalPo(entity.getTotalPo())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
+                .rateOfMaterial(String.valueOf(entity.getRateOfMaterial()))
+                .rateOfGst(String.valueOf(entity.getRateOfGst()))
+                .baseValuePo(String.valueOf(entity.getBaseValuePo()))
+                .totalPo(String.valueOf(entity.getTotalPo()))
+                .createdAt(String.valueOf(entity.getCreatedAt()))
+                .updatedAt(String.valueOf(entity.getUpdatedAt()))
                 .build();
     }
 
@@ -201,20 +201,20 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
      */
     private RmHeatQuantityDto mapToHeatDto(RmHeatQuantity entity) {
         return RmHeatQuantityDto.builder()
-                .id(entity.getId())
-                .rmDetailId(entity.getRmInspectionDetails() != null ? entity.getRmInspectionDetails().getId() : null)
+                .id(Math.toIntExact(entity.getId()))
+                .rmDetailId(Math.toIntExact(entity.getRmInspectionDetails() != null ? entity.getRmInspectionDetails().getId() : null))
                 .heatNumber(entity.getHeatNumber())
                 .manufacturer(entity.getManufacturer())
-                .offeredQty(entity.getOfferedQty())
+                //.offeredQty(entity.getOfferedQty())
                 .tcNumber(entity.getTcNumber())
-                .tcDate(entity.getTcDate())
-                .tcQuantity(entity.getTcQuantity())
-                .qtyLeft(entity.getQtyLeft())
-                .qtyAccepted(entity.getQtyAccepted())
-                .qtyRejected(entity.getQtyRejected())
+                .tcDate(String.valueOf(entity.getTcDate()))
+               // .tcQuantity(entity.getTcQuantity())
+                .qtyLeft(String.valueOf(entity.getQtyLeft()))
+                .qtyAccepted(String.valueOf(entity.getQtyAccepted()))
+                .qtyRejected(String.valueOf(entity.getQtyRejected()))
                 .rejectionReason(entity.getRejectionReason())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
+                .createdAt(String.valueOf(entity.getCreatedAt()))
+                .updatedAt(String.valueOf(entity.getUpdatedAt()))
                 .build();
     }
 
