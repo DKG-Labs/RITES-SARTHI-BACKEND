@@ -13,6 +13,8 @@ public interface PoHeaderRepository extends JpaRepository<PoHeader, Long> {
 
     boolean existsByPoKey(String poKey);
 
+    List<PoHeader> findByVendorCode(String vendorCode);
+
 //    @Query("""
 //        select distinct h
 //        from PoHeader h

@@ -1,0 +1,176 @@
+package com.sarthi.service.Impl;
+
+import com.sarthi.dto.IcDtos.*;
+
+import com.sarthi.entity.rawmaterial.InspectionCall;
+import com.sarthi.entity.rawmaterial.RmChemicalAnalysis;
+import com.sarthi.entity.rawmaterial.RmHeatQuantity;
+import com.sarthi.entity.rawmaterial.RmInspectionDetails;
+import com.sarthi.repository.rawmaterial.InspectionCallRepository;
+import com.sarthi.service.InspectionCallService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@Transactional
+public class InspectionCallServiceImpl implements InspectionCallService {
+
+    private final InspectionCallRepository inspectionCallRepository;
+
+    public InspectionCallServiceImpl(InspectionCallRepository inspectionCallRepository) {
+        this.inspectionCallRepository = inspectionCallRepository;
+    }
+
+    @Override
+    public InspectionCall createInspectionCall(
+            InspectionCallRequestDto icRequest,
+            RmInspectionDetailsRequestDto rmRequest
+    ) {
+
+        InspectionCall inspectionCall = new InspectionCall();
+
+        inspectionCall.setIcNumber(icRequest.getIcNumber());
+        inspectionCall.setPoNo(icRequest.getPoNo());
+        inspectionCall.setPoSerialNo(icRequest.getPoSerialNo());
+        inspectionCall.setTypeOfCall(icRequest.getTypeOfCall());
+        inspectionCall.setStatus(icRequest.getStatus());
+
+        inspectionCall.setDesiredInspectionDate(
+                LocalDate.parse(icRequest.getDesiredInspectionDate())
+        );
+
+        if (icRequest.getActualInspectionDate() != null) {
+            inspectionCall.setActualInspectionDate(
+                    LocalDate.parse(icRequest.getActualInspectionDate())
+            );
+        }
+
+        inspectionCall.setCompanyId(icRequest.getCompanyId());
+        inspectionCall.setCompanyName(icRequest.getCompanyName());
+        inspectionCall.setUnitId(icRequest.getUnitId());
+        inspectionCall.setUnitName(icRequest.getUnitName());
+        inspectionCall.setUnitAddress(icRequest.getUnitAddress());
+        inspectionCall.setRemarks(icRequest.getRemarks());
+
+        inspectionCall.setCreatedBy(icRequest.getCreatedBy());
+        inspectionCall.setUpdatedBy(icRequest.getUpdatedBy());
+        inspectionCall.setCreatedAt(LocalDateTime.now());
+        inspectionCall.setUpdatedAt(LocalDateTime.now());
+
+        // ================== RM INSPECTION DETAILS ==================
+        RmInspectionDetails rmDetails = new RmInspectionDetails();
+        rmDetails.setInspectionCall(inspectionCall);
+        inspectionCall.setRmInspectionDetails(rmDetails);
+
+        rmDetails.setItemDescription(rmRequest.getItemDescription());
+        rmDetails.setItemQuantity(rmRequest.getItemQuantity());
+        rmDetails.setConsigneeZonalRailway(rmRequest.getConsigneeZonalRailway());
+        rmDetails.setHeatNumbers(rmRequest.getHeatNumbers());
+        rmDetails.setTcNumber(rmRequest.getTcNumber());
+
+        if (rmRequest.getTcDate() != null) {
+            rmDetails.setTcDate(LocalDate.parse(rmRequest.getTcDate()));
+        }
+
+        rmDetails.setTcQuantity(toBigDecimal(rmRequest.getTcQuantity()));
+        rmDetails.setManufacturer(rmRequest.getManufacturer());
+        rmDetails.setSupplierName(rmRequest.getSupplierName());
+        rmDetails.setSupplierAddress(rmRequest.getSupplierAddress());
+
+        rmDetails.setInvoiceNumber(rmRequest.getInvoiceNumber());
+        if (rmRequest.getInvoiceDate() != null) {
+            rmDetails.setInvoiceDate(LocalDate.parse(rmRequest.getInvoiceDate()));
+        }
+
+        rmDetails.setSubPoNumber(rmRequest.getSubPoNumber());
+        if (rmRequest.getSubPoDate() != null) {
+            rmDetails.setSubPoDate(LocalDate.parse(rmRequest.getSubPoDate()));
+        }
+
+        rmDetails.setSubPoQty(rmRequest.getSubPoQty());
+        rmDetails.setTotalOfferedQtyMt(toBigDecimal(rmRequest.getTotalOfferedQtyMt()));
+        rmDetails.setOfferedQtyErc(rmRequest.getOfferedQtyErc());
+        rmDetails.setUnitOfMeasurement(rmRequest.getUnitOfMeasurement());
+
+        rmDetails.setRateOfMaterial(toBigDecimal(rmRequest.getRateOfMaterial()));
+        rmDetails.setRateOfGst(toBigDecimal(rmRequest.getRateOfGst()));
+        rmDetails.setBaseValuePo(toBigDecimal(rmRequest.getBaseValuePo()));
+        rmDetails.setTotalPo(toBigDecimal(rmRequest.getTotalPo()));
+
+        rmDetails.setCreatedAt(LocalDateTime.now());
+        rmDetails.setUpdatedAt(LocalDateTime.now());
+
+        // ================== HEAT QUANTITIES ==================
+        List<RmHeatQuantity> heatEntities = new ArrayList<>();
+
+        if (rmRequest.getHeatQuantities() != null) {
+            for (RmHeatQuantityRequestDto heatReq : rmRequest.getHeatQuantities()) {
+
+                RmHeatQuantity heat = new RmHeatQuantity();
+                heat.setRmInspectionDetails(rmDetails);
+
+                heat.setHeatNumber(heatReq.getHeatNumber());
+                heat.setManufacturer(heatReq.getManufacturer());
+                heat.setOfferedQty(toBigDecimal(heatReq.getOfferedQty()));
+
+                heat.setTcNumber(heatReq.getTcNumber());
+                if (heatReq.getTcDate() != null) {
+                    heat.setTcDate(LocalDate.parse(heatReq.getTcDate()));
+                }
+
+                heat.setTcQuantity(toBigDecimal(heatReq.getTcQuantity()));
+                heat.setQtyLeft(toBigDecimal(heatReq.getQtyLeft()));
+                heat.setQtyAccepted(toBigDecimal(heatReq.getQtyAccepted()));
+                heat.setQtyRejected(toBigDecimal(heatReq.getQtyRejected()));
+                heat.setRejectionReason(heatReq.getRejectionReason());
+
+                heat.setCreatedAt(LocalDateTime.now());
+                heat.setUpdatedAt(LocalDateTime.now());
+
+                heatEntities.add(heat);
+            }
+        }
+
+        rmDetails.setHeatQuantities(heatEntities);
+
+        // ================== CHEMICAL ANALYSIS ==================
+        List<RmChemicalAnalysis> chemEntities = new ArrayList<>();
+
+        if (rmRequest.getChemicalAnalysis() != null) {
+            for (RmChemicalAnalysisRequestDto chemReq : rmRequest.getChemicalAnalysis()) {
+
+                RmChemicalAnalysis chem = new RmChemicalAnalysis();
+                chem.setRmInspectionDetails(rmDetails);
+
+                chem.setHeatNumber(chemReq.getHeatNumber());
+                chem.setCarbon(toBigDecimal(chemReq.getCarbon()));
+                chem.setManganese(toBigDecimal(chemReq.getManganese()));
+                chem.setSilicon(toBigDecimal(chemReq.getSilicon()));
+                chem.setSulphur(toBigDecimal(chemReq.getSulphur()));
+                chem.setPhosphorus(toBigDecimal(chemReq.getPhosphorus()));
+                chem.setChromium(toBigDecimal(chemReq.getChromium()));
+
+                chem.setCreatedAt(LocalDateTime.now());
+                chem.setUpdatedAt(LocalDateTime.now());
+
+                chemEntities.add(chem);
+            }
+        }
+
+        rmDetails.setChemicalAnalysisList(chemEntities);
+
+
+        return inspectionCallRepository.save(inspectionCall);
+    }
+
+    private BigDecimal toBigDecimal(Double value) {
+        return value != null ? BigDecimal.valueOf(value) : null;
+    }
+}
+

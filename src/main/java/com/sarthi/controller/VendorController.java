@@ -3,6 +3,8 @@ package com.sarthi.controller;
 import com.sarthi.dto.LoginRequestDto;
 import com.sarthi.dto.LoginResponseDto;
 import com.sarthi.dto.vendorDtos.PoResponseDto;
+import com.sarthi.dto.vendorDtos.VendorPoHeaderResponseDto;
+import com.sarthi.service.VendorPoService;
 import com.sarthi.service.vendorService;
 import com.sarthi.util.ResponseBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +18,13 @@ import java.util.List;
 @RequestMapping("/api/vendor")
 public class VendorController {
 
-//    @Autowired
-//    private vendorService vService;
+    @Autowired
+    private VendorPoService vService;
 
-//    @GetMapping("/poData")
-//    public ResponseEntity<Object> login(@RequestParam String vendorCode) {
-//        List<PoResponseDto> res = vService.getPosByVendor(vendorCode);
-//        return new ResponseEntity<Object>(ResponseBuilder.getSuccessResponse(res), HttpStatus.OK);
-//    }
+    @GetMapping("/poData")
+    public ResponseEntity<Object> login(@RequestParam String vendorCode) {
+        List<VendorPoHeaderResponseDto> res = vService.getPoListByVendorCode(vendorCode);
+        return new ResponseEntity<Object>(ResponseBuilder.getSuccessResponse(res), HttpStatus.OK);
+    }
 
 }
