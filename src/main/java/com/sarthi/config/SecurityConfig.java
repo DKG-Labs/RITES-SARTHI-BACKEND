@@ -25,6 +25,7 @@ public class SecurityConfig {
                         // Public endpoints - no authentication required
                         .requestMatchers(
                                 "/api/auth/login",
+                                "/api/vendor/poData",
                                 "/sarthi-backend/api/auth",
                                 "/sarthi-backend/api/auth/login",
                                 "/sarthi-backend/api/auth",

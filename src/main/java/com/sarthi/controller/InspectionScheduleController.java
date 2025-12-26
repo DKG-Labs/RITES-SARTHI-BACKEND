@@ -2,6 +2,7 @@ package com.sarthi.controller;
 
 import com.sarthi.dto.InspectionScheduleDto;
 import com.sarthi.service.InspectionScheduleService;
+import com.sarthi.service.WorkflowService;
 import com.sarthi.util.ResponseBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,8 @@ public class InspectionScheduleController {
 
     @Autowired
     private InspectionScheduleService scheduleService;
+    @Autowired
+    private WorkflowService workflowService;
 
     /**
      * Schedule an inspection call.
@@ -33,6 +36,11 @@ public class InspectionScheduleController {
     public ResponseEntity<Object> scheduleInspection(@RequestBody InspectionScheduleDto scheduleDto) {
         logger.info("Received request to schedule inspection for call: {}", scheduleDto.getCallNo());
         InspectionScheduleDto result = scheduleService.scheduleInspection(scheduleDto);
+
+        String workflowname = "IE INSPECTION";
+        String pincode ="560001";
+        workflowService.initiateWorkflow(result.getCallNo(), Integer.valueOf(result.getCreatedBy()), workflowname,pincode);
+
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(result), HttpStatus.CREATED);
     }
 
