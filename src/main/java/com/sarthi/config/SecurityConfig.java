@@ -22,6 +22,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints - no authentication required
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/sarthi-backend/api/auth",
@@ -35,6 +36,8 @@ public class SecurityConfig {
                                 "/sarthi-backend/allPendingWorkflowTransition",
                                 "/sarthi-backend/allPendingQtyEditTransitions",
                                 "/sarthi-backend/workflowTransitionHistory",
+                                // Raw Material APIs - temporarily public for testing
+                                "/api/raw-material/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -44,6 +47,7 @@ public class SecurityConfig {
                                 "/configuration/security"
                         ).permitAll()
 
+                        // All other requests - permit for now (can be changed to authenticated() later)
                         .anyRequest().permitAll()
                 )
                 .sessionManagement(session ->

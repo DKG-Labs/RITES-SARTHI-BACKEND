@@ -1,0 +1,73 @@
+package com.sarthi.service.rawmaterial;
+
+import com.sarthi.dto.rawmaterial.InspectionCallDto;
+import com.sarthi.dto.rawmaterial.RmHeatQuantityDto;
+import com.sarthi.dto.rawmaterial.RmInspectionDetailsDto;
+
+import java.util.List;
+
+/**
+ * Service interface for Raw Material Inspection operations.
+ * Handles all CRUD and business logic for the 4 RM tables:
+ * - inspection_calls
+ * - rm_inspection_details
+ * - rm_heat_quantities
+ * - rm_chemical_analysis
+ */
+public interface RawMaterialInspectionService {
+
+    /* ==================== Inspection Call Operations ==================== */
+
+    /**
+     * Get all Raw Material inspection calls
+     * @return List of all RM inspection calls with basic details
+     */
+    List<InspectionCallDto> getAllRawMaterialCalls();
+
+    /**
+     * Get Raw Material calls by status
+     * @param status Status filter (Pending, Scheduled, In Progress, Completed)
+     * @return Filtered list of RM inspection calls
+     */
+    List<InspectionCallDto> getRawMaterialCallsByStatus(String status);
+
+    /**
+     * Get complete inspection call details by ID (includes all related data)
+     * @param id Inspection call ID
+     * @return Complete call details with heat quantities
+     */
+    InspectionCallDto getInspectionCallById(Integer id);
+
+    /**
+     * Get inspection call by IC number
+     * @param icNumber Unique IC number
+     * @return Call details
+     */
+    InspectionCallDto getInspectionCallByIcNumber(String icNumber);
+
+    /* ==================== RM Inspection Details Operations ==================== */
+
+    /**
+     * Get RM inspection details by inspection call ID
+     * @param inspectionCallId Parent call ID
+     * @return RM-specific inspection details
+     */
+    RmInspectionDetailsDto getRmDetailsByCallId(Integer inspectionCallId);
+
+    /* ==================== Heat Quantity Operations ==================== */
+
+    /**
+     * Get all heat quantities for an RM inspection detail
+     * @param rmDetailId Parent RM detail ID
+     * @return List of heat-wise quantity breakdown
+     */
+    List<RmHeatQuantityDto> getHeatQuantitiesByRmDetailId(Integer rmDetailId);
+
+    /**
+     * Get heat quantity by ID
+     * @param heatId Heat quantity ID
+     * @return Heat details
+     */
+    RmHeatQuantityDto getHeatQuantityById(Integer heatId);
+}
+

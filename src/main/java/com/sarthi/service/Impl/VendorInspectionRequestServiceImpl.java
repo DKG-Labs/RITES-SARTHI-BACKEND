@@ -250,6 +250,12 @@ public class VendorInspectionRequestServiceImpl implements VendorInspectionReque
         entity.setUnitContactPerson(dto.getUnitContactPerson());
         entity.setUnitRole(dto.getUnitRole());
 
+        // PO Additional Information
+        entity.setPurchasingAuthority(dto.getPurchasingAuthority());
+        entity.setBpo(dto.getBpo());
+        entity.setDeliveryPeriod(dto.getDeliveryPeriod());
+        entity.setInspectionFeesPaymentDetails(dto.getInspectionFeesPaymentDetails());
+
         entity.setRemarks(dto.getRemarks());
         entity.setCreatedBy(dto.getCreatedBy());
 
@@ -333,6 +339,12 @@ public class VendorInspectionRequestServiceImpl implements VendorInspectionReque
         dto.setUnitGstin(entity.getUnitGstin());
         dto.setUnitContactPerson(entity.getUnitContactPerson());
         dto.setUnitRole(entity.getUnitRole());
+
+        // PO Additional Information
+        dto.setPurchasingAuthority(entity.getPurchasingAuthority());
+        dto.setBpo(entity.getBpo());
+        dto.setDeliveryPeriod(entity.getDeliveryPeriod());
+        dto.setInspectionFeesPaymentDetails(entity.getInspectionFeesPaymentDetails());
 
         dto.setRemarks(entity.getRemarks());
         dto.setStatus(entity.getStatus());

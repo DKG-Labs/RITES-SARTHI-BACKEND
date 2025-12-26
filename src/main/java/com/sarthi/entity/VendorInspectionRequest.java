@@ -134,6 +134,19 @@ public class VendorInspectionRequest {
     @Column(name = "unit_role", length = 50)
     private String unitRole;
 
+    // PO Additional Information
+    @Column(name = "purchasing_authority", length = 100)
+    private String purchasingAuthority;
+
+    @Column(name = "bpo", length = 100)
+    private String bpo;
+
+    @Column(name = "delivery_period", length = 50)
+    private String deliveryPeriod;
+
+    @Column(name = "inspection_fees_payment_details", length = 255)
+    private String inspectionFeesPaymentDetails;
+
     // Remarks
     @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;

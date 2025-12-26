@@ -70,7 +70,13 @@ public class VendorInspectionRequestDto {
     private String unitGstin;
     private String unitContactPerson;
     private String unitRole;
-    
+
+    // PO Additional Information
+    private String purchasingAuthority;
+    private String bpo;
+    private String deliveryPeriod;
+    private String inspectionFeesPaymentDetails;
+
     // Remarks
     private String remarks;
     
