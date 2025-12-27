@@ -9,24 +9,21 @@ import java.util.Optional;
 
 /**
  * Repository for RmChemicalAnalysis entity.
- * Note: This table currently mirrors inspection_calls structure.
- * Basic repository for future chemical analysis implementation.
+ * Provides CRUD operations and custom queries for chemical analysis data.
  */
 @Repository
-public interface RmChemicalAnalysisRepository extends JpaRepository<RmChemicalAnalysis, Integer> {
+public interface RmChemicalAnalysisRepository extends JpaRepository<RmChemicalAnalysis, Long> {
 
-    /* ==================== Find by IC Number ==================== */
+    /* ==================== Find by Heat Number ==================== */
 
-    Optional<RmChemicalAnalysis> findByIcNumber(String icNumber);
+    Optional<RmChemicalAnalysis> findByHeatNumber(String heatNumber);
 
-    List<RmChemicalAnalysis> findByIcNumberOrderByCreatedAtDesc(String icNumber);
+    List<RmChemicalAnalysis> findByHeatNumberOrderByCreatedAtDesc(String heatNumber);
 
-    /* ==================== Find by Status ==================== */
+    /* ==================== Find by RM Detail ID ==================== */
 
-    List<RmChemicalAnalysis> findByStatusIgnoreCaseOrderByCreatedAtDesc(String status);
+    List<RmChemicalAnalysis> findByRmInspectionDetailsIdOrderByCreatedAtDesc(Integer rmDetailId);
 
-    /* ==================== Find by Type of Call ==================== */
-
-    List<RmChemicalAnalysis> findByTypeOfCallOrderByCreatedAtDesc(String typeOfCall);
+    List<RmChemicalAnalysis> findByRmInspectionDetailsId(Integer rmDetailId);
 }
 

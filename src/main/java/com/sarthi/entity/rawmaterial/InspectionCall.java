@@ -55,6 +55,7 @@ public class InspectionCall {
     private LocalDateTime updatedAt;
 
 
+    // ---- RELATION ----
     @OneToOne(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
     private RmInspectionDetails rmInspectionDetails;
 }

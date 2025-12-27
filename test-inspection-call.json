@@ -1,0 +1,90 @@
+{
+  "inspectionCall": {
+    "icNumber": "IC001",
+    "poNo": "PO123",
+    "poSerialNo": "1",
+    "typeOfCall": "Raw Material",
+    "status": "Pending",
+    "desiredInspectionDate": "2024-12-26",
+    "actualInspectionDate": null,
+    "companyId": 1,
+    "companyName": "ABC Company",
+    "unitId": 1,
+    "unitName": "Unit 1",
+    "unitAddress": "123 Main Street",
+    "remarks": "Test inspection call",
+    "createdBy": "admin",
+    "updatedBy": "admin"
+  },
+  "rmInspectionDetails": {
+    "itemDescription": "Steel Bars Grade A",
+    "itemQuantity": 100,
+    "consigneeZonalRailway": "CR",
+    "heatNumbers": "H001,H002",
+    "tcNumber": "TC001",
+    "tcDate": "2024-12-20",
+    "tcQuantity": 100.0,
+    "manufacturer": "Steel Manufacturing Co",
+    "supplierName": "ABC Suppliers",
+    "supplierAddress": "456 Industrial Area",
+    "invoiceNumber": "INV001",
+    "invoiceDate": "2024-12-15",
+    "subPoNumber": "SUB001",
+    "subPoDate": "2024-12-10",
+    "subPoQty": 100,
+    "totalOfferedQtyMt": 100.5,
+    "offeredQtyErc": 100,
+    "unitOfMeasurement": "MT",
+    "rateOfMaterial": 1000.0,
+    "rateOfGst": 18.0,
+    "baseValuePo": 100000.0,
+    "totalPo": 118000.0,
+    "heatQuantities": [
+      {
+        "heatNumber": "H001",
+        "manufacturer": "Steel Manufacturing Co",
+        "offeredQty": 50.0,
+        "tcNumber": "TC001",
+        "tcDate": "2024-12-20",
+        "tcQuantity": 50.0,
+        "qtyLeft": 50.0,
+        "qtyAccepted": 0.0,
+        "qtyRejected": 0.0,
+        "rejectionReason": null
+      },
+      {
+        "heatNumber": "H002",
+        "manufacturer": "Steel Manufacturing Co",
+        "offeredQty": 50.0,
+        "tcNumber": "TC001",
+        "tcDate": "2024-12-20",
+        "tcQuantity": 50.0,
+        "qtyLeft": 50.0,
+        "qtyAccepted": 0.0,
+        "qtyRejected": 0.0,
+        "rejectionReason": null
+      }
+    ],
+    "chemicalAnalysis": [
+      {
+        "heatNumber": "H001",
+        "carbon": 0.25,
+        "manganese": 0.8,
+        "silicon": 0.3,
+        "sulphur": 0.05,
+        "phosphorus": 0.04,
+        "chromium": 0.1
+      },
+      {
+        "heatNumber": "H002",
+        "carbon": 0.26,
+        "manganese": 0.82,
+        "silicon": 0.31,
+        "sulphur": 0.04,
+        "phosphorus": 0.03,
+        "chromium": 0.11
+      }
+    ]
+  }
+}
+

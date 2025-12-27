@@ -22,4 +22,11 @@ public interface PoHeaderRepository extends JpaRepository<PoHeader, Long> {
 //        where h.vendorCode = :vendorCode
 //    """)
 //    List<PoHeader> findAllByVendorCodeWithItems(String vendorCode);
+    @Query("""
+        select distinct h
+        from PoHeader h
+        left join fetch h.items i
+        where h.vendorCode = :vendorCode
+    """)
+    List<PoHeader> findAllByVendorCodeWithItems(String vendorCode);
 }

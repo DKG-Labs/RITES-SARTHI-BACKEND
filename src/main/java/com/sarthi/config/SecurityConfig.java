@@ -26,6 +26,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/vendor/poData",
+                                "/api/vendor/po-assigned",
                                 "/sarthi-backend/api/auth",
                                 "/sarthi-backend/api/auth/login",
                                 "/sarthi-backend/api/auth",
