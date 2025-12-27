@@ -6,10 +6,12 @@ import com.sarthi.dto.WorkflowDtos.TransitionActionReqDto;
 import com.sarthi.dto.WorkflowDtos.TransitionDto;
 import com.sarthi.dto.WorkflowDtos.WorkflowTransitionDto;
 import com.sarthi.entity.*;
+import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.exception.BusinessException;
 import com.sarthi.exception.ErrorDetails;
 import com.sarthi.exception.InvalidInputException;
 import com.sarthi.repository.*;
+import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.service.WorkflowService;
 import com.sarthi.util.CommonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +59,8 @@ public class WorkflowServiceImpl implements WorkflowService {
     private ProcessIeMappingRepository processIeMappingRepository;
     @Autowired
     private RegionSbuHeadRepository regionSbuHeadRepository;
+    @Autowired
+    private InspectionCallRepository inspectionCallRepository;
     public void validateUser(Integer userId) {
         UserMaster userMaster = userMasterRepository.findById(userId).orElseThrow(() -> new InvalidInputException(new ErrorDetails(AppConstant.USER_NOT_FOUND, AppConstant.ERROR_TYPE_CODE_VALIDATION,
                 AppConstant.ERROR_TYPE_VALIDATION, "User not found.")));
@@ -1142,6 +1146,13 @@ System.out.print(last);
     }
 
     private WorkflowTransitionDto mapWorkflowTransition(WorkflowTransition wt) {
+
+        Optional<InspectionCall> ic = inspectionCallRepository.findByIcNumber(wt.getRequestId());
+
+        InspectionCall i =null;
+        if(ic.isPresent()){
+            i = ic.get();
+        }
         WorkflowTransitionDto dto = new WorkflowTransitionDto();
         dto.setWorkflowTransitionId(wt.getWorkflowTransitionId());
         dto.setWorkflowId(wt.getWorkflowId());
@@ -1158,6 +1169,12 @@ System.out.print(last);
         dto.setAssignedToUser(wt.getAssignedToUser());
         dto.setWorkflowSequence(wt.getWorkflowSequence());
         dto.setModifiedBy(wt.getModifiedBy());
+        if(ic.isPresent()){
+            dto.setPoNo(i.getPoNo());
+            dto.setVendorName(i.getVendorId());
+            dto.setProductType(i.getTypeOfCall());
+            dto.setDesiredInspectionDate(String.valueOf(i.getDesiredInspectionDate()));
+        }
       //  dto.setTransitionOrder(wt.getTransitionOrder());
         return dto;
     }

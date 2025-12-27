@@ -2,6 +2,7 @@ package com.sarthi.controller.rawmaterial;
 
 import com.sarthi.dto.IcDtos.InspectionCallRequestDto;
 import com.sarthi.dto.IcDtos.RmInspectionDetailsRequestDto;
+import com.sarthi.dto.WorkflowDtos.WorkflowTransitionDto;
 import com.sarthi.dto.rawmaterial.*;
 import com.sarthi.dto.vendorDtos.VendorPoHeaderResponseDto;
 import com.sarthi.entity.rawmaterial.InspectionCall;
@@ -11,6 +12,7 @@ import com.sarthi.dto.rawmaterial.*;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.exception.ErrorDetails;
 import com.sarthi.service.InspectionCallService;
+import com.sarthi.service.WorkflowService;
 import com.sarthi.service.rawmaterial.RawMaterialInspectionService;
 import com.sarthi.util.APIResponse;
 import com.sarthi.util.ResponseBuilder;
@@ -45,6 +47,8 @@ public class RawMaterialInspectionController {
 
     @Autowired
     private InspectionCallService inspectionCallService;
+    @Autowired
+    private WorkflowService workflowService;
 
     @Autowired
     public RawMaterialInspectionController(RawMaterialInspectionService rmService) {
@@ -170,6 +174,9 @@ public class RawMaterialInspectionController {
                 request.getInspectionCall(),
                 request.getRmInspectionDetails()
             );
+            String workflowName ="INSPECTION CALL";
+            workflowService.initiateWorkflow(ic.getIcNumber(), Integer.valueOf(ic.getCreatedBy()), workflowName, "560001");
+
 
             logger.info("✅ Inspection call created successfully with ID: {}", ic.getId());
             return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(ic), HttpStatus.OK);
