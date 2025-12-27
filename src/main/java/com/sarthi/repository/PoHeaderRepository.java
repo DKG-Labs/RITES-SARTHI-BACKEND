@@ -15,15 +15,15 @@ public interface PoHeaderRepository extends JpaRepository<PoHeader, Long> {
 
     List<PoHeader> findByVendorCode(String vendorCode);
 
-// <<<<<<< Updated upstream
-// //    @Query("""
-// //        select distinct h
-// //        from PoHeader h
-// //        left join fetch h.items i
-// //        where h.vendorCode = :vendorCode
-// //    """)
-// //    List<PoHeader> findAllByVendorCodeWithItems(String vendorCode);
-// =======
+<<<<<<< Updated upstream
+//    @Query("""
+//        select distinct h
+//        from PoHeader h
+//        left join fetch h.items i
+//        where h.vendorCode = :vendorCode
+//    """)
+//    List<PoHeader> findAllByVendorCodeWithItems(String vendorCode);
+=======
     @Query("""
         select distinct h
         from PoHeader h
@@ -31,5 +31,5 @@ public interface PoHeaderRepository extends JpaRepository<PoHeader, Long> {
         where h.vendorCode = :vendorCode
     """)
     List<PoHeader> findAllByVendorCodeWithItems(String vendorCode);
-// >>>>>>> Stashed changes
+>>>>>>> Stashed changes
 }

@@ -1,18 +1,18 @@
 package com.sarthi.controller.rawmaterial;
 
-// <<<<<<< Updated upstream
-// import com.sarthi.dto.IcDtos.InspectionCallRequestDto;
-// import com.sarthi.dto.IcDtos.RmInspectionDetailsRequestDto;
-// import com.sarthi.dto.rawmaterial.*;
-// import com.sarthi.dto.vendorDtos.VendorPoHeaderResponseDto;
-// import com.sarthi.entity.rawmaterial.InspectionCall;
-// =======
+<<<<<<< Updated upstream
+import com.sarthi.dto.IcDtos.InspectionCallRequestDto;
+import com.sarthi.dto.IcDtos.RmInspectionDetailsRequestDto;
+import com.sarthi.dto.rawmaterial.*;
+import com.sarthi.dto.vendorDtos.VendorPoHeaderResponseDto;
+import com.sarthi.entity.rawmaterial.InspectionCall;
+=======
 import com.sarthi.constant.AppConstant;
 import com.sarthi.dto.IcDtos.CreateInspectionCallRequestDto;
 import com.sarthi.dto.rawmaterial.*;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.exception.ErrorDetails;
-// >>>>>>> Stashed changes
+>>>>>>> Stashed changes
 import com.sarthi.service.InspectionCallService;
 import com.sarthi.service.rawmaterial.RawMaterialInspectionService;
 import com.sarthi.util.APIResponse;
@@ -147,16 +147,16 @@ public class RawMaterialInspectionController {
 
 
 
-// <<<<<<< Updated upstream
-//     @PostMapping("/inspectionCall")
-//     public ResponseEntity<Object> createInspectionCall(@RequestBody InspectionCallRequestDto icRequest,
-//                                                      @RequestBody  RmInspectionDetailsRequestDto rmRequest) {
+<<<<<<< Updated upstream
+    @PostMapping("/inspectionCall")
+    public ResponseEntity<Object> createInspectionCall(@RequestBody InspectionCallRequestDto icRequest,
+                                                     @RequestBody  RmInspectionDetailsRequestDto rmRequest) {
 
-//       InspectionCall ic =  inspectionCallService.createInspectionCall(icRequest, rmRequest);
-//         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(ic), HttpStatus.OK);
+      InspectionCall ic =  inspectionCallService.createInspectionCall(icRequest, rmRequest);
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(ic), HttpStatus.OK);
 
 
-// =======
+=======
     /**
      * Create a new inspection call with RM details
      * POST /api/raw-material/inspectionCall
@@ -194,7 +194,7 @@ public class RawMaterialInspectionController {
 
             return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-// >>>>>>> Stashed changes
+>>>>>>> Stashed changes
     }
 
 

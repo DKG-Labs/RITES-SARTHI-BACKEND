@@ -26,10 +26,10 @@ public class RmHeatQuantity {
     // ---- RELATION ----
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rm_detail_id", nullable = false)
-// <<<<<<< Updated upstream
-// =======
-//     @JsonIgnore  // Prevent circular reference during JSON serialization
-// >>>>>>> Stashed changes
+<<<<<<< Updated upstream
+=======
+    @JsonIgnore  // Prevent circular reference during JSON serialization
+>>>>>>> Stashed changes
     private RmInspectionDetails rmInspectionDetails;
 
     private String heatNumber;
