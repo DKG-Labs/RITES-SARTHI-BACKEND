@@ -38,19 +38,17 @@ public interface RmHeatQuantityRepository extends JpaRepository<RmHeatQuantity, 
     /* ==================== Find with Chemical Analyses ==================== */
 
     /**
-     * Find heat quantity with chemical analyses
+     * Find heat quantity by ID
+     * Note: Chemical analyses are linked via heat number, not direct relationship
      */
-    @Query("SELECT DISTINCT hq FROM RmHeatQuantity hq " +
-           "LEFT JOIN FETCH hq.chemicalAnalyses " +
-           "WHERE hq.id = :id")
+    @Query("SELECT hq FROM RmHeatQuantity hq WHERE hq.id = :id")
     Optional<RmHeatQuantity> findByIdWithChemicalAnalyses(@Param("id") Integer id);
 
     /**
-     * Find all heat quantities for RM detail with chemical analyses
+     * Find all heat quantities for RM detail
+     * Note: Chemical analyses are linked via heat number, not direct relationship
      */
-    @Query("SELECT DISTINCT hq FROM RmHeatQuantity hq " +
-           "LEFT JOIN FETCH hq.chemicalAnalyses " +
-           "WHERE hq.rmInspectionDetails.id = :rmDetailId")
+    @Query("SELECT hq FROM RmHeatQuantity hq WHERE hq.rmInspectionDetails.id = :rmDetailId")
     List<RmHeatQuantity> findByRmDetailIdWithChemicalAnalyses(@Param("rmDetailId") Integer rmDetailId);
 }
 

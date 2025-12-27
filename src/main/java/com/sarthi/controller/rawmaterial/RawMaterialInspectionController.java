@@ -1,10 +1,18 @@
 package com.sarthi.controller.rawmaterial;
 
+<<<<<<< Updated upstream
 import com.sarthi.dto.IcDtos.InspectionCallRequestDto;
 import com.sarthi.dto.IcDtos.RmInspectionDetailsRequestDto;
 import com.sarthi.dto.rawmaterial.*;
 import com.sarthi.dto.vendorDtos.VendorPoHeaderResponseDto;
 import com.sarthi.entity.rawmaterial.InspectionCall;
+=======
+import com.sarthi.constant.AppConstant;
+import com.sarthi.dto.IcDtos.CreateInspectionCallRequestDto;
+import com.sarthi.dto.rawmaterial.*;
+import com.sarthi.entity.rawmaterial.InspectionCall;
+import com.sarthi.exception.ErrorDetails;
+>>>>>>> Stashed changes
 import com.sarthi.service.InspectionCallService;
 import com.sarthi.service.rawmaterial.RawMaterialInspectionService;
 import com.sarthi.util.APIResponse;
@@ -139,6 +147,7 @@ public class RawMaterialInspectionController {
 
 
 
+<<<<<<< Updated upstream
     @PostMapping("/inspectionCall")
     public ResponseEntity<Object> createInspectionCall(@RequestBody InspectionCallRequestDto icRequest,
                                                      @RequestBody  RmInspectionDetailsRequestDto rmRequest) {
@@ -147,6 +156,45 @@ public class RawMaterialInspectionController {
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(ic), HttpStatus.OK);
 
 
+=======
+    /**
+     * Create a new inspection call with RM details
+     * POST /api/raw-material/inspectionCall
+     */
+    @PostMapping("/inspectionCall")
+    @Operation(summary = "Create inspection call", description = "Creates a new inspection call with RM inspection details")
+    public ResponseEntity<APIResponse> createInspectionCall(@RequestBody CreateInspectionCallRequestDto request) {
+        try {
+            logger.info("========== CREATE INSPECTION CALL REQUEST ==========");
+            logger.info("Request object: {}", request);
+            logger.info("Inspection Call: {}", request.getInspectionCall());
+            logger.info("RM Details: {}", request.getRmInspectionDetails());
+            logger.info("====================================================");
+
+            InspectionCall ic = inspectionCallService.createInspectionCall(
+                request.getInspectionCall(),
+                request.getRmInspectionDetails()
+            );
+
+            logger.info("✅ Inspection call created successfully with ID: {}", ic.getId());
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(ic), HttpStatus.OK);
+
+        } catch (Exception e) {
+            logger.error("❌ ERROR creating inspection call", e);
+            logger.error("❌ Error message: {}", e.getMessage());
+            logger.error("❌ Error cause: {}", e.getCause());
+
+            // Create ErrorDetails object for the response
+            ErrorDetails errorDetails = new ErrorDetails(
+                AppConstant.INTER_SERVER_ERROR,
+                AppConstant.ERROR_TYPE_CODE_INTERNAL,
+                AppConstant.ERROR_TYPE_ERROR,
+                e.getMessage() != null ? e.getMessage() : "Failed to create inspection call"
+            );
+
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+>>>>>>> Stashed changes
     }
 
 

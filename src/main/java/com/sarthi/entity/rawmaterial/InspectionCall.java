@@ -54,7 +54,11 @@ public class InspectionCall {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+<<<<<<< Updated upstream
 
+=======
+    // ---- RELATION ----
+>>>>>>> Stashed changes
     @OneToOne(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
     private RmInspectionDetails rmInspectionDetails;
 }
