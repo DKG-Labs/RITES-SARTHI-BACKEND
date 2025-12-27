@@ -20,11 +20,8 @@ public class VendorPoServiceImpl implements VendorPoService {
 
     public List<VendorPoHeaderResponseDto> getPoListByVendorCode(String vendorCode) {
 
-<<<<<<< Updated upstream
-        List<PoHeader> poHeaders = poHeaderRepository.findByVendorCode(vendorCode);
-=======
+        // List<PoHeader> poHeaders = poHeaderRepository.findByVendorCode(vendorCode);
         List<PoHeader> poHeaders = poHeaderRepository.findAllByVendorCodeWithItems(vendorCode);
->>>>>>> Stashed changes
 
         return poHeaders.stream().map(this::mapToHeaderDto).toList();
     }

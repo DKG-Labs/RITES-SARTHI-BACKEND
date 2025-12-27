@@ -23,12 +23,10 @@ public class VendorController {
     private VendorPoService vService;
 
     @GetMapping("/poData")
-<<<<<<< Updated upstream
-    public ResponseEntity<Object> login(@RequestParam String vendorCode) {
-        List<VendorPoHeaderResponseDto> res = vService.getPoListByVendorCode(vendorCode);
-        return new ResponseEntity<Object>(ResponseBuilder.getSuccessResponse(res), HttpStatus.OK);
-    }
-=======
+    // public ResponseEntity<Object> login(@RequestParam String vendorCode) {
+    //     List<VendorPoHeaderResponseDto> res = vService.getPoListByVendorCode(vendorCode);
+    //     return new ResponseEntity<Object>(ResponseBuilder.getSuccessResponse(res), HttpStatus.OK);
+    // }
     public ResponseEntity<Object> getPoData(@RequestParam String vendorCode) {
         List<VendorPoHeaderResponseDto> res = vService.getPoListByVendorCode(vendorCode);
         return new ResponseEntity<Object>(ResponseBuilder.getSuccessResponse(res), HttpStatus.OK);
@@ -43,6 +41,5 @@ public class VendorController {
         List<VendorPoHeaderResponseDto> res = vService.getPoListByVendorCode(vendorId);
         return new ResponseEntity<Object>(ResponseBuilder.getSuccessResponse(res), HttpStatus.OK);
     }
->>>>>>> Stashed changes
 
 }

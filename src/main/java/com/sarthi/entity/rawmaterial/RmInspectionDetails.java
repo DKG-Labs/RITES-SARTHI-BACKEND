@@ -25,10 +25,7 @@ public class RmInspectionDetails {
     // ---- RELATION ----
     @OneToOne
     @JoinColumn(name = "ic_id", nullable = false)
-<<<<<<< Updated upstream
-=======
     @JsonIgnore  // Prevent circular reference during JSON serialization
->>>>>>> Stashed changes
     private InspectionCall inspectionCall;
 
     // ---- ITEM DETAILS ----

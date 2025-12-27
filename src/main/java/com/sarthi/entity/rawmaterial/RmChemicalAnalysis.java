@@ -1,5 +1,5 @@
 package com.sarthi.entity.rawmaterial;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -18,10 +18,7 @@ public class RmChemicalAnalysis {
     // ---- RELATION ----
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rm_detail_id", nullable = false)
-<<<<<<< Updated upstream
-=======
     @JsonIgnore  // Prevent circular reference during JSON serialization
->>>>>>> Stashed changes
     private RmInspectionDetails rmInspectionDetails;
 
     private String heatNumber;
