@@ -2,7 +2,9 @@ package com.sarthi.service.Impl;
 
 import com.sarthi.dto.*;
 import com.sarthi.entity.*;
+import com.sarthi.entity.rawmaterial.RmChemicalAnalysis;
 import com.sarthi.repository.*;
+import com.sarthi.repository.rawmaterial.RmChemicalAnalysisRepository;
 import com.sarthi.service.RmInspectionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +48,9 @@ public class RmInspectionServiceImpl implements RmInspectionService {
 
     @Autowired
     private RmCalibrationDocumentsRepository calibrationRepository;
+
+    @Autowired
+    private RmChemicalAnalysisRepository chemicalAnalysisRepository;
 
     @Override
     @Transactional
@@ -104,7 +109,7 @@ public class RmInspectionServiceImpl implements RmInspectionService {
         String callNo = dto.getInspectionCallNo();
 
         RmInspectionSummary summary = summaryRepository.findByInspectionCallNo(callNo)
-            .orElse(new RmInspectionSummary());
+                .orElse(new RmInspectionSummary());
 
         summary.setInspectionCallNo(callNo);
 
@@ -217,19 +222,23 @@ public class RmInspectionServiceImpl implements RmInspectionService {
         }
     }
 
-    private void savePackingStorage(String callNo, RmPackingStorageDto dto) {
+    private void savePackingStorage(String callNo, List<RmPackingStorageDto> dtoList) {
         packingRepository.deleteByInspectionCallNo(callNo);
-        RmPackingStorage entity = new RmPackingStorage();
-        entity.setInspectionCallNo(callNo);
-        entity.setBundlingSecure(dto.getBundlingSecure());
-        entity.setTagsAttached(dto.getTagsAttached());
-        entity.setLabelsCorrect(dto.getLabelsCorrect());
-        entity.setProtectionAdequate(dto.getProtectionAdequate());
-        entity.setStorageCondition(dto.getStorageCondition());
-        entity.setMoistureProtection(dto.getMoistureProtection());
-        entity.setStackingProper(dto.getStackingProper());
-        entity.setRemarks(dto.getRemarks());
-        packingRepository.save(entity);
+        for (RmPackingStorageDto dto : dtoList) {
+            RmPackingStorage entity = new RmPackingStorage();
+            entity.setInspectionCallNo(callNo);
+            entity.setHeatNo(dto.getHeatNo());
+            entity.setHeatIndex(dto.getHeatIndex());
+            entity.setBundlingSecure(dto.getBundlingSecure());
+            entity.setTagsAttached(dto.getTagsAttached());
+            entity.setLabelsCorrect(dto.getLabelsCorrect());
+            entity.setProtectionAdequate(dto.getProtectionAdequate());
+            entity.setStorageCondition(dto.getStorageCondition());
+            entity.setMoistureProtection(dto.getMoistureProtection());
+            entity.setStackingProper(dto.getStackingProper());
+            entity.setRemarks(dto.getRemarks());
+            packingRepository.save(entity);
+        }
     }
 
     private void saveCalibrationDocuments(String callNo, List<RmCalibrationDocumentsDto> data) {
@@ -275,8 +284,284 @@ public class RmInspectionServiceImpl implements RmInspectionService {
 
     @Override
     public RmFinishInspectionDto getByCallNo(String callNo) {
-        // To be implemented for fetching data
-        return null;
+        logger.info("Fetching RM inspection data for call: {}", callNo);
+
+        // Check if inspection data exists
+        if (!summaryRepository.existsByInspectionCallNo(callNo)) {
+            logger.warn("No inspection data found for call: {}", callNo);
+            return null;
+        }
+
+        RmFinishInspectionDto dto = new RmFinishInspectionDto();
+        dto.setInspectionCallNo(callNo);
+
+        // 1. Fetch Summary (Pre-Inspection Data + Inspector Details)
+        summaryRepository.findByInspectionCallNo(callNo).ifPresent(summary -> {
+            // Pre-Inspection Data
+            RmPreInspectionDataDto preData = new RmPreInspectionDataDto();
+            preData.setInspectionCallNo(callNo);
+            preData.setTotalHeatsOffered(summary.getTotalHeatsOffered());
+            preData.setTotalQtyOfferedMt(summary.getTotalQtyOfferedMt());
+            preData.setNumberOfBundles(summary.getNumberOfBundles());
+            preData.setNumberOfErc(summary.getNumberOfErc());
+            preData.setProductModel(summary.getProductModel());
+            preData.setPoNo(summary.getPoNo());
+            preData.setPoDate(formatDate(summary.getPoDate()));
+            preData.setVendorName(summary.getVendorName());
+            preData.setPlaceOfInspection(summary.getPlaceOfInspection());
+            preData.setSourceOfRawMaterial(summary.getSourceOfRawMaterial());
+            dto.setPreInspectionData(preData);
+
+            // Inspector Details
+            RmInspectorDetailsDto inspectorData = new RmInspectorDetailsDto();
+            inspectorData.setFinishedBy(summary.getFinishedBy());
+            inspectorData.setFinishedAt(formatDateTime(summary.getFinishedAt()));
+            inspectorData.setInspectionDate(formatDate(summary.getInspectionDate()));
+            inspectorData.setShiftOfInspection(summary.getShiftOfInspection());
+            dto.setInspectorDetails(inspectorData);
+        });
+
+        // 2. Fetch Heat Final Results
+        List<RmHeatFinalResult> heatResults = heatResultRepository.findByInspectionCallNo(callNo);
+        List<RmHeatFinalResultDto> heatResultDtos = new ArrayList<>();
+        for (RmHeatFinalResult entity : heatResults) {
+            RmHeatFinalResultDto heatDto = new RmHeatFinalResultDto();
+            heatDto.setInspectionCallNo(entity.getInspectionCallNo());
+            heatDto.setHeatIndex(entity.getHeatIndex());
+            heatDto.setHeatNo(entity.getHeatNo());
+            heatDto.setTcNo(entity.getTcNo());
+            heatDto.setTcDate(formatDate(entity.getTcDate()));
+            heatDto.setManufacturerName(entity.getManufacturerName());
+            heatDto.setInvoiceNumber(entity.getInvoiceNumber());
+            heatDto.setInvoiceDate(formatDate(entity.getInvoiceDate()));
+            heatDto.setSubPoNumber(entity.getSubPoNumber());
+            heatDto.setSubPoDate(formatDate(entity.getSubPoDate()));
+            heatDto.setSubPoQty(entity.getSubPoQty());
+            heatDto.setTotalValueOfPo(entity.getTotalValueOfPo());
+            heatDto.setTcQuantity(entity.getTcQuantity());
+            heatDto.setOfferedQty(entity.getOfferedQty());
+            heatDto.setColorCode(entity.getColorCode());
+            heatDto.setStatus(entity.getStatus());
+            heatDto.setWeightOfferedMt(entity.getWeightOfferedMt());
+            heatDto.setWeightAcceptedMt(entity.getWeightAcceptedMt());
+            heatDto.setWeightRejectedMt(entity.getWeightRejectedMt());
+            heatDto.setCalibrationStatus(entity.getCalibrationStatus());
+            heatDto.setVisualStatus(entity.getVisualStatus());
+            heatDto.setDimensionalStatus(entity.getDimensionalStatus());
+            heatDto.setMaterialTestStatus(entity.getMaterialTestStatus());
+            heatDto.setPackingStatus(entity.getPackingStatus());
+            heatDto.setRemarks(entity.getRemarks());
+            heatResultDtos.add(heatDto);
+        }
+        dto.setHeatFinalResults(heatResultDtos);
+
+        // 3. Fetch Visual Inspection Data
+        List<RmVisualInspection> visualEntities = visualRepository.findByInspectionCallNo(callNo);
+        List<RmVisualInspectionDto> visualDtos = new ArrayList<>();
+        for (RmVisualInspection entity : visualEntities) {
+            RmVisualInspectionDto visualDto = new RmVisualInspectionDto();
+            visualDto.setInspectionCallNo(entity.getInspectionCallNo());
+            visualDto.setHeatNo(entity.getHeatNo());
+            visualDto.setHeatIndex(entity.getHeatIndex());
+            visualDto.setDefectName(entity.getDefectName());
+            visualDto.setIsSelected(entity.getIsSelected());
+            visualDto.setDefectLengthMm(entity.getDefectLengthMm());
+            visualDtos.add(visualDto);
+        }
+        dto.setVisualInspectionData(visualDtos);
+
+        // 4. Fetch Dimensional Check Data
+        List<RmDimensionalCheck> dimensionalEntities = dimensionalRepository.findByInspectionCallNo(callNo);
+        List<RmDimensionalCheckDto> dimensionalDtos = new ArrayList<>();
+        for (RmDimensionalCheck entity : dimensionalEntities) {
+            RmDimensionalCheckDto dimDto = new RmDimensionalCheckDto();
+            dimDto.setInspectionCallNo(entity.getInspectionCallNo());
+            dimDto.setHeatNo(entity.getHeatNo());
+            dimDto.setHeatIndex(entity.getHeatIndex());
+            dimDto.setSampleNumber(entity.getSampleNumber());
+            dimDto.setDiameter(entity.getDiameter());
+            dimensionalDtos.add(dimDto);
+        }
+        dto.setDimensionalCheckData(dimensionalDtos);
+
+        // 5. Fetch Material Testing Data
+        List<RmMaterialTesting> materialEntities = materialTestingRepository.findByInspectionCallNo(callNo);
+        List<RmMaterialTestingDto> materialDtos = new ArrayList<>();
+        for (RmMaterialTesting entity : materialEntities) {
+            RmMaterialTestingDto matDto = new RmMaterialTestingDto();
+            matDto.setInspectionCallNo(entity.getInspectionCallNo());
+            matDto.setHeatNo(entity.getHeatNo());
+            matDto.setHeatIndex(entity.getHeatIndex());
+            matDto.setSampleNumber(entity.getSampleNumber());
+            matDto.setCarbonPercent(entity.getCarbonPercent());
+            matDto.setSiliconPercent(entity.getSiliconPercent());
+            matDto.setManganesePercent(entity.getManganesePercent());
+            matDto.setPhosphorusPercent(entity.getPhosphorusPercent());
+            matDto.setSulphurPercent(entity.getSulphurPercent());
+            matDto.setGrainSize(entity.getGrainSize());
+            // Map entity field names to DTO field names
+            matDto.setHardnessHrc(entity.getHardness());
+            matDto.setDecarbDepthMm(entity.getDecarb());
+            matDto.setInclusionA(entity.getInclusionA());
+            matDto.setInclusionB(entity.getInclusionB());
+            matDto.setInclusionC(entity.getInclusionC());
+            matDto.setInclusionD(entity.getInclusionD());
+            matDto.setRemarks(entity.getRemarks());
+            materialDtos.add(matDto);
+        }
+        dto.setMaterialTestingData(materialDtos);
+
+        // 6. Fetch Packing & Storage Data - per heat
+        List<RmPackingStorage> packingEntities = packingRepository.findByInspectionCallNo(callNo);
+        List<RmPackingStorageDto> packingDtos = new ArrayList<>();
+        for (RmPackingStorage entity : packingEntities) {
+            RmPackingStorageDto packingDto = new RmPackingStorageDto();
+            packingDto.setInspectionCallNo(entity.getInspectionCallNo());
+            packingDto.setHeatNo(entity.getHeatNo());
+            packingDto.setHeatIndex(entity.getHeatIndex());
+            packingDto.setBundlingSecure(entity.getBundlingSecure());
+            packingDto.setTagsAttached(entity.getTagsAttached());
+            packingDto.setLabelsCorrect(entity.getLabelsCorrect());
+            packingDto.setProtectionAdequate(entity.getProtectionAdequate());
+            packingDto.setStorageCondition(entity.getStorageCondition());
+            packingDto.setMoistureProtection(entity.getMoistureProtection());
+            packingDto.setStackingProper(entity.getStackingProper());
+            packingDto.setRemarks(entity.getRemarks());
+            packingDtos.add(packingDto);
+        }
+        dto.setPackingStorageData(packingDtos);
+
+        // 7. Fetch Calibration Documents Data
+        List<RmCalibrationDocuments> calibrationEntities = calibrationRepository.findByInspectionCallNo(callNo);
+        List<RmCalibrationDocumentsDto> calibrationDtos = new ArrayList<>();
+        for (RmCalibrationDocuments entity : calibrationEntities) {
+            RmCalibrationDocumentsDto calDto = new RmCalibrationDocumentsDto();
+            calDto.setInspectionCallNo(entity.getInspectionCallNo());
+            calDto.setHeatNo(entity.getHeatNo());
+            calDto.setHeatIndex(entity.getHeatIndex());
+            calDto.setRdsoApprovalId(entity.getRdsoApprovalId());
+            calDto.setRdsoValidFrom(formatDate(entity.getRdsoValidFrom()));
+            calDto.setRdsoValidTo(formatDate(entity.getRdsoValidTo()));
+            calDto.setGaugesAvailable(entity.getGaugesAvailable());
+            calDto.setLadleCarbonPercent(entity.getLadleCarbonPercent());
+            calDto.setLadleSiliconPercent(entity.getLadleSiliconPercent());
+            calDto.setLadleManganesePercent(entity.getLadleManganesePercent());
+            calDto.setLadlePhosphorusPercent(entity.getLadlePhosphorusPercent());
+            calDto.setLadleSulphurPercent(entity.getLadleSulphurPercent());
+            calDto.setVendorVerified(entity.getVendorVerified());
+            calDto.setVerifiedBy(entity.getVerifiedBy());
+            calDto.setVerifiedAt(formatDateTime(entity.getVerifiedAt()));
+            calibrationDtos.add(calDto);
+        }
+        dto.setCalibrationDocumentsData(calibrationDtos);
+
+        logger.info("Successfully fetched RM inspection data for call: {}", callNo);
+        return dto;
+    }
+
+    /**
+     * Format LocalDate to String (dd/MM/yyyy)
+     */
+    private String formatDate(LocalDate date) {
+        if (date == null) return null;
+        return date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+    }
+
+    /**
+     * Format LocalDateTime to ISO String
+     */
+    private String formatDateTime(LocalDateTime dateTime) {
+        if (dateTime == null) return null;
+        return dateTime.format(DateTimeFormatter.ISO_DATE_TIME);
+    }
+
+    @Override
+    public RmPreInspectionDataDto getSummaryByCallNo(String callNo) {
+        logger.info("Fetching cumulative summary data for call: {}", callNo);
+
+        return summaryRepository.findByInspectionCallNo(callNo)
+                .map(summary -> {
+                    RmPreInspectionDataDto dto = new RmPreInspectionDataDto();
+                    dto.setInspectionCallNo(callNo);
+                    dto.setTotalHeatsOffered(summary.getTotalHeatsOffered());
+                    dto.setTotalQtyOfferedMt(summary.getTotalQtyOfferedMt());
+                    dto.setNumberOfBundles(summary.getNumberOfBundles());
+                    dto.setNumberOfErc(summary.getNumberOfErc());
+                    dto.setProductModel(summary.getProductModel());
+                    dto.setPoNo(summary.getPoNo());
+                    dto.setPoDate(formatDate(summary.getPoDate()));
+                    dto.setVendorName(summary.getVendorName());
+                    dto.setPlaceOfInspection(summary.getPlaceOfInspection());
+                    dto.setSourceOfRawMaterial(summary.getSourceOfRawMaterial());
+                    logger.info("Successfully fetched cumulative summary for call: {}", callNo);
+                    return dto;
+                })
+                .orElse(null);
+    }
+
+    @Override
+    public List<RmHeatFinalResultDto> getFinalResultsByCallNo(String callNo) {
+        logger.info("Fetching final inspection results for call: {}", callNo);
+
+        List<RmHeatFinalResult> entities = heatResultRepository.findByInspectionCallNo(callNo);
+        List<RmHeatFinalResultDto> dtos = new ArrayList<>();
+
+        for (RmHeatFinalResult entity : entities) {
+            RmHeatFinalResultDto dto = new RmHeatFinalResultDto();
+            dto.setInspectionCallNo(entity.getInspectionCallNo());
+            dto.setHeatIndex(entity.getHeatIndex());
+            dto.setHeatNo(entity.getHeatNo());
+            dto.setTcNo(entity.getTcNo());
+            dto.setTcDate(formatDate(entity.getTcDate()));
+            dto.setManufacturerName(entity.getManufacturerName());
+            dto.setInvoiceNumber(entity.getInvoiceNumber());
+            dto.setInvoiceDate(formatDate(entity.getInvoiceDate()));
+            dto.setSubPoNumber(entity.getSubPoNumber());
+            dto.setSubPoDate(formatDate(entity.getSubPoDate()));
+            dto.setSubPoQty(entity.getSubPoQty());
+            dto.setTotalValueOfPo(entity.getTotalValueOfPo());
+            dto.setTcQuantity(entity.getTcQuantity());
+            dto.setOfferedQty(entity.getOfferedQty());
+            dto.setColorCode(entity.getColorCode());
+            dto.setStatus(entity.getStatus());
+            dto.setWeightOfferedMt(entity.getWeightOfferedMt());
+            dto.setWeightAcceptedMt(entity.getWeightAcceptedMt());
+            dto.setWeightRejectedMt(entity.getWeightRejectedMt());
+            dto.setCalibrationStatus(entity.getCalibrationStatus());
+            dto.setVisualStatus(entity.getVisualStatus());
+            dto.setDimensionalStatus(entity.getDimensionalStatus());
+            dto.setMaterialTestStatus(entity.getMaterialTestStatus());
+            dto.setPackingStatus(entity.getPackingStatus());
+            dto.setRemarks(entity.getRemarks());
+            dtos.add(dto);
+        }
+
+        logger.info("Successfully fetched {} heat final results for call: {}", dtos.size(), callNo);
+        return dtos;
+    }
+
+    @Override
+    public List<RmLadleValuesDto> getLadleValuesByCallNo(String callNo) {
+        logger.info("Fetching ladle values (chemical analysis) for call: {}", callNo);
+
+        List<RmChemicalAnalysis> entities = chemicalAnalysisRepository.findByInspectionCallNo(callNo);
+        List<RmLadleValuesDto> dtos = new ArrayList<>();
+
+        for (RmChemicalAnalysis entity : entities) {
+            RmLadleValuesDto dto = RmLadleValuesDto.builder()
+                    .heatNo(entity.getHeatNumber())
+                    .percentC(entity.getCarbon())
+                    .percentSi(entity.getSilicon())
+                    .percentMn(entity.getManganese())
+                    .percentP(entity.getPhosphorus())
+                    .percentS(entity.getSulphur())
+                    .percentCr(entity.getChromium())
+                    .build();
+            dtos.add(dto);
+        }
+
+        logger.info("Successfully fetched {} ladle values for call: {}", dtos.size(), callNo);
+        return dtos;
     }
 
     /**
@@ -352,4 +637,3 @@ public class RmInspectionServiceImpl implements RmInspectionService {
         return errors;
     }
 }
-

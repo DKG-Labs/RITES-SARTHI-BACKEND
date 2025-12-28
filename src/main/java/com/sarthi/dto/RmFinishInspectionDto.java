@@ -16,7 +16,8 @@ public class RmFinishInspectionDto {
     private List<RmVisualInspectionDto> visualInspectionData;
     private List<RmDimensionalCheckDto> dimensionalCheckData;
     private List<RmMaterialTestingDto> materialTestingData;
-    private RmPackingStorageDto packingStorageData;
+    private List<RmPackingStorageDto> packingStorageData;  // Changed to List - per heat
+
     private List<RmCalibrationDocumentsDto> calibrationDocumentsData;
     private RmInspectorDetailsDto inspectorDetails;
 }

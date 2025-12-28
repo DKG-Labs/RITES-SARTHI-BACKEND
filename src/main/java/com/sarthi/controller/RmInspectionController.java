@@ -2,6 +2,11 @@ package com.sarthi.controller;
 
 import com.sarthi.constant.AppConstant;
 import com.sarthi.dto.RmFinishInspectionDto;
+
+import com.sarthi.dto.RmPreInspectionDataDto;
+import com.sarthi.dto.RmHeatFinalResultDto;
+import com.sarthi.dto.RmLadleValuesDto;
+
 import com.sarthi.exception.ErrorDetails;
 import com.sarthi.service.RmInspectionService;
 import com.sarthi.util.ResponseBuilder;
@@ -11,6 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+
+import java.util.List;
 
 /**
  * REST Controller for Raw Material inspection operations.
@@ -87,5 +95,97 @@ public class RmInspectionController {
             return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    /**
+     * Get cumulative summary data only (pre-inspection data).
+     */
+    @GetMapping("/summary/{callNo}")
+    public ResponseEntity<Object> getSummaryByCallNo(@PathVariable String callNo) {
+        logger.info("GET /api/rm-inspection/summary/{}", callNo);
+        try {
+            RmPreInspectionDataDto dto = service.getSummaryByCallNo(callNo);
+            if (dto == null) {
+                ErrorDetails errorDetails = new ErrorDetails(
+                    AppConstant.ERROR_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_RESOURCE,
+                    "Summary data not found"
+                );
+                return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(dto), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error fetching summary data: {}", e.getMessage(), e);
+            ErrorDetails errorDetails = new ErrorDetails(
+                AppConstant.INTER_SERVER_ERROR,
+                AppConstant.ERROR_TYPE_CODE_INTERNAL,
+                AppConstant.ERROR_TYPE_ERROR,
+                e.getMessage()
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get final inspection results for all heats.
+     */
+    @GetMapping("/final-results/{callNo}")
+    public ResponseEntity<Object> getFinalResultsByCallNo(@PathVariable String callNo) {
+        logger.info("GET /api/rm-inspection/final-results/{}", callNo);
+        try {
+            List<RmHeatFinalResultDto> results = service.getFinalResultsByCallNo(callNo);
+            if (results == null || results.isEmpty()) {
+                ErrorDetails errorDetails = new ErrorDetails(
+                    AppConstant.ERROR_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_RESOURCE,
+                    "Final results not found"
+                );
+                return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(results), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error fetching final results: {}", e.getMessage(), e);
+            ErrorDetails errorDetails = new ErrorDetails(
+                AppConstant.INTER_SERVER_ERROR,
+                AppConstant.ERROR_TYPE_CODE_INTERNAL,
+                AppConstant.ERROR_TYPE_ERROR,
+                e.getMessage()
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get ladle values (chemical analysis from vendor) for all heats.
+     * Used in Material Testing page to display ladle values.
+     */
+    @GetMapping("/ladle-values/{callNo}")
+    public ResponseEntity<Object> getLadleValuesByCallNo(@PathVariable String callNo) {
+        logger.info("GET /api/rm-inspection/ladle-values/{}", callNo);
+        try {
+            List<RmLadleValuesDto> ladleValues = service.getLadleValuesByCallNo(callNo);
+            if (ladleValues == null || ladleValues.isEmpty()) {
+                ErrorDetails errorDetails = new ErrorDetails(
+                    AppConstant.ERROR_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_RESOURCE,
+                    "Ladle values not found"
+                );
+                return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(ladleValues), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error fetching ladle values: {}", e.getMessage(), e);
+            ErrorDetails errorDetails = new ErrorDetails(
+                AppConstant.INTER_SERVER_ERROR,
+                AppConstant.ERROR_TYPE_CODE_INTERNAL,
+                AppConstant.ERROR_TYPE_ERROR,
+                e.getMessage()
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }
 

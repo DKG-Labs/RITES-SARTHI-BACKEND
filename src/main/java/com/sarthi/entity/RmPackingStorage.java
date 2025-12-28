@@ -3,14 +3,10 @@ package com.sarthi.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
-
-/**
- * Entity representing packing and storage verification for Raw Material.
- * Single record per inspection call.
- */
 @Entity
 @Table(name = "rm_packing_storage", indexes = {
-    @Index(name = "idx_rm_pack_call_no", columnList = "inspection_call_no")
+        @Index(name = "idx_rm_pack_call_no", columnList = "inspection_call_no"),
+        @Index(name = "idx_rm_pack_heat_no", columnList = "heat_no")
 })
 @Data
 public class RmPackingStorage {
@@ -19,8 +15,14 @@ public class RmPackingStorage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "inspection_call_no", nullable = false, unique = true, length = 50)
+    @Column(name = "inspection_call_no", nullable = false, length = 50)
     private String inspectionCallNo;
+
+    @Column(name = "heat_no", length = 50)
+    private String heatNo;
+
+    @Column(name = "heat_index")
+    private Integer heatIndex;
 
     @Column(name = "bundling_secure", length = 10)
     private String bundlingSecure;
@@ -49,4 +51,5 @@ public class RmPackingStorage {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 }
+
 

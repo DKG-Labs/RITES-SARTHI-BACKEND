@@ -45,6 +45,10 @@ public class RmHeatQuantity {
     @Column(columnDefinition = "TEXT")
     private String rejectionReason;
 
+    // Color code manually entered by inspector
+    @Column(name = "color_code", length = 50)
+    private String colorCode;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
