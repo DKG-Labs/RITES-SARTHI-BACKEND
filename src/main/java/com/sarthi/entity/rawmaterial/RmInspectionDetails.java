@@ -2,11 +2,7 @@ package com.sarthi.entity.rawmaterial;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -15,17 +11,21 @@ import java.util.ArrayList;
 import java.util.List;
 @Entity
 @Table(name = "rm_inspection_details")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class RmInspectionDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     // ---- RELATION ----
     @OneToOne
     @JoinColumn(name = "ic_id", nullable = false)
     @JsonIgnore  // Prevent circular reference during JSON serialization
+    @ToString.Exclude
     private InspectionCall inspectionCall;
 
     // ---- ITEM DETAILS ----
@@ -71,9 +71,11 @@ public class RmInspectionDetails {
 
     // ---- CHILD TABLES ----
     @OneToMany(mappedBy = "rmInspectionDetails", cascade = CascadeType.ALL)
+    @ToString.Exclude
     private List<RmHeatQuantity> heatQuantities;
 
     @OneToMany(mappedBy = "rmInspectionDetails", cascade = CascadeType.ALL)
+    @ToString.Exclude
     private List<RmChemicalAnalysis> chemicalAnalysisList;
 }
 

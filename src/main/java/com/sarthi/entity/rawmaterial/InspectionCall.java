@@ -1,9 +1,7 @@
 package com.sarthi.entity.rawmaterial;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,11 +10,14 @@ import java.util.List;
 
 @Entity
 @Table(name = "inspection_calls")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class InspectionCall {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     private String vendorId;
@@ -57,6 +58,7 @@ public class InspectionCall {
 
     // ---- RELATION ----
     @OneToOne(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
+    @ToString.Exclude
     private RmInspectionDetails rmInspectionDetails;
 }
 

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-@Service
+
 public interface WorkflowService {
 
     public WorkflowTransitionDto initiateWorkflow(String requestId, Integer createdBy, String workflowName, String pincode);

@@ -162,7 +162,9 @@ public class RawMaterialInspectionController {
      */
     @PostMapping("/inspectionCall")
     @Operation(summary = "Create inspection call", description = "Creates a new inspection call with RM inspection details")
-    public ResponseEntity<APIResponse> createInspectionCall(@RequestBody CreateInspectionCallRequestDto request) {
+    public ResponseEntity<APIResponse> createInspectionCall(
+            @RequestBody CreateInspectionCallRequestDto request) {
+
         try {
             logger.info("========== CREATE INSPECTION CALL REQUEST ==========");
             logger.info("Request object: {}", request);
@@ -170,33 +172,45 @@ public class RawMaterialInspectionController {
             logger.info("RM Details: {}", request.getRmInspectionDetails());
             logger.info("====================================================");
 
+            // 1️⃣ Save inspection call
             InspectionCall ic = inspectionCallService.createInspectionCall(
-                request.getInspectionCall(),
-                request.getRmInspectionDetails()
+                    request.getInspectionCall(),
+                    request.getRmInspectionDetails()
             );
-            String workflowName ="INSPECTION CALL";
-            workflowService.initiateWorkflow(ic.getIcNumber(), Integer.valueOf(ic.getCreatedBy()), workflowName, "560001");
 
+            // 2️⃣ Trigger workflow ONLY on success
+            String workflowName = "INSPECTION CALL";
+            workflowService.initiateWorkflow(
+                    ic.getIcNumber(),
+                    Integer.valueOf(ic.getCreatedBy()),
+                    workflowName,
+                    "560001"
+            );
 
             logger.info("✅ Inspection call created successfully with ID: {}", ic.getId());
-            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(ic), HttpStatus.OK);
-
-        } catch (Exception e) {
-            logger.error("❌ ERROR creating inspection call", e);
-            logger.error("❌ Error message: {}", e.getMessage());
-            logger.error("❌ Error cause: {}", e.getCause());
-
-            // Create ErrorDetails object for the response
-            ErrorDetails errorDetails = new ErrorDetails(
-                AppConstant.INTER_SERVER_ERROR,
-                AppConstant.ERROR_TYPE_CODE_INTERNAL,
-                AppConstant.ERROR_TYPE_ERROR,
-                e.getMessage() != null ? e.getMessage() : "Failed to create inspection call"
+            return new ResponseEntity<>(
+                    ResponseBuilder.getSuccessResponse(ic),
+                    HttpStatus.OK
             );
 
-            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+
+            logger.error("❌ ERROR creating inspection call", e);
+
+            ErrorDetails errorDetails = new ErrorDetails(
+                    AppConstant.INTER_SERVER_ERROR,
+                    AppConstant.ERROR_TYPE_CODE_INTERNAL,
+                    AppConstant.ERROR_TYPE_ERROR,
+                    e.getMessage() != null ? e.getMessage() : "Failed to create inspection call"
+            );
+
+            return new ResponseEntity<>(
+                    ResponseBuilder.getErrorResponse(errorDetails),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
     }
+
 
 
 
