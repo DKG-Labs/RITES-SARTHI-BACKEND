@@ -1,5 +1,6 @@
-package com.sarthi.service.Impl;
+package com.sarthi.service.Impl.CrisService;
 
+import com.sarthi.service.Impl.CrisAuthServic;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -9,12 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 @Service
-public class CrisPoListService {
+public class CrisAmendedPoListService {
 
     @Autowired
     private CrisAuthServic authService;
@@ -22,25 +22,25 @@ public class CrisPoListService {
     @Value("${cris.base-url}")
     private String baseUrl;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    @Autowired
+    private RestTemplate crisRestTemplate;
 
-    public List<Map<String, String>> getPoList(String date) {
+    public List<Map<String, String>> getAmendedPoList(String date) {
 
-        String url = baseUrl + "/purchase/getPOList";
+        String url = baseUrl + "/purchase/getAmendedPOList";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(authService.getToken());
-        Map<String, String> body = new HashMap<>();
-        body.put("poDate", date.toString());
+
+        Map<String, String> body = Map.of("maDate", date);
 
         HttpEntity<?> request = new HttpEntity<>(body, headers);
 
         ResponseEntity<Map> response =
-                restTemplate.postForEntity(url, request, Map.class);
-        System.out.print(response);
+                crisRestTemplate.postForEntity(url, request, Map.class);
 
         return (List<Map<String, String>>) response.getBody().get("data");
-
     }
 }
+

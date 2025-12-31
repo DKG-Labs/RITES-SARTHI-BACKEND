@@ -1,5 +1,6 @@
-package com.sarthi.service.Impl;
+package com.sarthi.service.Impl.CrisService;
 
+import com.sarthi.service.Impl.CrisAuthServic;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -9,12 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 @Service
-public class CrisPoListService {
+public class CrisPoCancellationListService {
 
     @Autowired
     private CrisAuthServic authService;
@@ -22,25 +22,27 @@ public class CrisPoListService {
     @Value("${cris.base-url}")
     private String baseUrl;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    @Autowired
+    private RestTemplate crisRestTemplate;
 
-    public List<Map<String, String>> getPoList(String date) {
+    public List<Map<String, String>> getCancellationList(String date) {
 
-        String url = baseUrl + "/purchase/getPOList";
+        String url = baseUrl + "/purchase/getPOCancellationsList";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(authService.getToken());
-        Map<String, String> body = new HashMap<>();
-        body.put("poDate", date.toString());
 
-        HttpEntity<?> request = new HttpEntity<>(body, headers);
+        Map<String, String> body = Map.of("cancelDate", date);
 
         ResponseEntity<Map> response =
-                restTemplate.postForEntity(url, request, Map.class);
-        System.out.print(response);
+                crisRestTemplate.postForEntity(
+                        url,
+                        new HttpEntity<>(body, headers),
+                        Map.class
+                );
 
         return (List<Map<String, String>>) response.getBody().get("data");
-
     }
 }
+
