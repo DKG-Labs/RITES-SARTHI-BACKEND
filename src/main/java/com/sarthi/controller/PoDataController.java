@@ -32,19 +32,22 @@ public class PoDataController {
      * Automatically includes RM inspection details (Section C) if available
      *
      * @param poNo PO Number
+     * @param requestId Optional Inspection Call Number to filter specific inspection call data
      * @return PoDataForSectionsDto containing all required data including RM heat details
      *
-     * Example: GET /api/po-data/sections?poNo=PO123456
+     * Example: GET /api/po-data/sections?poNo=PO123456&requestId=RM-IC-1766906438059
      */
     @GetMapping("/sections")
-    public ResponseEntity<?> getPoDataForSections(@RequestParam String poNo) {
+    public ResponseEntity<?> getPoDataForSections(
+            @RequestParam String poNo,
+            @RequestParam(required = false) String requestId) {
         try {
             if (poNo == null || poNo.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("PO Number is required");
             }
 
             // Use the enhanced method that includes RM details
-            PoDataForSectionsDto data = poDataService.getPoDataWithRmDetailsForSectionC(poNo);
+            PoDataForSectionsDto data = poDataService.getPoDataWithRmDetailsForSectionC(poNo, requestId);
 
             if (data == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -61,46 +64,55 @@ public class PoDataController {
 
     /**
      * Get PO data for Section A only
-     * 
+     *
      * @param poNo PO Number
+     * @param requestId Optional Inspection Call Number
      * @return Section A data
-     * 
-     * Example: GET /api/po-data/section-a?poNo=PO123456
+     *
+     * Example: GET /api/po-data/section-a?poNo=PO123456&requestId=RM-IC-1766906438059
      */
     @GetMapping("/section-a")
-    public ResponseEntity<?> getSectionAData(@RequestParam String poNo) {
-        return getPoDataForSections(poNo);
+    public ResponseEntity<?> getSectionAData(
+            @RequestParam String poNo,
+            @RequestParam(required = false) String requestId) {
+        return getPoDataForSections(poNo, requestId);
     }
 
     /**
      * Get PO data for Section B only
-     * 
+     *
      * @param poNo PO Number
+     * @param requestId Optional Inspection Call Number
      * @return Section B data
-     * 
-     * Example: GET /api/po-data/section-b?poNo=PO123456
+     *
+     * Example: GET /api/po-data/section-b?poNo=PO123456&requestId=RM-IC-1766906438059
      */
     @GetMapping("/section-b")
-    public ResponseEntity<?> getSectionBData(@RequestParam String poNo) {
-        return getPoDataForSections(poNo);
+    public ResponseEntity<?> getSectionBData(
+            @RequestParam String poNo,
+            @RequestParam(required = false) String requestId) {
+        return getPoDataForSections(poNo, requestId);
     }
 
     /**
      * Get PO data for Section C only (with RM inspection details)
      *
      * @param poNo PO Number
+     * @param requestId Optional Inspection Call Number
      * @return Section C data with RM heat details
      *
-     * Example: GET /api/po-data/section-c?poNo=PO123456
+     * Example: GET /api/po-data/section-c?poNo=PO123456&requestId=RM-IC-1766906438059
      */
     @GetMapping("/section-c")
-    public ResponseEntity<?> getSectionCData(@RequestParam String poNo) {
+    public ResponseEntity<?> getSectionCData(
+            @RequestParam String poNo,
+            @RequestParam(required = false) String requestId) {
         try {
             if (poNo == null || poNo.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body("PO Number is required");
             }
 
-            PoDataForSectionsDto data = poDataService.getPoDataWithRmDetailsForSectionC(poNo);
+            PoDataForSectionsDto data = poDataService.getPoDataWithRmDetailsForSectionC(poNo, requestId);
 
             if (data == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)

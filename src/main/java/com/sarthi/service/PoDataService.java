@@ -17,9 +17,10 @@ public interface PoDataService {
     /**
      * Get PO data for Section C with RM inspection details by PO Number
      * @param poNo PO Number
+     * @param requestId Optional Inspection Call Number to filter specific inspection call
      * @return PoDataForSectionsDto containing Section C data with RM heat details
      */
-    PoDataForSectionsDto getPoDataWithRmDetailsForSectionC(String poNo);
+    PoDataForSectionsDto getPoDataWithRmDetailsForSectionC(String poNo, String requestId);
 
     /**
      * Update color code for a specific heat number
