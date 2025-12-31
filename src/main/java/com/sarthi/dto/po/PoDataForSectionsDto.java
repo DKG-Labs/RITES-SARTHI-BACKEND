@@ -14,13 +14,14 @@ import java.util.List;
 public class PoDataForSectionsDto {
 
     // Section A: Main PO Information (from po_header)
-    private String rlyPoNo;           // RLY + PO_NO (combined field)
+    private String rlyPoNo;           // RLY/PO_NO (combined field with / separator)
     private String rlyCd;             // Railway code
     private String poNo;              // PO Number
+    private String poSerialNo;        // PO Serial Number (from inspection_calls table)
     private String poDate;            // PO Date (dd/MM/yyyy format)
     private Integer poQty;            // Total PO Quantity (from po_item)
 
-    private String inspPlace;         // Inspection Place (from vendor details or firm details)
+    private String inspPlace;         // Inspection Place (from inspection_calls table)
     private String vendorName;        // Vendor Name (extracted from vendorDetails)
     private String vendorCode;        // Vendor Code
     private String vendorDetails;     // Full vendor details
@@ -36,6 +37,7 @@ public class PoDataForSectionsDto {
     private String condText;          // Condition Text (from po_ma_detail.newValue)
 
     // Section B: Additional fields (from po_item)
+    private String rlyPoNoSerial;     // RLY/PO_NO/PO_SR (combined field for Section B)
     private String itemDesc;          // Item Description
     private String consignee;         // Consignee Name
     private String consigneeDetail;   // Consignee Details

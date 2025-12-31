@@ -72,18 +72,37 @@ public class PoDataServiceImpl implements PoDataService {
     }
 
     private PoDataForSectionsDto mapToDto(PoHeader poHeader, List<PoMaHeader> maHeaders) {
+        return mapToDto(poHeader, maHeaders, null);
+    }
+
+    private PoDataForSectionsDto mapToDto(PoHeader poHeader, List<PoMaHeader> maHeaders, InspectionCall inspectionCall) {
         PoDataForSectionsDto dto = new PoDataForSectionsDto();
 
         // Section A: PO Header fields (from po_header table)
         dto.setRlyCd(poHeader.getRlyCd());
         dto.setPoNo(poHeader.getPoNo());
-        dto.setRlyPoNo(poHeader.getRlyCd() + poHeader.getPoNo()); // Combined RLY + PO_NO
+
+        // Set PO Serial Number and formatted fields from inspection call if available
+        if (inspectionCall != null && inspectionCall.getPoSerialNo() != null) {
+            dto.setPoSerialNo(inspectionCall.getPoSerialNo());
+            dto.setRlyPoNo(poHeader.getRlyCd() + "/" + poHeader.getPoNo()); // RLY/PO_NO with / separator
+            dto.setRlyPoNoSerial(poHeader.getRlyCd() + "/" + poHeader.getPoNo() + "/" + inspectionCall.getPoSerialNo()); // RLY/PO_NO/PO_SR
+
+            // Use place_of_inspection from inspection_calls table, fallback to vendor details if null
+            String placeOfInspection = inspectionCall.getPlaceOfInspection();
+            dto.setInspPlace(placeOfInspection != null ? placeOfInspection : extractPlaceOfInspection(poHeader.getFirmDetails()));
+        } else {
+            dto.setPoSerialNo("N/A");
+            dto.setRlyPoNo("N/A");
+            dto.setRlyPoNoSerial("N/A");
+            dto.setInspPlace(extractPlaceOfInspection(poHeader.getFirmDetails())); // Fallback to vendor details
+        }
+
         dto.setPoDate(formatDateTime(poHeader.getPoDate()));
 
         dto.setVendorCode(poHeader.getVendorCode());
         dto.setVendorDetails(poHeader.getVendorDetails());
         dto.setVendorName(extractVendorName(poHeader.getVendorDetails()));
-        dto.setInspPlace(extractPlaceOfInspection(poHeader.getFirmDetails()));
 
         dto.setPurchasingAuthority(poHeader.getPurchaserDetail() != null ?
                 poHeader.getPurchaserDetail() : "Manager, Procurement");
@@ -199,24 +218,47 @@ public class PoDataServiceImpl implements PoDataService {
     }
 
     @Override
-    public PoDataForSectionsDto getPoDataWithRmDetailsForSectionC(String poNo) {
-        // First get basic PO data
-        PoDataForSectionsDto dto = getPoDataByPoNumber(poNo);
-        if (dto == null) {
+    public PoDataForSectionsDto getPoDataWithRmDetailsForSectionC(String poNo, String requestId) {
+        // Find PO Header
+        PoHeader poHeader = poHeaderRepository.findAll().stream()
+                .filter(po -> poNo.equals(po.getPoNo()))
+                .findFirst()
+                .orElse(null);
+
+        if (poHeader == null) {
             return null;
         }
 
-        // Find all inspection calls for this PO
-        List<InspectionCall> inspectionCalls = inspectionCallRepository.findByPoNoOrderByCreatedAtDesc(poNo);
-        if (inspectionCalls.isEmpty()) {
-            return dto; // Return PO data without RM details
+        // Find MA records for this PO
+        List<PoMaHeader> maHeaders = poMaHeaderRepository.findAll().stream()
+                .filter(ma -> poNo.equals(ma.getPoNo()))
+                .collect(Collectors.toList());
+
+        // Find inspection call based on requestId or get the latest one
+        InspectionCall targetCall = null;
+
+        if (requestId != null && !requestId.trim().isEmpty()) {
+            // Find specific inspection call by ic_number (requestId) - use direct method
+            targetCall = inspectionCallRepository.findByIcNumber(requestId).orElse(null);
+
+            if (targetCall == null) {
+                // If specific call not found, return PO data without RM details and inspection call info
+                return mapToDto(poHeader, maHeaders, null);
+            }
+        } else {
+            // If no requestId provided, get the latest inspection call (backward compatibility)
+            List<InspectionCall> inspectionCalls = inspectionCallRepository.findByPoNoOrderByCreatedAtDesc(poNo);
+            if (inspectionCalls.isEmpty()) {
+                return mapToDto(poHeader, maHeaders, null); // Return PO data without RM details
+            }
+            targetCall = inspectionCalls.get(0);
         }
 
-        // Get the latest inspection call
-        InspectionCall latestCall = inspectionCalls.get(0);
+        // Build DTO with inspection call data
+        PoDataForSectionsDto dto = mapToDto(poHeader, maHeaders, targetCall);
 
         // Find RM inspection details for this call
-        RmInspectionDetails rmDetails = rmInspectionDetailsRepository.findByIcId(latestCall.getId()).orElse(null);
+        RmInspectionDetails rmDetails = rmInspectionDetailsRepository.findByIcId(targetCall.getId()).orElse(null);
         if (rmDetails == null) {
             return dto; // Return PO data without RM details
         }
