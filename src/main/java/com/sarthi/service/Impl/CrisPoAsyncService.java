@@ -2,9 +2,7 @@ package com.sarthi.service.Impl;
 
 import com.sarthi.entity.CricsPos.CrisSyncStatus;
 import com.sarthi.repository.CrisSyncStatusRepository;
-import com.sarthi.service.Impl.CrisService.CrisPoMaDetailsService;
-import com.sarthi.service.Impl.CrisService.CrisPoMaListService;
-import com.sarthi.service.Impl.CrisService.PoMaPersistService;
+import com.sarthi.service.Impl.CrisService.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -31,6 +29,24 @@ public class CrisPoAsyncService {
     private PoMaPersistService maPersistService;
     @Autowired
     private CrisSyncStatusRepository  statusRepo;
+    @Autowired
+    private CrisAmendedPoListService amendedPoListService;
+    @Autowired
+    private CrisAmendedPoDetailsService amendedPoDetailsService;
+    @Autowired
+    private AmendedPoPersistService amendedPoPersistService;
+
+    @Autowired
+    private CrisPoCancellationListService cancellationListService;
+
+    @Autowired
+    private CrisPoCancellationDetailsService cancellationDetailsService;
+
+    @Autowired
+    private PoCancellationPersistService cancellationPersistService;
+
+
+
 
     @Async("poSyncExecutor")
     public void syncPos(String date) {
@@ -74,7 +90,6 @@ public class CrisPoAsyncService {
                     status.setErrorMessage(e.getMessage());
                     statusRepo.save(status);
                 }
-
                 Thread.sleep(300); // rate limit
             } catch (Exception e) {
                 e.printStackTrace();
@@ -120,6 +135,95 @@ public class CrisPoAsyncService {
                     statusRepo.save(status);
                 }
                 Thread.sleep(300);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Async("poSyncExecutor")
+    public void syncAmendedPo(String date) {
+
+        List<Map<String, String>> list =
+                amendedPoListService.getAmendedPoList(date);
+
+        System.out.print(list);
+        for (Map<String, String> po : list) {
+
+//            if (statusRepo.existsByRefTypeAndRefKey("APO", po.get("POKEY")))
+//                continue;
+
+//            CrisSyncStatus status = new CrisSyncStatus();
+//            status.setRefType("APO");
+//            status.setRefKey(po.get("POKEY"));
+//            status.setRly(po.get("RLY"));
+//            status.setStatus("FETCHED");
+//            status.setFetchedAt(LocalDateTime.now());
+//            statusRepo.save(status);
+
+            try {
+                Map<String, Object>  data =
+                        amendedPoDetailsService.getDetails(
+                              //  po.get("RLY"),
+                             //   po.get("POKEY")
+                                "08","4664990"
+                        );
+                System.out.print("data"+ data);
+
+                amendedPoPersistService.save(data);
+
+//                status.setStatus("SAVED");
+//                status.setProcessedAt(LocalDateTime.now());
+
+            } catch (Exception e) {
+//                status.setStatus("FAILED");
+//                status.setErrorMessage(e.getMessage());
+            }
+
+          //  statusRepo.save(status);
+        }
+    }
+
+    @Async("poSyncExecutor")
+    public void syncPoCancellations(String date) {
+
+        List<Map<String, String>> list =
+                cancellationListService.getCancellationList(date);
+
+        for (Map<String, String> c : list) {
+            try {
+
+                if (statusRepo.existsByRefTypeAndRefKey("CA", c.get("CAKEY")))
+                    continue;
+
+                CrisSyncStatus status = new CrisSyncStatus();
+                status.setRefType("CA");
+                status.setRefKey(c.get("CAKEY"));
+                status.setRly(c.get("RLY"));
+                status.setStatus("FETCHED");
+                status.setFetchedAt(LocalDateTime.now());
+                statusRepo.save(status);
+
+                try {
+                    Map<String, Object> data =
+                            cancellationDetailsService.getDetails(
+                                    c.get("RLY"),
+                                    c.get("CAKEY")
+                            );
+
+                    cancellationPersistService.save(data);
+
+                    status.setStatus("SAVED");
+                    status.setProcessedAt(LocalDateTime.now());
+
+                } catch (Exception e) {
+                    status.setStatus("FAILED");
+                    status.setErrorMessage(e.getMessage());
+                }
+
+                statusRepo.save(status);
+                Thread.sleep(300);
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
