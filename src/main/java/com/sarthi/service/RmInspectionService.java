@@ -1,11 +1,13 @@
 package com.sarthi.service;
 
 import com.sarthi.dto.RmFinishInspectionDto;
+
 import com.sarthi.dto.RmPreInspectionDataDto;
 import com.sarthi.dto.RmHeatFinalResultDto;
 import com.sarthi.dto.RmLadleValuesDto;
 
 import java.util.List;
+
 
 /**
  * Service interface for Raw Material inspection operations.
@@ -25,6 +27,7 @@ public interface RmInspectionService {
      * @return Complete inspection data
      */
     RmFinishInspectionDto getByCallNo(String callNo);
+
 
     /**
      * Get cumulative summary data only (pre-inspection data).
@@ -47,5 +50,6 @@ public interface RmInspectionService {
      * @return List of ladle values per heat
      */
     List<RmLadleValuesDto> getLadleValuesByCallNo(String callNo);
+
 }
 

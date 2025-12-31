@@ -109,7 +109,7 @@ public class RmInspectionServiceImpl implements RmInspectionService {
         String callNo = dto.getInspectionCallNo();
 
         RmInspectionSummary summary = summaryRepository.findByInspectionCallNo(callNo)
-            .orElse(new RmInspectionSummary());
+                .orElse(new RmInspectionSummary());
 
         summary.setInspectionCallNo(callNo);
 
@@ -480,23 +480,23 @@ public class RmInspectionServiceImpl implements RmInspectionService {
         logger.info("Fetching cumulative summary data for call: {}", callNo);
 
         return summaryRepository.findByInspectionCallNo(callNo)
-            .map(summary -> {
-                RmPreInspectionDataDto dto = new RmPreInspectionDataDto();
-                dto.setInspectionCallNo(callNo);
-                dto.setTotalHeatsOffered(summary.getTotalHeatsOffered());
-                dto.setTotalQtyOfferedMt(summary.getTotalQtyOfferedMt());
-                dto.setNumberOfBundles(summary.getNumberOfBundles());
-                dto.setNumberOfErc(summary.getNumberOfErc());
-                dto.setProductModel(summary.getProductModel());
-                dto.setPoNo(summary.getPoNo());
-                dto.setPoDate(formatDate(summary.getPoDate()));
-                dto.setVendorName(summary.getVendorName());
-                dto.setPlaceOfInspection(summary.getPlaceOfInspection());
-                dto.setSourceOfRawMaterial(summary.getSourceOfRawMaterial());
-                logger.info("Successfully fetched cumulative summary for call: {}", callNo);
-                return dto;
-            })
-            .orElse(null);
+                .map(summary -> {
+                    RmPreInspectionDataDto dto = new RmPreInspectionDataDto();
+                    dto.setInspectionCallNo(callNo);
+                    dto.setTotalHeatsOffered(summary.getTotalHeatsOffered());
+                    dto.setTotalQtyOfferedMt(summary.getTotalQtyOfferedMt());
+                    dto.setNumberOfBundles(summary.getNumberOfBundles());
+                    dto.setNumberOfErc(summary.getNumberOfErc());
+                    dto.setProductModel(summary.getProductModel());
+                    dto.setPoNo(summary.getPoNo());
+                    dto.setPoDate(formatDate(summary.getPoDate()));
+                    dto.setVendorName(summary.getVendorName());
+                    dto.setPlaceOfInspection(summary.getPlaceOfInspection());
+                    dto.setSourceOfRawMaterial(summary.getSourceOfRawMaterial());
+                    logger.info("Successfully fetched cumulative summary for call: {}", callNo);
+                    return dto;
+                })
+                .orElse(null);
     }
 
     @Override
@@ -549,14 +549,14 @@ public class RmInspectionServiceImpl implements RmInspectionService {
 
         for (RmChemicalAnalysis entity : entities) {
             RmLadleValuesDto dto = RmLadleValuesDto.builder()
-                .heatNo(entity.getHeatNumber())
-                .percentC(entity.getCarbon())
-                .percentSi(entity.getSilicon())
-                .percentMn(entity.getManganese())
-                .percentP(entity.getPhosphorus())
-                .percentS(entity.getSulphur())
-                .percentCr(entity.getChromium())
-                .build();
+                    .heatNo(entity.getHeatNumber())
+                    .percentC(entity.getCarbon())
+                    .percentSi(entity.getSilicon())
+                    .percentMn(entity.getManganese())
+                    .percentP(entity.getPhosphorus())
+                    .percentS(entity.getSulphur())
+                    .percentCr(entity.getChromium())
+                    .build();
             dtos.add(dto);
         }
 
@@ -637,4 +637,3 @@ public class RmInspectionServiceImpl implements RmInspectionService {
         return errors;
     }
 }
-

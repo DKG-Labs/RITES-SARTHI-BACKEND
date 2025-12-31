@@ -2,6 +2,7 @@ package com.sarthi.repository.rawmaterial;
 
 import com.sarthi.entity.rawmaterial.RmChemicalAnalysis;
 import org.springframework.data.jpa.repository.JpaRepository;
+
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -40,5 +41,6 @@ public interface RmChemicalAnalysisRepository extends JpaRepository<RmChemicalAn
            "WHERE ic.icNumber = :callNo " +
            "ORDER BY ca.heatNumber, ca.createdAt DESC")
     List<RmChemicalAnalysis> findByInspectionCallNo(@Param("callNo") String callNo);
+
 }
 

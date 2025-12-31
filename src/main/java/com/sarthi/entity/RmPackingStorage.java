@@ -3,15 +3,10 @@ package com.sarthi.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
-
-/**
- * Entity representing packing and storage verification for Raw Material.
- * One record per heat per inspection call.
- */
 @Entity
 @Table(name = "rm_packing_storage", indexes = {
-    @Index(name = "idx_rm_pack_call_no", columnList = "inspection_call_no"),
-    @Index(name = "idx_rm_pack_heat_no", columnList = "heat_no")
+        @Index(name = "idx_rm_pack_call_no", columnList = "inspection_call_no"),
+        @Index(name = "idx_rm_pack_heat_no", columnList = "heat_no")
 })
 @Data
 public class RmPackingStorage {
@@ -56,4 +51,5 @@ public class RmPackingStorage {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 }
+
 

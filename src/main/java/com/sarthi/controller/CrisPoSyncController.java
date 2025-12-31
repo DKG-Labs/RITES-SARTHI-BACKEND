@@ -32,6 +32,24 @@ public class CrisPoSyncController {
         );
     }
 
+    @PostMapping("/AmendedPo")
+    public ResponseEntity<String> syncAmendedPo(@RequestParam String date) {
+
+        asyncService.syncAmendedPo(date);
+
+        return ResponseEntity.ok(
+                "Amended Po triggered for date: "
+        );
+    }
+    @PostMapping("/cancellationPo")
+    public ResponseEntity<String> syncCancellationPo(@RequestParam String date) {
+
+        asyncService.syncPoCancellations(date);
+
+        return ResponseEntity.ok(
+                "Po Cancellation triggered for date: "
+        );
+    }
 
 
 
