@@ -286,7 +286,8 @@ public class PoDataServiceImpl implements PoDataService {
             heatDto.setTcNumber(heat.getTcNumber());
             heatDto.setTcDate(formatDate(heat.getTcDate()));
             heatDto.setOfferedQty(heat.getOfferedQty());
-            heatDto.setColorCode(heat.getColorCode()); // Color code manually entered by inspector
+            // TODO: Uncomment when color_code column is added to database
+            // heatDto.setColorCode(heat.getColorCode()); // Color code manually entered by inspector
 
             rmHeatDetailsList.add(heatDto);
         }
@@ -304,15 +305,19 @@ public class PoDataServiceImpl implements PoDataService {
 
     @Override
     public boolean updateColorCode(Integer heatId, String colorCode) {
-        Optional<RmHeatQuantity> heatOpt = rmHeatQuantityRepository.findById(heatId);
+        // TODO: Implement when color_code column is added to database
+        // Optional<RmHeatQuantity> heatOpt = rmHeatQuantityRepository.findById(heatId);
+        //
+        // if (heatOpt.isPresent()) {
+        //     RmHeatQuantity heat = heatOpt.get();
+        //     heat.setColorCode(colorCode);
+        //     rmHeatQuantityRepository.save(heat);
+        //     return true;
+        // }
+        //
+        // return false;
 
-        if (heatOpt.isPresent()) {
-            RmHeatQuantity heat = heatOpt.get();
-            heat.setColorCode(colorCode);
-            rmHeatQuantityRepository.save(heat);
-            return true;
-        }
-
+        // Temporary: Return false until color_code column is added
         return false;
     }
 }

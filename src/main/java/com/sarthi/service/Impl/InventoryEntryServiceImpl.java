@@ -1,0 +1,257 @@
+package com.sarthi.service.Impl;
+
+import com.sarthi.constant.AppConstant;
+import com.sarthi.dto.InventoryEntryRequestDto;
+import com.sarthi.dto.InventoryEntryResponseDto;
+import com.sarthi.entity.InventoryEntry;
+import com.sarthi.exception.BusinessException;
+import com.sarthi.exception.ErrorDetails;
+import com.sarthi.repository.InventoryEntryRepository;
+import com.sarthi.service.InventoryEntryService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Service implementation for inventory entry operations
+ */
+@Service
+@Transactional
+public class InventoryEntryServiceImpl implements InventoryEntryService {
+
+    private static final Logger logger = LoggerFactory.getLogger(InventoryEntryServiceImpl.class);
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    @Autowired
+    private InventoryEntryRepository inventoryEntryRepository;
+
+    @Override
+    public InventoryEntryResponseDto createInventoryEntry(InventoryEntryRequestDto requestDto) {
+        logger.info("Creating inventory entry for vendor: {}", requestDto.getVendorCode());
+
+        try {
+            // Validate required fields
+            validateInventoryRequest(requestDto);
+
+            // Create entity from DTO
+            InventoryEntry entry = new InventoryEntry();
+            mapRequestToEntity(requestDto, entry);
+
+            // Set default status
+            entry.setStatus(InventoryEntry.InventoryStatus.FRESH_PO);
+
+            // Save to database
+            InventoryEntry savedEntry = inventoryEntryRepository.save(entry);
+            logger.info("Inventory entry created successfully with ID: {}", savedEntry.getId());
+
+            // Convert to response DTO
+            return mapEntityToResponse(savedEntry);
+
+        } catch (Exception e) {
+            logger.error("Error creating inventory entry: {}", e.getMessage(), e);
+            throw new BusinessException(
+                    new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_CODE_INTERNAL,
+                            AppConstant.ERROR_TYPE_ERROR,
+                            "Failed to create inventory entry: " + e.getMessage())
+            );
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<InventoryEntryResponseDto> getInventoryEntriesByVendor(String vendorCode) {
+        logger.info("Fetching inventory entries for vendor: {}", vendorCode);
+
+        try {
+            List<InventoryEntry> entries = inventoryEntryRepository.findByVendorCodeOrderByCreatedDateDesc(vendorCode);
+            logger.info("Found {} inventory entries for vendor: {}", entries.size(), vendorCode);
+
+            return entries.stream()
+                    .map(this::mapEntityToResponse)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            logger.error("Error fetching inventory entries: {}", e.getMessage(), e);
+            throw new BusinessException(
+                    new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_CODE_INTERNAL,
+                            AppConstant.ERROR_TYPE_ERROR,
+                            "Failed to fetch inventory entries: " + e.getMessage())
+            );
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public InventoryEntryResponseDto getInventoryEntryById(Long id) {
+        logger.info("Fetching inventory entry by ID: {}", id);
+
+        InventoryEntry entry = inventoryEntryRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_RESOURCE,
+                                "Inventory entry not found with ID: " + id)
+                ));
+
+        return mapEntityToResponse(entry);
+    }
+
+    @Override
+    public InventoryEntryResponseDto updateInventoryStatus(Long id, String status) {
+        logger.info("Updating inventory entry {} status to: {}", id, status);
+
+        InventoryEntry entry = inventoryEntryRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_RESOURCE,
+                                "Inventory entry not found with ID: " + id)
+                ));
+
+        try {
+            InventoryEntry.InventoryStatus newStatus = InventoryEntry.InventoryStatus.valueOf(status.toUpperCase());
+            entry.setStatus(newStatus);
+            InventoryEntry updatedEntry = inventoryEntryRepository.save(entry);
+
+            logger.info("Inventory entry status updated successfully");
+            return mapEntityToResponse(updatedEntry);
+
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(
+                    new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
+                            AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "Invalid status value: " + status)
+            );
+        }
+    }
+
+    /**
+     * Validate inventory request DTO
+     */
+    private void validateInventoryRequest(InventoryEntryRequestDto dto) {
+        if (dto.getVendorCode() == null || dto.getVendorCode().trim().isEmpty()) {
+            throw new BusinessException(
+                    new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
+                            AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "Vendor code is required")
+            );
+        }
+        if (dto.getSupplierName() == null || dto.getSupplierName().trim().isEmpty()) {
+            throw new BusinessException(
+                    new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
+                            AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "Supplier name is required")
+            );
+        }
+        if (dto.getRawMaterial() == null || dto.getRawMaterial().trim().isEmpty()) {
+            throw new BusinessException(
+                    new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
+                            AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "Raw material is required")
+            );
+        }
+        if (dto.getHeatNumber() == null || dto.getHeatNumber().trim().isEmpty()) {
+            throw new BusinessException(
+                    new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
+                            AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "Heat number is required")
+            );
+        }
+    }
+
+    /**
+     * Map request DTO to entity
+     */
+    private void mapRequestToEntity(InventoryEntryRequestDto dto, InventoryEntry entity) {
+        entity.setVendorCode(dto.getVendorCode());
+        entity.setVendorName(dto.getVendorName());
+        entity.setCompanyId(dto.getCompanyId());
+        entity.setCompanyName(dto.getCompanyName());
+        entity.setSupplierName(dto.getSupplierName());
+        entity.setUnitName(dto.getUnitName());
+        entity.setSupplierAddress(dto.getSupplierAddress());
+        entity.setRawMaterial(dto.getRawMaterial());
+        entity.setGradeSpecification(dto.getGradeSpecification());
+        entity.setLengthOfBars(dto.getLengthOfBars());
+        entity.setHeatNumber(dto.getHeatNumber());
+        entity.setTcNumber(dto.getTcNumber());
+        entity.setTcDate(parseDate(dto.getTcDate()));
+        entity.setTcQuantity(dto.getTcQuantity());
+        entity.setSubPoNumber(dto.getSubPoNumber());
+        entity.setSubPoDate(parseDate(dto.getSubPoDate()));
+        entity.setSubPoQty(dto.getSubPoQty());
+        entity.setInvoiceNumber(dto.getInvoiceNumber());
+        entity.setInvoiceDate(parseDate(dto.getInvoiceDate()));
+        entity.setUnitOfMeasurement(dto.getUnitOfMeasurement());
+        entity.setRateOfMaterial(dto.getRateOfMaterial());
+        entity.setRateOfGst(dto.getRateOfGst());
+        entity.setBaseValuePo(dto.getBaseValuePo());
+        entity.setTotalPo(dto.getTotalPo());
+    }
+
+    /**
+     * Map entity to response DTO
+     */
+    private InventoryEntryResponseDto mapEntityToResponse(InventoryEntry entity) {
+        InventoryEntryResponseDto dto = new InventoryEntryResponseDto();
+        dto.setId(entity.getId());
+        dto.setVendorCode(entity.getVendorCode());
+        dto.setVendorName(entity.getVendorName());
+        dto.setCompanyId(entity.getCompanyId());
+        dto.setCompanyName(entity.getCompanyName());
+        dto.setSupplierName(entity.getSupplierName());
+        dto.setUnitName(entity.getUnitName());
+        dto.setSupplierAddress(entity.getSupplierAddress());
+        dto.setRawMaterial(entity.getRawMaterial());
+        dto.setGradeSpecification(entity.getGradeSpecification());
+        dto.setLengthOfBars(entity.getLengthOfBars());
+        dto.setHeatNumber(entity.getHeatNumber());
+        dto.setTcNumber(entity.getTcNumber());
+        dto.setTcDate(entity.getTcDate());
+        dto.setTcQuantity(entity.getTcQuantity());
+        dto.setSubPoNumber(entity.getSubPoNumber());
+        dto.setSubPoDate(entity.getSubPoDate());
+        dto.setSubPoQty(entity.getSubPoQty());
+        dto.setInvoiceNumber(entity.getInvoiceNumber());
+        dto.setInvoiceDate(entity.getInvoiceDate());
+        dto.setUnitOfMeasurement(entity.getUnitOfMeasurement());
+        dto.setRateOfMaterial(entity.getRateOfMaterial());
+        dto.setRateOfGst(entity.getRateOfGst());
+        dto.setBaseValuePo(entity.getBaseValuePo());
+        dto.setTotalPo(entity.getTotalPo());
+        dto.setStatus(entity.getStatus() != null ? entity.getStatus().name() : null);
+        dto.setCreatedAt(entity.getCreatedDate());
+        dto.setUpdatedAt(entity.getUpdatedDate());
+        return dto;
+    }
+
+    /**
+     * Parse date string to LocalDate
+     */
+    private LocalDate parseDate(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(dateStr, DATE_FORMATTER);
+        } catch (Exception e) {
+            logger.warn("Failed to parse date: {}", dateStr);
+            return null;
+        }
+    }
+}
+
