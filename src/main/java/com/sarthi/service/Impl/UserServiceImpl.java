@@ -1,6 +1,7 @@
 package com.sarthi.service.Impl;
 
 import com.sarthi.constant.AppConstant;
+import com.sarthi.dto.IePinPoiDto;
 import com.sarthi.dto.LoginRequestDto;
 import com.sarthi.dto.LoginResponseDto;
 import com.sarthi.dto.UserDto;
@@ -48,6 +49,12 @@ public class UserServiceImpl implements UserService {
     private JwtService jwtService;
     @Autowired
     private RegionSbuHeadRepository regionSbuHeadRepository;
+    @Autowired
+    private IeProfileRepository ieProfileRepository;
+    @Autowired
+    private IePincodePoiMappingRepository iePincodePoiMappingRepository;
+    @Autowired
+    private ieControllingManagerRepository ieControllingManagerRepository;
 
 
 /*
@@ -116,6 +123,14 @@ public UserDto createUser(userRequestDto userDto) {
     userMaster.setCreatedBy(userDto.getCreatedBy());
     userMaster.setEmployeeId(userDto.getEmployeeId());
 
+    userMaster.setEmployeeCode(userDto.getEmployeeCode());
+    userMaster.setRitesEmployeeCode(userDto.getRitesEmployeeCode());
+    userMaster.setEmploymentType(userDto.getEmploymentType());
+    userMaster.setFullName(userDto.getFullName());
+    userMaster.setShortName(userDto.getShortName());
+    userMaster.setDesignation(userDto.getDesignation());
+    userMaster.setDiscipline(userDto.getDiscipline());
+
     String rolesAsString = String.join(",", userDto.getRoleNames());
     userMaster.setRoleName(rolesAsString);
 
@@ -142,8 +157,9 @@ public UserDto createUser(userRequestDto userDto) {
 
         // Validate cluster-region mapping (only for role types)
         if (roleName.equalsIgnoreCase("RIO Help Desk")
-                || roleName.equalsIgnoreCase("IE")
-                || roleName.equalsIgnoreCase("IE Secondary")) {
+               // || roleName.equalsIgnoreCase("IE")
+              //  || roleName.equalsIgnoreCase("IE Secondary")
+          ) {
 
             RegionCluster rc = regionClusterRepository
                     .findByClusterName(userDto.getClusterName())
@@ -174,36 +190,36 @@ public UserDto createUser(userRequestDto userDto) {
         }
 
         // Save primary IE
-        if (roleName.equalsIgnoreCase("IE")) {
-
-            boolean exists = clusterPrimaryIeRepository
-                    .findByClusterName(userDto.getClusterName())
-                    .isPresent();
-
-            if (exists) {
-                throw new BusinessException(
-                        new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
-                                AppConstant.ERROR_TYPE_CODE_VALIDATION,
-                                AppConstant.ERROR_TYPE_VALIDATION,
-                                "Primary IE already exists for this cluster: "
-                                        + userDto.getClusterName()
-                        ));
-            }
-            ClusterPrimaryIe p = new ClusterPrimaryIe();
-            p.setClusterName(userDto.getClusterName());
-            p.setIeUserId(userMaster.getUserId());
-            clusterPrimaryIeRepository.save(p);
-        }
+//        if (roleName.equalsIgnoreCase("IE")) {
+//
+//            boolean exists = clusterPrimaryIeRepository
+//                    .findByClusterName(userDto.getClusterName())
+//                    .isPresent();
+//
+//            if (exists) {
+//                throw new BusinessException(
+//                        new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+//                                AppConstant.ERROR_TYPE_CODE_VALIDATION,
+//                                AppConstant.ERROR_TYPE_VALIDATION,
+//                                "Primary IE already exists for this cluster: "
+//                                        + userDto.getClusterName()
+//                        ));
+//            }
+//            ClusterPrimaryIe p = new ClusterPrimaryIe();
+//            p.setClusterName(userDto.getClusterName());
+//            p.setIeUserId(userMaster.getUserId());
+//            clusterPrimaryIeRepository.save(p);
+//        }
 
         // Save secondary IE
-        if (roleName.equalsIgnoreCase("IE Secondary")) {
-
-            ClusterSecondaryIe s = new ClusterSecondaryIe();
-            s.setClusterName(userDto.getClusterName());
-            s.setIeUserId(userMaster.getUserId());
-            s.setPriorityOrder(userDto.getPriority());
-            clusterSecondaryIeRepository.save(s);
-        }
+//        if (roleName.equalsIgnoreCase("IE Secondary")) {
+//
+//            ClusterSecondaryIe s = new ClusterSecondaryIe();
+//            s.setClusterName(userDto.getClusterName());
+//            s.setIeUserId(userMaster.getUserId());
+//            s.setPriorityOrder(userDto.getPriority());
+//            clusterSecondaryIeRepository.save(s);
+//        }
 
         // saveing the Cm can have multple cluster (now we mapping only one throught the user user creation we can do multiple throught another api
         if (roleName.equalsIgnoreCase("Control Manager")) {
@@ -265,6 +281,44 @@ public UserDto createUser(userRequestDto userDto) {
                 processIeMappingRepository.save(mapping);
             }
         }
+        boolean isIeRole = userDto.getRoleNames().stream()
+                .anyMatch(r -> r.equalsIgnoreCase("IE")
+                        || r.equalsIgnoreCase("IE Secondary"));
+
+        if (isIeRole) {
+
+            // ---------- IE PROFILE ----------
+            IeProfile ieProfile = new IeProfile();
+            ieProfile.setEmployeeCode(userMaster.getEmployeeCode());
+            ieProfile.setRio(userDto.getRio());
+            ieProfile.setCurrentCityOfPosting(userDto.getCurrentCityOfPosting());
+            ieProfile.setMetalStampNo(userDto.getMetalStampNo());
+            ieProfileRepository.save(ieProfile);
+
+            // ---------- IE PIN + POI ----------
+            if (userDto.getIePinPoiList() != null) {
+                for (IePinPoiDto dto : userDto.getIePinPoiList()) {
+
+                    IePincodePoiMapping m = new IePincodePoiMapping();
+                    m.setEmployeeCode(userMaster.getEmployeeCode());
+                    m.setProduct(dto.getProduct());
+                    m.setPinCode(dto.getPinCode());
+                    m.setPoiCode(dto.getPoiCode());
+                    m.setIeType(dto.getIeType()); // PRIMARY / SECONDARY
+
+                    iePincodePoiMappingRepository.save(m);
+                }
+            }
+
+            // ---------- IE → CONTROLLING MANAGER ----------
+            if (userDto.getControllingManagerUserId() != null) {
+                IeControllingManager cm = new IeControllingManager();
+                cm.setIeEmployeeCode(userMaster.getEmployeeCode());
+                cm.setCmUserId(userDto.getControllingManagerUserId());
+                ieControllingManagerRepository.save(cm);
+            }
+        }
+
 
         userRoleMasterRepository.save(userRole);
 

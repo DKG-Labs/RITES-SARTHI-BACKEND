@@ -61,6 +61,16 @@ public class WorkflowServiceImpl implements WorkflowService {
     private RegionSbuHeadRepository regionSbuHeadRepository;
     @Autowired
     private InspectionCallRepository inspectionCallRepository;
+
+    @Autowired
+    private IeFieldsMappingRepository ieFieldsMappingRepository;
+    @Autowired
+    private PincodePoIMappingRepository pincodePoIMappingRepository;
+    @Autowired
+    private IePincodePoiMappingRepository iePincodePoiMappingRepository;
+
+
+
     public void validateUser(Integer userId) {
         UserMaster userMaster = userMasterRepository.findById(userId).orElseThrow(() -> new InvalidInputException(new ErrorDetails(AppConstant.USER_NOT_FOUND, AppConstant.ERROR_TYPE_CODE_VALIDATION,
                 AppConstant.ERROR_TYPE_VALIDATION, "User not found.")));
@@ -1017,8 +1027,7 @@ System.out.print(last);
 
         return next;
     }
-
-
+/*
     private Integer assignIE(String pincode) {
 
         //  Get Cluster
@@ -1049,7 +1058,65 @@ System.out.print(last);
                         AppConstant.ERROR_TYPE_VALIDATION,
                         "No IE available for assignment")
         );
+    }*/
+private Integer assignIE(
+        String pinCode,
+        String product,
+        String stage,
+        String poiCode) {
+
+    // 1. Validate Pin + Product + Stage → RIO
+    IEFieldsMapping mapping =
+            ieFieldsMappingRepository
+                    .findByPinCodeAndProductAndStage(pinCode, product, stage)
+                    .orElseThrow(() -> new BusinessException(
+                            new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                    "No IE mapping for given pin/product/stage")));
+
+
+    String rio = mapping.getRio();
+     // 2. Validate POI
+    boolean poiValid = pincodePoIMappingRepository
+            .existsByPinCodeAndPoiCode(pinCode, poiCode);
+
+    if (!poiValid) {
+        throw new BusinessException(
+                new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                        AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                        AppConstant.ERROR_TYPE_VALIDATION,
+                        "Invalid POI for pin code")
+        );
     }
+
+    // 3. Try PRIMARY IE
+    Optional<Integer> primaryIe =
+            iePincodePoiMappingRepository
+                    .findPrimaryIe(pinCode, product, poiCode, rio);
+
+    if (primaryIe.isPresent()) {
+        return primaryIe.get();
+    }
+
+    // 4. Try SECONDARY IE
+    Optional<Integer> secondaryIe =
+            iePincodePoiMappingRepository
+                    .findSecondaryIe(pinCode, product, poiCode, rio);
+
+    if (secondaryIe.isPresent()) {
+        return secondaryIe.get();
+    }
+
+    // 5. No IE
+    throw new BusinessException(
+            new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                    AppConstant.ERROR_TYPE_VALIDATION,
+                    "No IE available for assignment")
+    );
+}
+
 
     private int getIeWorkload(Integer ieUserId) {
         return workflowTransitionRepository.countActiveCallsForIE(ieUserId);

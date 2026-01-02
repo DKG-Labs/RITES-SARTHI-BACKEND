@@ -1,9 +1,14 @@
 package com.sarthi.service.Impl;
 
+import com.sarthi.dto.WorkflowDtos.userRequestDto;
 import com.sarthi.entity.PoHeader;
 import com.sarthi.entity.PoItem;
+import com.sarthi.entity.VendorMaster;
 import com.sarthi.repository.PoHeaderRepository;
 import com.sarthi.repository.PoItemRepository;
+import com.sarthi.repository.UserMasterRepository;
+import com.sarthi.repository.VendorMasterRepository;
+import com.sarthi.service.UserService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class PoPersistService {
@@ -21,6 +27,12 @@ public class PoPersistService {
     private PoHeaderRepository headerRepo;
     @Autowired
     private PoItemRepository itemRepo;
+    @Autowired
+    private VendorMasterRepository vendorMasterRepository;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private UserMasterRepository userMasterRepository;
 
     private static final DateTimeFormatter PO_DT_FMT =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -38,10 +50,16 @@ public class PoPersistService {
             throw new RuntimeException("PoHdr missing in response");
         }
 
-        String poKey = (String) hdrMap.get("CASE_NO");
+        createVendorIfNotExists(hdrMap);
+
+        String poKey = (String) hdrMap.get("POKEY");
+
+        if (poKey == null) {
+            throw new IllegalStateException("POKEY missing in CRIS response");
+        }
 
         if (headerRepo.existsByPoKey(poKey)) {
-            return; // already saved
+            return;
         }
 
         PoHeader header = buildPoHeader(hdrMap);
@@ -60,7 +78,8 @@ public class PoPersistService {
 
         PoHeader h = new PoHeader();
 
-        h.setPoKey((String) m.get("CASE_NO"));
+      //  h.setPoKey((String) m.get("CASE_NO"));
+        h.setPoKey((String) m.get("POKEY"));
         h.setPoNo((String) m.get("PO_NO"));
         h.setL5PoNo((String) m.get("L5NO_PO"));
         h.setRlyCd((String) m.get("RLY_CD"));
@@ -98,6 +117,7 @@ public class PoPersistService {
         i.setPoHeader(header);
 
         i.setCaseNo((String) m.get("CASE_NO"));
+     //   i.setPoKey((String) m.get("POKEY"));
         i.setItemSrNo((String) m.get("ITEM_SRNO"));
         i.setPlNo((String) m.get("PL_NO"));
         i.setItemDesc((String) m.get("ITEM_DESC"));
@@ -144,4 +164,50 @@ public class PoPersistService {
     private BigDecimal bd(Object o) {
         return o == null ? null : new BigDecimal(o.toString());
     }
+
+
+    @Transactional
+    public void createVendorIfNotExists(Map<String, Object> hdrMap) {
+
+        String vendorCode = (String) hdrMap.get("IMMS_VENDOR_CODE");
+        String vendorDetails = (String) hdrMap.get("VENDOR_DETAILS");
+        String firmDetails = (String) hdrMap.get("FIRM_DETAILS");
+
+        if (vendorCode == null || vendorCode.isBlank()) return;
+
+        Optional<VendorMaster> existing =
+                vendorMasterRepository.findByVendorCode(vendorCode);
+
+        if (existing.isPresent()) return;
+
+        //  Save Vendor Master
+        VendorMaster vendor = new VendorMaster();
+        vendor.setVendorCode(vendorCode);
+        vendor.setVendorName(firmDetails);
+        vendor.setVendorDetails(vendorDetails);
+        vendor.setCreatedDate(LocalDateTime.now());
+        vendorMasterRepository.save(vendor);
+
+        if (userMasterRepository.existsByUserName(vendorCode)) {
+            return;
+        }
+
+        userRequestDto dto = new userRequestDto();
+        dto.setUserName(vendorCode);                     // unique vendor login
+        dto.setPassword("Vendor@123");                   // or encoded inside service
+        dto.setEmail(vendorCode + "@vendor.local");
+        dto.setMobileNumber(null);
+        dto.setRoleNames(List.of("Vendor"));
+
+        dto.setCreatedBy("Crics");
+        dto.setEmployeeId(null);
+
+        dto.setClusterName(null);
+        dto.setRegionName(null);
+        dto.setPriority(null);
+        dto.setIeUserIds(null);
+
+        userService.createUser(dto);
+    }
+
 }

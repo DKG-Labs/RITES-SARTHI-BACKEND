@@ -12,12 +12,12 @@ public class CrisPoScheduler {
     @Autowired
     private CrisPoAsyncService asyncService;
 
-    @Scheduled(cron = "0 54 07 * * ?")
+    @Scheduled(cron = "0 13 14 * * ?")
     public void runDailyPoSync() {
         System.out.println("Scheduler triggered");
       //  asyncService.syncPos(LocalDate.now().minusDays(1));
 
-        // asyncService.syncPos("2019-11-23");
+         asyncService.syncPos("2019-11-23");
 
        //  asyncService.syncMa("2019-06-19");
 
