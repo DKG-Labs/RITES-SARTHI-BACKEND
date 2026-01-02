@@ -38,6 +38,31 @@ public class UserMaster implements UserDetails {
     @Column(name = "MOBILENUMBER")
     private String mobileNumber;
 
+    @Column(name = "EMPLOYEE_CODE", length = 50)
+    private String employeeCode;
+
+    @Column(name = "RITES_EMPLOYEE_CODE")
+    private Integer ritesEmployeeCode;
+
+    @Column(name = "EMPLOYMENT_TYPE", length = 20)
+    private String employmentType; // REGULAR / CONTRACTUAL / MPA
+
+    @Column(name = "FULL_NAME", length = 255)
+    private String fullName;
+
+    @Column(name = "SHORT_NAME", length = 100, unique = true)
+    private String shortName;
+
+    @Column(name = "DATE_OF_BIRTH")
+    private LocalDate dateOfBirth;
+
+    @Column(name = "DESIGNATION", length = 100)
+    private String designation;
+
+    @Column(name = "DISCIPLINE", length = 50)
+    private String discipline;
+
+
     @Column(name = "CREATEDBY")
     private String createdBy;
 
