@@ -69,6 +69,12 @@ public interface InspectionCallRepository extends JpaRepository<InspectionCall, 
     long countByTypeAndStatus(@Param("type") String type, @Param("status") String status);
 
     /**
+     * Count calls by type
+     */
+    @Query("SELECT COUNT(ic) FROM InspectionCall ic WHERE ic.typeOfCall = :type")
+    long countByTypeOfCall(@Param("type") String type);
+
+    /**
      * Check if IC number exists
      */
     boolean existsByIcNumber(String icNumber);
