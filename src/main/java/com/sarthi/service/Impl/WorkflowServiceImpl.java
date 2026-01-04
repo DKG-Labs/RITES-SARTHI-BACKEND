@@ -13,7 +13,6 @@ import com.sarthi.exception.InvalidInputException;
 import com.sarthi.repository.*;
 import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.service.WorkflowService;
-import com.sarthi.util.CommonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,9 +22,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
 
 @Service
 public class WorkflowServiceImpl implements WorkflowService {
@@ -68,6 +64,9 @@ public class WorkflowServiceImpl implements WorkflowService {
     private PincodePoIMappingRepository pincodePoIMappingRepository;
     @Autowired
     private IePincodePoiMappingRepository iePincodePoiMappingRepository;
+@Autowired
+    private ieControllingManagerRepository ieControllingManagerRepository;
+
 
 
 
@@ -488,16 +487,23 @@ public class WorkflowServiceImpl implements WorkflowService {
                         ? current.getAssignedToUser()
                         : req.getActionBy();
 
-                Integer cmUserId = getCmUserFromIeUser(ieUserId);
+             //   Integer cmUserId = getCmUserFromIeUser(ieUserId);
+                Optional<UserMaster> um = userMasterRepository.findByUserId(ieUserId);
 
-                if (cmUserId == null) {
-                    throw new BusinessException(
-                            new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
-                                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
-                                    AppConstant.ERROR_TYPE_VALIDATION,
-                                    "No CM user found for IE cluster")
-                    );
+                Integer cmUserId =null;
+                if(um.isPresent()){
+                    UserMaster u = um.get();
+                    cmUserId =  getCmUserFromIeEmployeeCode(u.getEmployeeCode());
                 }
+
+//                if (cmUserId == null) {
+//                    throw new BusinessException(
+//                            new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+//                                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
+//                                    AppConstant.ERROR_TYPE_VALIDATION,
+//                                    "No CM user found for IE cluster")
+//                    );
+//                }
 
 
                 next.setAssignedToUser(cmUserId);
@@ -713,8 +719,39 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
 
     } else {
 
+        InspectionCall ic = inspectionCallRepository.findByIcNumber(req.getRequestId())
+                .orElseThrow(() -> new BusinessException(
+                        new ErrorDetails(
+                                AppConstant.ERROR_CODE_INVALID,
+                                AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                                AppConstant.ERROR_TYPE_VALIDATION,
+                                "Place of Inspection (POI) is not assigned"
+                        )
+                ));
+
+      //  PincodePoIMapping poi = pincodePoIMappingRepository.findByPoiCode(ic.getPlaceOfInspection());
+
+
+        PincodePoIMapping poi =
+                pincodePoIMappingRepository.findByPoiCode(ic.getPlaceOfInspection())
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Invalid POI code"
+                                )
+                        ));
+        String stage = null;
+        if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
+            stage ="R";
+        }
+
+
         // RAW / FINAL → normal IE assignment
-        callReg.setAssignedToUser(assignIE(req.getPincode()));
+       // callReg.setAssignedToUser(assignIE(req.getPincode()));
+
+        callReg.setAssignedToUser(assignIE(poi.getPinCode(),"ERC",stage,ic.getPlaceOfInspection() ));
     }
 
 
@@ -1066,9 +1103,20 @@ private Integer assignIE(
         String poiCode) {
 
     // 1. Validate Pin + Product + Stage → RIO
+//    IEFieldsMapping mapping =
+//            ieFieldsMappingRepository
+//                    .findByPinCodeAndProductAndStage(pinCode, product, stage)
+//                    .orElseThrow(() -> new BusinessException(
+//                            new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+//                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+//                                    AppConstant.ERROR_TYPE_VALIDATION,
+//                                    "No IE mapping for given pin/product/stage")));
+
+    System.out.print(pinCode+""+product +""+ stage +""+poiCode);
+
     IEFieldsMapping mapping =
             ieFieldsMappingRepository
-                    .findByPinCodeAndProductAndStage(pinCode, product, stage)
+                    .findByPinCodeProductAndStageMatch(pinCode, product, stage)
                     .orElseThrow(() -> new BusinessException(
                             new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
                                     AppConstant.ERROR_TYPE_CODE_RESOURCE,
@@ -1077,7 +1125,7 @@ private Integer assignIE(
 
 
     String rio = mapping.getRio();
-     // 2. Validate POI
+     // Validate POI
     boolean poiValid = pincodePoIMappingRepository
             .existsByPinCodeAndPoiCode(pinCode, poiCode);
 
@@ -1091,21 +1139,32 @@ private Integer assignIE(
     }
 
     // 3. Try PRIMARY IE
-    Optional<Integer> primaryIe =
-            iePincodePoiMappingRepository
-                    .findPrimaryIe(pinCode, product, poiCode, rio);
-
+//    Optional<Integer> primaryIe =
+//            iePincodePoiMappingRepository
+//                    .findPrimaryIe(pinCode, product, poiCode);
+//
+//    if (primaryIe.isPresent()) {
+//        return primaryIe.get();
+//    }
+//
+//    // 4. Try SECONDARY IE
+//    Optional<Integer> secondaryIe =
+//            iePincodePoiMappingRepository
+//                    .findSecondaryIe(pinCode, product, poiCode, rio);
+//
+//    if (secondaryIe.isPresent()) {
+//        return secondaryIe.get();
+//    }
+    Optional<String> primaryIe =  iePincodePoiMappingRepository.findPrimaryIe(pinCode, product, poiCode);
     if (primaryIe.isPresent()) {
-        return primaryIe.get();
+        UserMaster um = userMasterRepository.findByEmployeeCode(primaryIe.get());
+       return um.getUserId();
     }
-
-    // 4. Try SECONDARY IE
-    Optional<Integer> secondaryIe =
-            iePincodePoiMappingRepository
-                    .findSecondaryIe(pinCode, product, poiCode, rio);
+    Optional<String> secondaryIe = iePincodePoiMappingRepository.findSecondaryIe(pinCode, product, poiCode);
 
     if (secondaryIe.isPresent()) {
-        return secondaryIe.get();
+        UserMaster um = userMasterRepository.findByEmployeeCode(secondaryIe.get());
+        return um.getUserId();
     }
 
     // 5. No IE
@@ -1246,7 +1305,7 @@ private Integer assignIE(
         return dto;
     }
 
-
+/*
     private Integer getCmUserFromIeUser(Integer ieUserId) {
 
         // Step 1: Find cluster of IE (check primary)
@@ -1277,6 +1336,14 @@ private Integer assignIE(
                 .orElse(null);
 
         return cmUser != null ? cmUser.getCmUserId() : null;
+    }*/
+
+    private Integer getCmUserFromIeEmployeeCode(String ieEmployeeCode) {
+
+        return ieControllingManagerRepository
+                .findByIeEmployeeCode(ieEmployeeCode)
+                .map(IeControllingManager::getCmUserId)
+                .orElse(null);
     }
 
 
@@ -1443,7 +1510,42 @@ private Integer assignIE(
                 current, callReg, "CALL_REGISTERED", "Payment Verified - Call Registered", req
         );
 
-        registered.setAssignedToUser(assignIE(req.getPincode()));
+      //  registered.setAssignedToUser(assignIE(req.getPincode()));
+       InspectionCall ic = inspectionCallRepository.findByIcNumber(req.getRequestId())
+               .orElseThrow(() -> new BusinessException(
+                       new ErrorDetails(
+                               AppConstant.ERROR_CODE_INVALID,
+                               AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                               AppConstant.ERROR_TYPE_VALIDATION,
+                               "Place of Inspection (POI) is not assigned"
+                       )
+               ));
+
+        System.out.println("Inspection call"+ ic.getPlaceOfInspection());
+       // PincodePoIMapping poi = pincodePoIMappingRepository.findByPoiCode(ic.getPlaceOfInspection());
+
+
+        PincodePoIMapping poi =
+                pincodePoIMappingRepository.findByPoiCode(ic.getPlaceOfInspection())
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Invalid POI code"
+                                )
+                        ));
+
+        System.out.println("poi"+ poi);
+        String stage = null;
+        if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
+            stage ="R";
+        }
+        // RAW / FINAL → normal IE assignment
+        // callReg.setAssignedToUser(assignIE(req.getPincode()));
+
+        registered.setAssignedToUser(assignIE(poi.getPinCode(),"ERC",stage,ic.getPlaceOfInspection() ));
+
         registered.setJobStatus("REGISTERED");
 
         workflowTransitionRepository.save(registered);
@@ -1461,7 +1563,39 @@ private Integer assignIE(
                 "Payment Received - Call Registered", req
         );
 
-        next.setAssignedToUser(assignIE(req.getPincode()));
+      //  next.setAssignedToUser(assignIE(req.getPincode()));
+        InspectionCall ic = inspectionCallRepository.findByIcNumber(req.getRequestId())
+                .orElseThrow(() -> new BusinessException(
+                        new ErrorDetails(
+                                AppConstant.ERROR_CODE_INVALID,
+                                AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                                AppConstant.ERROR_TYPE_VALIDATION,
+                                "Place of Inspection (POI) is not assigned"
+                        )
+                ));
+
+       // PincodePoIMapping poi = pincodePoIMappingRepository.findByPoiCode(ic.getPlaceOfInspection());
+
+        PincodePoIMapping poi =
+                pincodePoIMappingRepository.findByPoiCode(ic.getPlaceOfInspection())
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Invalid POI code"
+                                )
+                        ));
+        String stage = null;
+        if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
+            stage ="R";
+        }
+
+        // RAW / FINAL → normal IE assignment
+        // callReg.setAssignedToUser(assignIE(req.getPincode()));
+
+      next.setAssignedToUser(assignIE(poi.getPinCode(),"ERC",stage,ic.getPlaceOfInspection() ));
+
         next.setJobStatus("REGISTERED");
 
         workflowTransitionRepository.save(next);
@@ -1623,7 +1757,16 @@ private Integer assignIE(
         );
 
         // Assign CM of this IE's cluster
-        Integer cmUserId = getCmUserFromIeUser(callReg.getAssignedToUser());
+       // Integer cmUserId = getCmUserFromIeUser(callReg.getAssignedToUser());
+        Optional<UserMaster> um = userMasterRepository.findByUserId(callReg.getAssignedToUser());
+
+        Integer cmUserId =null;
+        if(um.isPresent()){
+            UserMaster u = um.get();
+           cmUserId =  getCmUserFromIeEmployeeCode(u.getEmployeeCode());
+        }
+
+
         next.setAssignedToUser(cmUserId);
 
         workflowTransitionRepository.save(next);
@@ -1756,7 +1899,14 @@ private Integer assignIE(
         String action = req.getAction();
 
         if (action.equalsIgnoreCase("IE_REQUEST_RESCHEDULE")) {
-            next.setAssignedToUser(getCmUserFromIeUser(req.getActionBy()));
+          //  next.setAssignedToUser(getCmUserFromIeUser(req.getActionBy()));
+            Optional<UserMaster> um = userMasterRepository.findByUserId(req.getActionBy());
+
+            Integer cmUserId;
+            if(um.isPresent()){
+                UserMaster u = um.get();
+                cmUserId =  getCmUserFromIeEmployeeCode(u.getEmployeeCode());
+            }
         }
         else if (action.equalsIgnoreCase("CM_FORWARD_TO_SBU_HEAD")) {
             next.setAssignedToUser(getSbuHeadUser(req.getPincode()));
