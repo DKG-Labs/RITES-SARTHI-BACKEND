@@ -1,5 +1,6 @@
 package com.sarthi.entity.rawmaterial;
 
+import com.sarthi.entity.processmaterial.ProcessInspectionDetails;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -60,5 +61,9 @@ public class InspectionCall {
     @OneToOne(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
     @ToString.Exclude
     private RmInspectionDetails rmInspectionDetails;
+
+    @OneToOne(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    private ProcessInspectionDetails processInspectionDetails;
 }
 
