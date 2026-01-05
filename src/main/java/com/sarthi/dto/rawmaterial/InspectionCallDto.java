@@ -30,7 +30,7 @@ public class InspectionCallDto {
     private String desiredInspectionDate;
     private String actualInspectionDate;
     private String placeOfInspection;
-    private String vendorCode;
+    
 
     /* ==================== Company Information ==================== */
 
