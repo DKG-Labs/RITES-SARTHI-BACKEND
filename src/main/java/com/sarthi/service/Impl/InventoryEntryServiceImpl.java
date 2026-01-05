@@ -135,6 +135,16 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public InventoryEntryResponseDto getInventoryEntryByHeatAndTc(String heatNumber, String tcNumber) {
+        logger.info("Fetching inventory entry by heat number: {} and TC number: {}", heatNumber, tcNumber);
+
+        return inventoryEntryRepository.findByHeatNumberAndTcNumber(heatNumber, tcNumber)
+                .map(this::mapEntityToResponse)
+                .orElse(null);
+    }
+
     /**
      * Validate inventory request DTO
      */

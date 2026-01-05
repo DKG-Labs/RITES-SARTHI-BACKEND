@@ -46,6 +46,10 @@ public class PoDataForSectionsDto {
     private String extendedDeliveryDate; // Extended Delivery Date
     private String plNo;              // PL Number
 
+    // Section B: Additional fields from inspection_calls and rm_inspection_details
+    private String ercType;           // Type of ERC (from inspection_calls.erc_type)
+    private BigDecimal totalOfferedQtyMt; // Call Qty (from rm_inspection_details.total_offered_qty_mt)
+
     // Section C: Additional fields
     private String productType;       // Product Type (default: Raw Material)
     private String origDp;            // Original DP
@@ -94,6 +98,10 @@ public class PoDataForSectionsDto {
         private String tcDate;             // tc_date (dd/MM/yyyy)
         private BigDecimal offeredQty;     // offered_qty
         private String colorCode;          // color_code (manually entered by inspector)
+
+        // From inventory_entries (fetched by heat_number + tc_number combination)
+        private BigDecimal totalValueOfPo; // total_po from inventory_entries
+        private BigDecimal tcQuantity;     // tc_quantity from inventory_entries
     }
 }
 

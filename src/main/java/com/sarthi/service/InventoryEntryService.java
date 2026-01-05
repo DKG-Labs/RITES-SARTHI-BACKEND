@@ -38,5 +38,13 @@ public interface InventoryEntryService {
      * @return The updated inventory entry
      */
     InventoryEntryResponseDto updateInventoryStatus(Long id, String status);
+
+    /**
+     * Get inventory entry by heat number and TC number combination
+     * @param heatNumber The heat number
+     * @param tcNumber The TC number
+     * @return The inventory entry matching both criteria, or null if not found
+     */
+    InventoryEntryResponseDto getInventoryEntryByHeatAndTc(String heatNumber, String tcNumber);
 }
 

@@ -2,11 +2,13 @@ package com.sarthi.service.Impl;
 
 import com.sarthi.dto.po.PoDataForSectionsDto;
 import com.sarthi.entity.CricsPos.PoMaHeader;
+import com.sarthi.entity.InventoryEntry;
 import com.sarthi.entity.PoHeader;
 import com.sarthi.entity.PoItem;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.entity.rawmaterial.RmInspectionDetails;
 import com.sarthi.entity.rawmaterial.RmHeatQuantity;
+import com.sarthi.repository.InventoryEntryRepository;
 import com.sarthi.repository.PoHeaderRepository;
 import com.sarthi.repository.PoMaHeaderRepository;
 import com.sarthi.repository.rawmaterial.InspectionCallRepository;
@@ -46,6 +48,9 @@ public class PoDataServiceImpl implements PoDataService {
 
     @Autowired
     private RmHeatQuantityRepository rmHeatQuantityRepository;
+
+    @Autowired
+    private InventoryEntryRepository inventoryEntryRepository;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -125,6 +130,18 @@ public class PoDataServiceImpl implements PoDataService {
                     .mapToInt(item -> item.getQty() != null ? item.getQty() : 0)
                     .sum();
             dto.setPoQty(totalQty);
+        }
+
+        // Section B: Additional fields from inspection_calls and rm_inspection_details
+        if (inspectionCall != null) {
+            // Set ERC Type from inspection_calls table
+            dto.setErcType(inspectionCall.getErcType());
+
+            // Fetch RM inspection details to get total_offered_qty_mt
+            Optional<RmInspectionDetails> rmDetailsOpt = rmInspectionDetailsRepository.findByIcId(inspectionCall.getId());
+            if (rmDetailsOpt.isPresent()) {
+                dto.setTotalOfferedQtyMt(rmDetailsOpt.get().getTotalOfferedQtyMt());
+            }
         }
 
         // Section C: Additional fields
@@ -271,9 +288,29 @@ public class PoDataServiceImpl implements PoDataService {
         for (RmHeatQuantity heat : heatQuantities) {
             PoDataForSectionsDto.RmHeatDetailsDto heatDto = new PoDataForSectionsDto.RmHeatDetailsDto();
 
-            // From rm_inspection_details
-            heatDto.setRawMaterialName(rmDetails.getItemDescription());
-            heatDto.setGrade("N/A"); // Grade not in current schema
+            // Fetch grade, raw material name, total_po, and tc_quantity from inventory_entries table based on heat + TC combination
+            String rawMaterialName = rmDetails.getItemDescription(); // Default from rm_inspection_details
+            String grade = "N/A"; // Default
+            BigDecimal totalValueOfPo = null; // Default
+            BigDecimal tcQuantity = null; // Default
+
+            if (heat.getHeatNumber() != null && heat.getTcNumber() != null) {
+                Optional<InventoryEntry> inventoryEntryOpt = inventoryEntryRepository
+                        .findByHeatNumberAndTcNumber(heat.getHeatNumber(), heat.getTcNumber());
+
+                if (inventoryEntryOpt.isPresent()) {
+                    InventoryEntry inventoryEntry = inventoryEntryOpt.get();
+                    // Override with inventory data if available
+                    rawMaterialName = inventoryEntry.getRawMaterial();
+                    grade = inventoryEntry.getGradeSpecification();
+                    totalValueOfPo = inventoryEntry.getTotalPo();
+                    tcQuantity = inventoryEntry.getTcQuantity();
+                }
+            }
+
+            // From rm_inspection_details + inventory_entries
+            heatDto.setRawMaterialName(rawMaterialName);
+            heatDto.setGrade(grade);
             heatDto.setManufacturer(heat.getManufacturer() != null ? heat.getManufacturer() : rmDetails.getManufacturer());
             heatDto.setSubPoNumber(rmDetails.getSubPoNumber());
             heatDto.setSubPoDate(formatDate(rmDetails.getSubPoDate()));
@@ -288,6 +325,10 @@ public class PoDataServiceImpl implements PoDataService {
             heatDto.setOfferedQty(heat.getOfferedQty());
             // TODO: Uncomment when color_code column is added to database
             // heatDto.setColorCode(heat.getColorCode()); // Color code manually entered by inspector
+
+            // From inventory_entries (fetched by heat + TC combination)
+            heatDto.setTotalValueOfPo(totalValueOfPo);
+            heatDto.setTcQuantity(tcQuantity);
 
             rmHeatDetailsList.add(heatDto);
         }

@@ -113,5 +113,32 @@ public class InventoryEntryController {
             );
         }
     }
+
+    /**
+     * Get inventory entry by heat number and TC number combination
+     * GET /api/vendor/inventory/entries/heat/{heatNumber}/tc/{tcNumber}
+     */
+    @GetMapping("/entries/heat/{heatNumber}/tc/{tcNumber}")
+    public ResponseEntity<Object> getInventoryEntryByHeatAndTc(
+            @PathVariable String heatNumber,
+            @PathVariable String tcNumber) {
+        logger.info("Received request to fetch inventory entry by heat: {} and TC: {}", heatNumber, tcNumber);
+
+        try {
+            InventoryEntryResponseDto entry = inventoryEntryService.getInventoryEntryByHeatAndTc(heatNumber, tcNumber);
+            if (entry == null) {
+                logger.warn("No inventory entry found for heat: {} and TC: {}", heatNumber, tcNumber);
+                return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(null), HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(entry), HttpStatus.OK);
+
+        } catch (Exception e) {
+            logger.error("Error fetching inventory entry: {}", e.getMessage(), e);
+            return new ResponseEntity<>(
+                ResponseBuilder.getSuccessResponse(null),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
 }
 

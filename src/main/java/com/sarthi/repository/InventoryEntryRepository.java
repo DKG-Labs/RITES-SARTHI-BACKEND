@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository interface for InventoryEntry entity.
@@ -49,5 +50,13 @@ public interface InventoryEntryRepository extends JpaRepository<InventoryEntry, 
      * @return true if exists, false otherwise
      */
     boolean existsByHeatNumberAndVendorCode(String heatNumber, String vendorCode);
+
+    /**
+     * Find inventory entry by heat number and TC number combination
+     * @param heatNumber The heat number
+     * @param tcNumber The TC number
+     * @return Optional inventory entry matching both criteria
+     */
+    Optional<InventoryEntry> findByHeatNumberAndTcNumber(String heatNumber, String tcNumber);
 }
 
