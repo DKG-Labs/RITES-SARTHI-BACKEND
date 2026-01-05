@@ -25,10 +25,12 @@ public class InspectionCallDto {
     private String poNo;
     private String poSerialNo;
     private String typeOfCall;
+    private String ercType;
     private String status;
     private String desiredInspectionDate;
     private String actualInspectionDate;
     private String placeOfInspection;
+    
 
     /* ==================== Company Information ==================== */
 
