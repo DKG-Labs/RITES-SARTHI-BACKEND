@@ -61,7 +61,7 @@ public class VendorPoServiceImpl implements VendorPoService {
 
         VendorPoItemsResponseDto dto = new VendorPoItemsResponseDto();
 
-        dto.setPoSerialNo(item.getCaseNo() + "/" + item.getItemSrNo());
+        dto.setPoSerialNo(item.getPoHeader().getPoNo() + "/" + item.getItemSrNo());
         dto.setPoDes(item.getItemDesc());
         dto.setConigness(item.getImmsConsigneeName());
         dto.setOrderedQty(BigDecimal.valueOf(item.getQty()));

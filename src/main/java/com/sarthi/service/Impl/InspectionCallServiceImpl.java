@@ -40,6 +40,8 @@ public class InspectionCallServiceImpl implements InspectionCallService {
         inspectionCall.setPoSerialNo(icRequest.getPoSerialNo());
         inspectionCall.setTypeOfCall(icRequest.getTypeOfCall());
         inspectionCall.setStatus(icRequest.getStatus());
+        inspectionCall.setVendorId(icRequest.getVendorId());
+        inspectionCall.setPlaceOfInspection(icRequest.getPlaceOfInspection());
 
         inspectionCall.setDesiredInspectionDate(
                 LocalDate.parse(icRequest.getDesiredInspectionDate())

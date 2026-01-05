@@ -11,6 +11,9 @@ public class InspectionCallRequestDto {
     private String typeOfCall;
     private String status;
 
+    private String placeOfInspection;
+    private String vendorId;
+
     // ---- DATES (yyyy-MM-dd) ----
     private String desiredInspectionDate;
     private String actualInspectionDate;
