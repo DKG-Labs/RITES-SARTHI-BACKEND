@@ -30,6 +30,8 @@ public class InspectionCall {
 
     private String typeOfCall;
 
+    private String ercType;
+
     private String status;
 
     private LocalDate desiredInspectionDate;

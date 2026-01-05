@@ -9,6 +9,7 @@ public class InspectionCallRequestDto {
     private String poNo;
     private String poSerialNo;
     private String typeOfCall;
+    private String ercType;
     private String status;
 
     private String placeOfInspection;
