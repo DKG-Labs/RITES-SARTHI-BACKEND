@@ -833,7 +833,7 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
         WorkflowTransition next = createNextTransition(current, fixRoutingTransition, "ROUTED_CORRECTION",
                 "Routing corrected & forwarded to correct RIO", req);
         next.setAssignedToUser(req.getAssignUserId());
-
+        next.setRio(req.getRioRouteChange());
         next.setWorkflowSequence(last.getWorkflowSequence()+1);
         return mapWorkflowTransition(next);
     }
@@ -885,7 +885,7 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
         next.setNextRoleName(roleNameById(transition.getNextRoleId()));
 
         next.setJobStatus("IN_PROGRESS");
-        PincodeCluster cluster = pincodeClusterRepository.findByPincode(req.getPincode())
+       /* PincodeCluster cluster = pincodeClusterRepository.findByPincode(req.getPincode())
                 .orElseThrow(() -> new BusinessException(
                         new ErrorDetails(
                                 AppConstant.ERROR_CODE_RESOURCE,
@@ -915,7 +915,49 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
 
         Integer assignedRioUserId = rioUser.getRioUserId();
 
-        next.setAssignedToUser(assignedRioUserId);
+        next.setAssignedToUser(assignedRioUserId);*/
+        InspectionCall ic = inspectionCallRepository.findByIcNumber(req.getRequestId())
+                .orElseThrow(() -> new BusinessException(
+                        new ErrorDetails(
+                                AppConstant.ERROR_CODE_INVALID,
+                                AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                                AppConstant.ERROR_TYPE_VALIDATION,
+                                "Place of Inspection (POI) is not assigned"
+                        )
+                ));
+
+        //  PincodePoIMapping poi = pincodePoIMappingRepository.findByPoiCode(ic.getPlaceOfInspection());
+
+
+        PincodePoIMapping poi =
+                pincodePoIMappingRepository.findByPoiCode(ic.getPlaceOfInspection())
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Invalid POI code"
+                                )
+                        ));
+        String stage = null;
+        if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
+            stage ="R";
+        }
+        String product ="ERC";
+        String pinCode = poi.getPinCode();
+
+        IEFieldsMapping mapping =
+                ieFieldsMappingRepository
+                        .findByPinCodeProductAndStageMatch(pinCode, product, stage)
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "No IE mapping for given pin/product/stage")));
+
+         String  rio =mapping.getRio();
+
+         next.setRio(rio);
 
         next.setWorkflowSequence(last.getWorkflowSequence()+1);
 
