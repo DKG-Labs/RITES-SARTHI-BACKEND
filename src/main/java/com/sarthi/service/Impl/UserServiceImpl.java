@@ -385,8 +385,7 @@ public UserDto createUser(userRequestDto userDto) {
                 user.getUserId(),
                 user.getUsername(),
                 user.getRoleName(),
-                r.getRio(),
-                token
+                token, r.getRio()
         );
     }
 
