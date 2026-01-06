@@ -63,5 +63,7 @@ public class WorkflowTransition {
 
     @Column(name = "WORKFLOWSEQUENCE")
     private Integer workflowSequence;
+
+    private String rio;
 }
 

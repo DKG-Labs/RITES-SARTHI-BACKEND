@@ -55,7 +55,8 @@ public class UserServiceImpl implements UserService {
     private IePincodePoiMappingRepository iePincodePoiMappingRepository;
     @Autowired
     private ieControllingManagerRepository ieControllingManagerRepository;
-
+    @Autowired
+    private RioUserRepository rioUserRepository;
 
 /*
     @Override
@@ -156,7 +157,7 @@ public UserDto createUser(userRequestDto userDto) {
 
 
         // Validate cluster-region mapping (only for role types)
-        if (roleName.equalsIgnoreCase("RIO Help Desk")
+      /*  if (roleName.equalsIgnoreCase("RIO Help Desk")
                // || roleName.equalsIgnoreCase("IE")
               //  || roleName.equalsIgnoreCase("IE Secondary")
           ) {
@@ -178,16 +179,23 @@ public UserDto createUser(userRequestDto userDto) {
                                 "Region mismatch for cluster: " + userDto.getClusterName())
                 );
             }
-        }
+        }*/
 
         // Save RIO mapping
         if (roleName.equalsIgnoreCase("RIO Help Desk")) {
 
-            ClusterRioUser map = new ClusterRioUser();
-            map.setClusterName(userDto.getClusterName());
-            map.setRioUserId(userMaster.getUserId());
-            clusterRioUserRepository.save(map);
+//            ClusterRioUser map = new ClusterRioUser();
+//            map.setClusterName(userDto.getClusterName());
+//            map.setRioUserId(userMaster.getUserId());
+//            clusterRioUserRepository.save(map);
+
+            RioUser rio = new RioUser();
+            rio.setRio(userDto.getRio());
+            rio.setEmployeeCode(userDto.getEmployeeCode());
+
+            rioUserRepository.save(rio);
         }
+
 
         // Save primary IE
 //        if (roleName.equalsIgnoreCase("IE")) {
@@ -354,6 +362,14 @@ public UserDto createUser(userRequestDto userDto) {
                                 "Invalid login credentials.")
                 ));
 
+      Optional<RioUser> rio =   rioUserRepository.findByEmployeeCode(user.getEmployeeCode());
+
+      RioUser r=null;
+
+    if(rio.isPresent()){
+        r = rio.get();
+    }
+
         if (!loginRequestDto.getPassword().equals(user.getPassword())) {
             throw new BusinessException(
                     new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
@@ -369,6 +385,7 @@ public UserDto createUser(userRequestDto userDto) {
                 user.getUserId(),
                 user.getUsername(),
                 user.getRoleName(),
+                r.getRio(),
                 token
         );
     }

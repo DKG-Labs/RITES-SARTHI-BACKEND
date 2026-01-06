@@ -34,4 +34,6 @@ public class WorkflowTransitionDto {
     private String vendorName;
     private String productType;
     private String desiredInspectionDate;
+
+    private String rio;
 }

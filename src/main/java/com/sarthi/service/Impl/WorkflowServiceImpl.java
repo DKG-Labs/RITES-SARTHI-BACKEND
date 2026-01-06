@@ -189,12 +189,13 @@ public class WorkflowServiceImpl implements WorkflowService {
         }
 
         Integer assignedRioUserId =null;
+        String rio = null;
 
 
           if (workflowName.equalsIgnoreCase("INSPECTION CALL")) {
 
               // Step 1: Get cluster by pincode
-              PincodeCluster cluster = pincodeClusterRepository.findByPincode(pincode)
+           /*   PincodeCluster cluster = pincodeClusterRepository.findByPincode(pincode)
                       .orElseThrow(() -> new BusinessException(
                               new ErrorDetails(
                                       AppConstant.ERROR_CODE_RESOURCE,
@@ -220,9 +221,50 @@ public class WorkflowServiceImpl implements WorkflowService {
                                       AppConstant.ERROR_TYPE_CODE_RESOURCE,
                                       AppConstant.ERROR_TYPE_VALIDATION,
                          "No RIO user found for region")
+                      ));*/
+
+              InspectionCall ic = inspectionCallRepository.findByIcNumber(requestId)
+                      .orElseThrow(() -> new BusinessException(
+                              new ErrorDetails(
+                                      AppConstant.ERROR_CODE_INVALID,
+                                      AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                                      AppConstant.ERROR_TYPE_VALIDATION,
+                                      "Place of Inspection (POI) is not assigned"
+                              )
                       ));
 
-              assignedRioUserId = rioUser.getRioUserId();
+              //  PincodePoIMapping poi = pincodePoIMappingRepository.findByPoiCode(ic.getPlaceOfInspection());
+
+
+              PincodePoIMapping poi =
+                      pincodePoIMappingRepository.findByPoiCode(ic.getPlaceOfInspection())
+                              .orElseThrow(() -> new BusinessException(
+                                      new ErrorDetails(
+                                              AppConstant.ERROR_CODE_RESOURCE,
+                                              AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                              AppConstant.ERROR_TYPE_VALIDATION,
+                                              "Invalid POI code"
+                                      )
+                              ));
+              String stage = null;
+              if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
+                  stage ="R";
+              }
+              String product ="ERC";
+              String pinCode = poi.getPinCode();
+
+              IEFieldsMapping mapping =
+                      ieFieldsMappingRepository
+                              .findByPinCodeProductAndStageMatch(pinCode, product, stage)
+                              .orElseThrow(() -> new BusinessException(
+                                      new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                                              AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                              AppConstant.ERROR_TYPE_VALIDATION,
+                                              "No IE mapping for given pin/product/stage")));
+
+              rio =mapping.getRio();
+
+            //  assignedRioUserId = rioUser.getRioUserId();
           }
 
         // Create transition entry
@@ -245,6 +287,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         if(workflow.getWorkflowName().equalsIgnoreCase("INSPECTION CALL")){
             entry.setAssignedToUser(assignedRioUserId);
+            entry.setRio(rio);
         }
 
         workflowTransitionRepository.save(entry);
@@ -1295,6 +1338,7 @@ private Integer assignIE(
         dto.setAssignedToUser(wt.getAssignedToUser());
         dto.setWorkflowSequence(wt.getWorkflowSequence());
         dto.setModifiedBy(wt.getModifiedBy());
+        dto.setRio(wt.getRio());
         if(ic.isPresent()){
             dto.setPoNo(i.getPoNo());
             dto.setVendorName(i.getVendorId());
