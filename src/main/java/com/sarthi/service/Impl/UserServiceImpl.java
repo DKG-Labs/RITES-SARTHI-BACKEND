@@ -353,31 +353,29 @@ public UserDto createUser(userRequestDto userDto) {
     @Override
     public LoginResponseDto login(LoginRequestDto loginRequestDto) {
 
-
         UserMaster user = userMasterRepository.findByUserId(loginRequestDto.getUserId())
                 .orElseThrow(() -> new BusinessException(
-                        new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
+                        new ErrorDetails(
+                                AppConstant.ERROR_CODE_INVALID,
                                 AppConstant.ERROR_TYPE_CODE_INVALID,
                                 AppConstant.ERROR_TYPE_INVALID,
                                 "Invalid login credentials.")
                 ));
 
-      Optional<RioUser> rio =   rioUserRepository.findByEmployeeCode(user.getEmployeeCode());
-
-      RioUser r=null;
-
-    if(rio.isPresent()){
-        r = rio.get();
-    }
-
         if (!loginRequestDto.getPassword().equals(user.getPassword())) {
             throw new BusinessException(
-                    new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
+                    new ErrorDetails(
+                            AppConstant.ERROR_CODE_INVALID,
                             AppConstant.ERROR_TYPE_CODE_INVALID,
                             AppConstant.ERROR_TYPE_INVALID,
                             "Invalid login credentials.")
             );
         }
+
+        String rio = rioUserRepository
+                .findByEmployeeCode(user.getEmployeeCode())
+                .map(RioUser::getRio)
+                .orElse(null);
 
         String token = jwtService.generateToken(user);
 
@@ -385,9 +383,11 @@ public UserDto createUser(userRequestDto userDto) {
                 user.getUserId(),
                 user.getUsername(),
                 user.getRoleName(),
-                token, r.getRio()
+                token,
+                rio
         );
     }
+
 
 
     public UserDetails loadUserByUsername(Integer userId) throws UsernameNotFoundException {
