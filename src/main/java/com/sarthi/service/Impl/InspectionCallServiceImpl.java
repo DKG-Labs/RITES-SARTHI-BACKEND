@@ -8,6 +8,10 @@ import com.sarthi.entity.rawmaterial.RmHeatQuantity;
 import com.sarthi.entity.rawmaterial.RmInspectionDetails;
 import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.service.InspectionCallService;
+import com.sarthi.util.IcNumberGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,10 +25,17 @@ import java.util.List;
 @Transactional
 public class InspectionCallServiceImpl implements InspectionCallService {
 
-    private final InspectionCallRepository inspectionCallRepository;
+    private static final Logger logger = LoggerFactory.getLogger(InspectionCallServiceImpl.class);
 
-    public InspectionCallServiceImpl(InspectionCallRepository inspectionCallRepository) {
+    private final InspectionCallRepository inspectionCallRepository;
+    private final IcNumberGenerator icNumberGenerator;
+
+    @Autowired
+    public InspectionCallServiceImpl(
+            InspectionCallRepository inspectionCallRepository,
+            IcNumberGenerator icNumberGenerator) {
         this.inspectionCallRepository = inspectionCallRepository;
+        this.icNumberGenerator = icNumberGenerator;
     }
 
     @Override
@@ -32,10 +43,19 @@ public class InspectionCallServiceImpl implements InspectionCallService {
             InspectionCallRequestDto icRequest,
             RmInspectionDetailsRequestDto rmRequest
     ) {
+        logger.info("========== CREATE RAW MATERIAL INSPECTION CALL ==========");
+        logger.info("IC Request: {}", icRequest);
+        logger.info("RM Details: {}", rmRequest);
 
         InspectionCall inspectionCall = new InspectionCall();
 
-        inspectionCall.setIcNumber(icRequest.getIcNumber());
+        // Generate IC Number with daily sequence reset
+        LocalDate today = LocalDate.now();
+        long dailySequence = inspectionCallRepository.countByTypeOfCallAndCreatedDate("Raw Material", today) + 1;
+        String icNumber = icNumberGenerator.generateIcNumber("Raw Material", dailySequence);
+        logger.info("Generated IC Number: {} (Daily Sequence: {})", icNumber, dailySequence);
+
+        inspectionCall.setIcNumber(icNumber);
         inspectionCall.setPoNo(icRequest.getPoNo());
         inspectionCall.setPoSerialNo(icRequest.getPoSerialNo());
         inspectionCall.setTypeOfCall(icRequest.getTypeOfCall());

@@ -40,6 +40,10 @@ public class SecurityConfig {
                                 "/sarthi-backend/workflowTransitionHistory",
                                 // Raw Material APIs - temporarily public for testing
                                 "/api/raw-material/**",
+                                // Process Material APIs - temporarily public for testing
+                                "/api/process-material/**",
+                                // Final Material APIs - temporarily public for testing
+                                "/api/final-material/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
