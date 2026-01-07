@@ -1,0 +1,33 @@
+package com.sarthi.repository.finalmaterial;
+
+import com.sarthi.entity.finalmaterial.FinalInspectionDetails;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+/**
+ * Repository for Final Inspection Details
+ */
+@Repository
+public interface FinalInspectionDetailsRepository extends JpaRepository<FinalInspectionDetails, Long> {
+
+    /**
+     * Find Final Inspection Details by Inspection Call ID
+     */
+    @Query("SELECT fd FROM FinalInspectionDetails fd WHERE fd.inspectionCall.id = :icId")
+    Optional<FinalInspectionDetails> findByIcId(@Param("icId") Long icId);
+
+    /**
+     * Find Final Inspection Details by RM IC Number
+     */
+    Optional<FinalInspectionDetails> findByRmIcNumber(String rmIcNumber);
+
+    /**
+     * Find Final Inspection Details by Process IC Number
+     */
+    Optional<FinalInspectionDetails> findByProcessIcNumber(String processIcNumber);
+}
+

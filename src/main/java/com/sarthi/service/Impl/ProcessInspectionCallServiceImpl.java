@@ -56,10 +56,11 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
         // ================== 1. CREATE INSPECTION CALL ==================
         InspectionCall inspectionCall = new InspectionCall();
 
-        // Generate IC Number
-        long sequence = inspectionCallRepository.countByTypeOfCall("Process") + 1;
-        String icNumber = icNumberGenerator.generateIcNumber("Process", sequence);
-        logger.info("Generated IC Number: {}", icNumber);
+        // Generate IC Number with daily sequence reset
+        LocalDate today = LocalDate.now();
+        long dailySequence = inspectionCallRepository.countByTypeOfCallAndCreatedDate("Process", today) + 1;
+        String icNumber = icNumberGenerator.generateIcNumber("Process", dailySequence);
+        logger.info("Generated IC Number: {} (Daily Sequence: {})", icNumber, dailySequence);
 
         inspectionCall.setIcNumber(icNumber);
         inspectionCall.setPoNo(icRequest.getPoNo());
