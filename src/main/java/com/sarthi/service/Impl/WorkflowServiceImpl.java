@@ -786,7 +786,7 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
   //  String inspectionType = req.getInspectionType(); // RAW_MATERIAL / FINAL / PROCESS
 
     // RAW MATERIAL → Send to Finance
-    if ("Raw Material".equalsIgnoreCase(inspectionType)) {
+  /*  if ("Raw Material".equalsIgnoreCase(inspectionType)) {
 
         TransitionMaster paymentVerifyTransition =
                 transitionMasterRepository.findByTransitionName("PAYMENT_VERIFICATION");
@@ -804,7 +804,7 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
         workflowTransitionRepository.save(financeStep);
 
         return mapWorkflowTransition(financeStep);
-    }
+    }*/
 
     // FINAL / PROCESS → direct CALL_REGISTERED
     TransitionMaster callRegTransition =
@@ -2228,17 +2228,43 @@ private Integer assignIE(
 
         IcWorkflowTransitionDto dto = new IcWorkflowTransitionDto();
 
-        Optional<InspectionCall> ic = inspectionCallRepository.findByIcNumber(wt.getRequestId());
+        Optional<InspectionCall> i = inspectionCallRepository.findByIcNumber(wt.getRequestId());
 
-        if(ic.isPresent()){
-            InspectionCall ins = ic.get();
+        InspectionCall ic = null;
 
-            dto.setPoNo(ins.getPoNo());
-            dto.setVendorName(ins.getVendorId());
-            dto.setProductType("ERC-RAW MATERIAL");
-            dto.setStage("Raw Material Inspection");
+        if(i.isPresent()){
+            ic= i.get();
 
         }
+
+        PincodePoIMapping poi =
+                pincodePoIMappingRepository.findByPoiCode(ic.getPlaceOfInspection())
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Invalid POI code"
+                                )
+                        ));
+        String stage = null;
+        if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
+            stage ="R";
+        }
+        String product ="ERC";
+        String pinCode = poi.getPinCode();
+
+        IEFieldsMapping mapping =
+                ieFieldsMappingRepository
+                        .findByPinCodeProductAndStageMatch(pinCode, product, stage)
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "No IE mapping for given pin/product/stage")));
+
+        String  rio =mapping.getRio();
+
         dto.setWorkflowTransitionId(wt.getWorkflowTransitionId());
         dto.setWorkflowId(wt.getWorkflowId());
         dto.setTransitionId(wt.getTransitionId());
@@ -2264,7 +2290,12 @@ private Integer assignIE(
         dto.setCreatedDate(wt.getCreatedDate());
         dto.setWorkflowSequence(wt.getWorkflowSequence());
 
-        dto.setRio(wt.getRio());
+        dto.setRio(rio);
+
+        dto.setPoNo(ic.getPoNo());
+        dto.setVendorName(ic.getVendorId());
+        dto.setProductType("ERC-RAW MATERIAL");
+        dto.setStage("Raw Material Inspection");
 
         return dto;
     }
