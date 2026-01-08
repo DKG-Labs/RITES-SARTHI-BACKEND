@@ -143,7 +143,12 @@ public class WorkflowServiceImpl implements WorkflowService {
          //    String inspectionType ="PROCESS";
             String inspectionType ="Raw Material";
                if(inspectionType.equalsIgnoreCase("PROCESS") && last.getNextRoleName().equalsIgnoreCase("IE")){
-                   validateProcessIeAction(last.getProcessIeUserId(),createdBy);
+                 //  validateProcessIeAction(last.getProcessIeUserId(),createdBy);
+                   validateProcessIeAction(
+                           last.getProcessIeUserId().longValue(),
+                           createdBy.longValue()
+                   );
+
                }else {
                    if (last.getAssignedToUser() == null ||
                            !last.getAssignedToUser().equals(createdBy)) {// Only assigned IE can act
@@ -304,6 +309,42 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         return mapWorkflowTransition(entry);
     }
+    private void validateProcessIeAction(Long processIeUserId, Long actionBy) {
+
+        List<ProcessIeUsers> mappings =
+                processIeUsersRepository.findAllByProcessUserId(Math.toIntExact(processIeUserId));
+
+        if (mappings.isEmpty()) {
+            throw new BusinessException(
+                    new ErrorDetails(
+                            AppConstant.ERROR_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "No IE users mapped under Process IE user: " + processIeUserId
+                    )
+            );
+        }
+
+        List<Long> allowedUsers = mappings.stream()
+                .map(ProcessIeUsers::getIeUserId)
+                .collect(Collectors.toList());
+
+        allowedUsers.add(processIeUserId);
+
+        if (!allowedUsers.contains(actionBy)) {
+            throw new InvalidInputException(
+                    new ErrorDetails(
+                            AppConstant.ACCESS_DENIED,
+                            AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "You are not authorized to perform this action. " +
+                                    "User " + actionBy + " is not under Process IE user " + processIeUserId
+                    )
+            );
+        }
+    }
+
+/*
     private void validateProcessIeAction(Integer processIeUserId, Integer actionBy) {
 
 
@@ -338,7 +379,8 @@ public class WorkflowServiceImpl implements WorkflowService {
                     )
             );
         }
-    }
+    }*/
+
 
 
     @Override
@@ -397,7 +439,12 @@ public class WorkflowServiceImpl implements WorkflowService {
 //            String inspectionType ="PROCESS";
             String inspectionType ="Raw Material";
             if(inspectionType.equalsIgnoreCase("PROCESS")){
-                validateProcessIeAction(last.getProcessIeUserId(),req.getActionBy());
+              //  validateProcessIeAction(last.getProcessIeUserId(),req.getActionBy());
+                validateProcessIeAction(
+                        last.getProcessIeUserId().longValue(),
+                        req.getActionBy().longValue()
+                );
+
             }else if (last.getAssignedToUser() == null ||
                     !last.getAssignedToUser().equals(req.getActionBy())) {
 
