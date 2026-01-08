@@ -4,41 +4,38 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 /**
- * DTO for per-heat final results including pre-inspection data.
+ * DTO for per-heat final results.
+ * Stores final inspection results, submodule statuses, and cumulative summary data.
  */
 @Data
 public class RmHeatFinalResultDto {
 
     private String inspectionCallNo;
-    private Integer heatIndex;
     private String heatNo;
 
-    // Heat Pre-Inspection Data
-    private String tcNo;
-    private String tcDate;
-    private String manufacturerName;
-    private String invoiceNumber;
-    private String invoiceDate;
-    private String subPoNumber;
-    private String subPoDate;
-    private BigDecimal subPoQty;
-    private String totalValueOfPo;
-    private BigDecimal tcQuantity;
-    private BigDecimal offeredQty;
-    private String colorCode;
-
-    // Final Status and Weights
-    private String status;
+    // Weights (MT)
     private BigDecimal weightOfferedMt;
     private BigDecimal weightAcceptedMt;
     private BigDecimal weightRejectedMt;
 
-    // Per-Submodule Status
+    // Submodule Statuses
     private String calibrationStatus;
     private String visualStatus;
     private String dimensionalStatus;
     private String materialTestStatus;
     private String packingStatus;
+
+    // Final Status
+    private String status;
+    private String overallStatus; // ACCEPTED / PARTIALLY_ACCEPTED / REJECTED / PENDING
+
+    // Cumulative Summary (per Inspection Call)
+    private Integer totalHeatsOffered;
+    private BigDecimal totalQtyOfferedMt;
+    private Integer noOfBundles;
+    private Integer noOfErcFinished;
+
+    // Remarks
     private String remarks;
 }
 

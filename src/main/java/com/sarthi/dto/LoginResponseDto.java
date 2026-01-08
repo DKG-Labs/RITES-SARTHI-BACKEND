@@ -11,4 +11,5 @@ public class LoginResponseDto {
     private String userName;
     private String roleName;
     private String token;
+    private String shortName;  // IE short name for IC number generation
 }

@@ -74,23 +74,13 @@ public class InspectionSectionServiceImpl implements InspectionSectionService {
     private MainPoInformationDto updateMainPoInformationEntity(MainPoInformation entity, MainPoInformationDto dto, String userId) {
         entity.setPoNo(dto.getPoNo());
         entity.setPoDate(dto.getPoDate());
-        entity.setVendorCode(dto.getVendorCode());
-        entity.setVendorName(dto.getVendorName());
-        entity.setVendorAddress(dto.getVendorAddress());
-        entity.setPlaceOfInspection(dto.getPlaceOfInspection());
-        entity.setManufacturer(dto.getManufacturer());
-        entity.setConsigneeRly(dto.getConsigneeRly());
-        entity.setConsignee(dto.getConsignee());
-        entity.setItemDescription(dto.getItemDescription());
         entity.setPoQty(dto.getPoQty());
-        entity.setUnit(dto.getUnit());
-        entity.setOrigDp(dto.getOrigDp());
-        entity.setExtDp(dto.getExtDp());
-        entity.setOrigDpStart(dto.getOrigDpStart());
-        entity.setBpo(dto.getBpo());
-        entity.setDateOfInspection(dto.getDateOfInspection());
-        entity.setShiftOfInspection(dto.getShiftOfInspection());
-        entity.setOfferedQty(dto.getOfferedQty());
+        entity.setPlaceOfInspection(dto.getPlaceOfInspection());
+        entity.setVendorName(dto.getVendorName());
+        entity.setMaNo(dto.getMaNo());
+        entity.setMaDate(dto.getMaDate());
+        entity.setPurchasingAuthority(dto.getPurchasingAuthority());
+        entity.setBillPayingOfficer(dto.getBillPayingOfficer());
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : "pending");
         entity.setRejectionRemarks(dto.getRejectionRemarks());
         entity.setUpdatedBy(userId);
@@ -401,31 +391,38 @@ public class InspectionSectionServiceImpl implements InspectionSectionService {
     private MainPoInformation mapToMainPoEntity(MainPoInformationDto dto) {
         MainPoInformation e = new MainPoInformation();
         e.setInspectionCallNo(dto.getInspectionCallNo());
-        e.setPoNo(dto.getPoNo()); e.setPoDate(dto.getPoDate()); e.setVendorCode(dto.getVendorCode());
-        e.setVendorName(dto.getVendorName()); e.setVendorAddress(dto.getVendorAddress());
-        e.setPlaceOfInspection(dto.getPlaceOfInspection()); e.setManufacturer(dto.getManufacturer());
-        e.setConsigneeRly(dto.getConsigneeRly()); e.setConsignee(dto.getConsignee());
-        e.setItemDescription(dto.getItemDescription()); e.setPoQty(dto.getPoQty()); e.setUnit(dto.getUnit());
-        e.setOrigDp(dto.getOrigDp()); e.setExtDp(dto.getExtDp()); e.setOrigDpStart(dto.getOrigDpStart());
-        e.setBpo(dto.getBpo()); e.setDateOfInspection(dto.getDateOfInspection());
-        e.setShiftOfInspection(dto.getShiftOfInspection()); e.setOfferedQty(dto.getOfferedQty());
+        e.setPoNo(dto.getPoNo());
+        e.setPoDate(dto.getPoDate());
+        e.setPoQty(dto.getPoQty());
+        e.setPlaceOfInspection(dto.getPlaceOfInspection());
+        e.setVendorName(dto.getVendorName());
+        e.setMaNo(dto.getMaNo());
+        e.setMaDate(dto.getMaDate());
+        e.setPurchasingAuthority(dto.getPurchasingAuthority());
+        e.setBillPayingOfficer(dto.getBillPayingOfficer());
         e.setStatus(dto.getStatus() != null ? dto.getStatus() : "pending");
         return e;
     }
 
     private MainPoInformationDto mapToMainPoDto(MainPoInformation e) {
         MainPoInformationDto d = new MainPoInformationDto();
-        d.setId(e.getId()); d.setInspectionCallNo(e.getInspectionCallNo()); d.setPoNo(e.getPoNo());
-        d.setPoDate(e.getPoDate()); d.setVendorCode(e.getVendorCode()); d.setVendorName(e.getVendorName());
-        d.setVendorAddress(e.getVendorAddress()); d.setPlaceOfInspection(e.getPlaceOfInspection());
-        d.setManufacturer(e.getManufacturer()); d.setConsigneeRly(e.getConsigneeRly());
-        d.setConsignee(e.getConsignee()); d.setItemDescription(e.getItemDescription());
-        d.setPoQty(e.getPoQty()); d.setUnit(e.getUnit()); d.setOrigDp(e.getOrigDp()); d.setExtDp(e.getExtDp());
-        d.setOrigDpStart(e.getOrigDpStart()); d.setBpo(e.getBpo()); d.setDateOfInspection(e.getDateOfInspection());
-        d.setShiftOfInspection(e.getShiftOfInspection()); d.setOfferedQty(e.getOfferedQty());
-        d.setStatus(e.getStatus()); d.setRejectionRemarks(e.getRejectionRemarks());
-        d.setCreatedBy(e.getCreatedBy()); d.setCreatedDate(e.getCreatedDate());
-        d.setUpdatedBy(e.getUpdatedBy()); d.setUpdatedDate(e.getUpdatedDate());
+        d.setId(e.getId());
+        d.setInspectionCallNo(e.getInspectionCallNo());
+        d.setPoNo(e.getPoNo());
+        d.setPoDate(e.getPoDate());
+        d.setPoQty(e.getPoQty());
+        d.setPlaceOfInspection(e.getPlaceOfInspection());
+        d.setVendorName(e.getVendorName());
+        d.setMaNo(e.getMaNo());
+        d.setMaDate(e.getMaDate());
+        d.setPurchasingAuthority(e.getPurchasingAuthority());
+        d.setBillPayingOfficer(e.getBillPayingOfficer());
+        d.setStatus(e.getStatus());
+        d.setRejectionRemarks(e.getRejectionRemarks());
+        d.setCreatedBy(e.getCreatedBy());
+        d.setCreatedDate(e.getCreatedDate());
+        d.setUpdatedBy(e.getUpdatedBy());
+        d.setUpdatedDate(e.getUpdatedDate());
         return d;
     }
 
@@ -438,6 +435,7 @@ public class InspectionSectionServiceImpl implements InspectionSectionService {
         e.setRlyPoNoSr(dto.getRlyPoNoSr());
         e.setItemDesc(dto.getItemDesc());
         e.setProductType(dto.getProductType());
+        e.setTypeOfErc(dto.getTypeOfErc()); // Type of ERC: MK-III, MK-V, etc.
         e.setPoQty(dto.getPoQty());
         e.setUnit(dto.getUnit());
         e.setConsigneeRly(dto.getConsigneeRly());
@@ -464,6 +462,7 @@ public class InspectionSectionServiceImpl implements InspectionSectionService {
         d.setRlyPoNoSr(e.getRlyPoNoSr());
         d.setItemDesc(e.getItemDesc());
         d.setProductType(e.getProductType());
+        d.setTypeOfErc(e.getTypeOfErc()); // Type of ERC: MK-III, MK-V, etc.
         d.setPoQty(e.getPoQty());
         d.setUnit(e.getUnit());
         d.setConsigneeRly(e.getConsigneeRly());

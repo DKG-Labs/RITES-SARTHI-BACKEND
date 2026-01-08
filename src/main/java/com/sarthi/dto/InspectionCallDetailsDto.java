@@ -35,6 +35,10 @@ public class InspectionCallDetailsDto {
     @Size(max = 50, message = "Product type must not exceed 50 characters")
     private String productType;
 
+    /* Type of ERC: Raw Material, Process, Final */
+    @Size(max = 50, message = "Type of ERC must not exceed 50 characters")
+    private String typeOfErc;
+
     private BigDecimal poQty;
 
     @Size(max = 20, message = "Unit must not exceed 20 characters")

@@ -1,11 +1,20 @@
 package com.sarthi.entity;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * Entity representing Section A: Main PO Information.
@@ -35,56 +44,26 @@ public class MainPoInformation extends BaseAuditEntity {
     @Column(name = "po_date")
     private LocalDate poDate;
 
-    @Column(name = "vendor_code", length = 50)
-    private String vendorCode;
-
-    @Column(name = "vendor_name", length = 200)
-    private String vendorName;
-
-    @Column(name = "vendor_address", columnDefinition = "TEXT")
-    private String vendorAddress;
+    @Column(name = "po_qty", precision = 15, scale = 3)
+    private BigDecimal poQty;
 
     @Column(name = "place_of_inspection", length = 200)
     private String placeOfInspection;
 
-    @Column(name = "manufacturer", length = 200)
-    private String manufacturer;
+    @Column(name = "vendor_name", length = 200)
+    private String vendorName;
 
-    @Column(name = "consignee_rly", length = 100)
-    private String consigneeRly;
+    @Column(name = "ma_no", length = 100)
+    private String maNo;
 
-    @Column(name = "consignee", length = 200)
-    private String consignee;
+    @Column(name = "ma_date", length = 255)
+    private String maDate;
 
-    @Column(name = "item_description", columnDefinition = "TEXT")
-    private String itemDescription;
+    @Column(name = "purchasing_authority", length = 200)
+    private String purchasingAuthority;
 
-    @Column(name = "po_qty", precision = 15, scale = 3)
-    private BigDecimal poQty;
-
-    @Column(name = "unit", length = 20)
-    private String unit;
-
-    @Column(name = "orig_dp", length = 50)
-    private String origDp;
-
-    @Column(name = "ext_dp", length = 50)
-    private String extDp;
-
-    @Column(name = "orig_dp_start")
-    private LocalDate origDpStart;
-
-    @Column(name = "bpo", length = 200)
-    private String bpo;
-
-    @Column(name = "date_of_inspection")
-    private LocalDate dateOfInspection;
-
-    @Column(name = "shift_of_inspection", length = 20)
-    private String shiftOfInspection;
-
-    @Column(name = "offered_qty", precision = 15, scale = 3)
-    private BigDecimal offeredQty;
+    @Column(name = "bill_paying_officer", length = 200)
+    private String billPayingOfficer;
 
     /* Approval status: pending, approved, rejected */
     @Column(name = "status", length = 20)

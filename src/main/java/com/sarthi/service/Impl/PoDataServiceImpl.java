@@ -2,12 +2,14 @@ package com.sarthi.service.Impl;
 
 import com.sarthi.dto.po.PoDataForSectionsDto;
 import com.sarthi.entity.CricsPos.PoMaHeader;
+import com.sarthi.entity.InspectionCallDetails;
 import com.sarthi.entity.InventoryEntry;
 import com.sarthi.entity.PoHeader;
 import com.sarthi.entity.PoItem;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.entity.rawmaterial.RmInspectionDetails;
 import com.sarthi.entity.rawmaterial.RmHeatQuantity;
+import com.sarthi.repository.InspectionCallDetailsRepository;
 import com.sarthi.repository.InventoryEntryRepository;
 import com.sarthi.repository.PoHeaderRepository;
 import com.sarthi.repository.PoMaHeaderRepository;
@@ -42,6 +44,9 @@ public class PoDataServiceImpl implements PoDataService {
 
     @Autowired
     private InspectionCallRepository inspectionCallRepository;
+
+    @Autowired
+    private InspectionCallDetailsRepository inspectionCallDetailsRepository;
 
     @Autowired
     private RmInspectionDetailsRepository rmInspectionDetailsRepository;
@@ -134,8 +139,18 @@ public class PoDataServiceImpl implements PoDataService {
 
         // Section B: Additional fields from inspection_calls and rm_inspection_details
         if (inspectionCall != null) {
-            // Set ERC Type from inspection_calls table
-            dto.setErcType(inspectionCall.getErcType());
+            // Try to fetch Type of ERC from inspection_call_details table (Section B)
+            // This is the approved value from Section B, which takes priority
+            Optional<InspectionCallDetails> callDetailsOpt =
+                inspectionCallDetailsRepository.findByInspectionCallNo(inspectionCall.getIcNumber());
+
+            if (callDetailsOpt.isPresent() && callDetailsOpt.get().getTypeOfErc() != null) {
+                // Use Type of ERC from Section B (inspection_call_details)
+                dto.setErcType(callDetailsOpt.get().getTypeOfErc());
+            } else {
+                // Fallback to inspection_calls.erc_type if Section B not yet approved
+                dto.setErcType(inspectionCall.getErcType());
+            }
 
             // Fetch RM inspection details to get total_offered_qty_mt
             Optional<RmInspectionDetails> rmDetailsOpt = rmInspectionDetailsRepository.findByIcId(inspectionCall.getId());
