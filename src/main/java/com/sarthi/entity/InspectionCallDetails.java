@@ -46,6 +46,10 @@ public class InspectionCallDetails extends BaseAuditEntity {
     @Column(name = "product_type", length = 50)
     private String productType;
 
+    /* Type of ERC: Raw Material, Process, Final */
+    @Column(name = "type_of_erc", length = 50)
+    private String typeOfErc;
+
     @Column(name = "po_qty", precision = 15, scale = 3)
     private BigDecimal poQty;
 

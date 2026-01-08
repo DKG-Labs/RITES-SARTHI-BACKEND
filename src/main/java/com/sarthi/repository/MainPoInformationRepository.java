@@ -35,8 +35,8 @@ public interface MainPoInformationRepository extends JpaRepository<MainPoInforma
     List<MainPoInformation> findByStatus(String status);
 
     /**
-     * Find all MainPoInformation by vendor code
+     * Find all MainPoInformation by vendor name
      */
-    List<MainPoInformation> findByVendorCode(String vendorCode);
+    List<MainPoInformation> findByVendorName(String vendorName);
 }
 

@@ -26,50 +26,25 @@ public class MainPoInformationDto {
 
     private LocalDate poDate;
 
-    @Size(max = 50, message = "Vendor code must not exceed 50 characters")
-    private String vendorCode;
-
-    @Size(max = 200, message = "Vendor name must not exceed 200 characters")
-    private String vendorName;
-
-    private String vendorAddress;
+    private BigDecimal poQty;
 
     @Size(max = 200, message = "Place of inspection must not exceed 200 characters")
     private String placeOfInspection;
 
-    @Size(max = 200, message = "Manufacturer must not exceed 200 characters")
-    private String manufacturer;
+    @Size(max = 200, message = "Vendor name must not exceed 200 characters")
+    private String vendorName;
 
-    @Size(max = 100, message = "Consignee RLY must not exceed 100 characters")
-    private String consigneeRly;
+    @Size(max = 100, message = "Amendment number must not exceed 100 characters")
+    private String maNo;
 
-    @Size(max = 200, message = "Consignee must not exceed 200 characters")
-    private String consignee;
+    @Size(max = 255, message = "Amendment date must not exceed 255 characters")
+    private String maDate;
 
-    private String itemDescription;
+    @Size(max = 200, message = "Purchasing authority must not exceed 200 characters")
+    private String purchasingAuthority;
 
-    private BigDecimal poQty;
-
-    @Size(max = 20, message = "Unit must not exceed 20 characters")
-    private String unit;
-
-    @Size(max = 50, message = "Original DP must not exceed 50 characters")
-    private String origDp;
-
-    @Size(max = 50, message = "Extended DP must not exceed 50 characters")
-    private String extDp;
-
-    private LocalDate origDpStart;
-
-    @Size(max = 200, message = "BPO must not exceed 200 characters")
-    private String bpo;
-
-    private LocalDate dateOfInspection;
-
-    @Size(max = 20, message = "Shift of inspection must not exceed 20 characters")
-    private String shiftOfInspection;
-
-    private BigDecimal offeredQty;
+    @Size(max = 200, message = "Bill paying officer must not exceed 200 characters")
+    private String billPayingOfficer;
 
     /* Approval status: pending, approved, rejected */
     private String status;

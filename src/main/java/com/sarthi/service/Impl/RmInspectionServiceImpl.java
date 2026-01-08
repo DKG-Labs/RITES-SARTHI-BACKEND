@@ -2,8 +2,10 @@ package com.sarthi.service.Impl;
 
 import com.sarthi.dto.*;
 import com.sarthi.entity.*;
+import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.entity.rawmaterial.RmChemicalAnalysis;
 import com.sarthi.repository.*;
+import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.repository.rawmaterial.RmChemicalAnalysisRepository;
 import com.sarthi.service.RmInspectionService;
 import org.slf4j.Logger;
@@ -52,6 +54,9 @@ public class RmInspectionServiceImpl implements RmInspectionService {
     @Autowired
     private RmChemicalAnalysisRepository chemicalAnalysisRepository;
 
+    @Autowired
+    private InspectionCallRepository inspectionCallRepository;
+
     @Override
     @Transactional
     public String finishInspection(RmFinishInspectionDto dto) {
@@ -99,6 +104,13 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             saveCalibrationDocuments(callNo, dto.getCalibrationDocumentsData());
         }
 
+        // 8. Update Inspection Call Status to COMPLETED
+        InspectionCall inspectionCall = inspectionCallRepository.findByIcNumber(callNo)
+                .orElseThrow(() -> new IllegalArgumentException("Inspection call not found: " + callNo));
+        inspectionCall.setStatus("COMPLETED");
+        inspectionCallRepository.save(inspectionCall);
+        logger.info("Updated inspection call status to COMPLETED for call: {}", callNo);
+
         logger.info("RM inspection saved successfully for call: {}", callNo);
         return "Raw Material Inspection saved successfully";
     }
@@ -141,21 +153,7 @@ public class RmInspectionServiceImpl implements RmInspectionService {
         for (RmHeatFinalResultDto dto : results) {
             RmHeatFinalResult entity = new RmHeatFinalResult();
             entity.setInspectionCallNo(callNo);
-            entity.setHeatIndex(dto.getHeatIndex());
             entity.setHeatNo(dto.getHeatNo());
-            entity.setTcNo(dto.getTcNo());
-            entity.setTcDate(parseDate(dto.getTcDate()));
-            entity.setManufacturerName(dto.getManufacturerName());
-            entity.setInvoiceNumber(dto.getInvoiceNumber());
-            entity.setInvoiceDate(parseDate(dto.getInvoiceDate()));
-            entity.setSubPoNumber(dto.getSubPoNumber());
-            entity.setSubPoDate(parseDate(dto.getSubPoDate()));
-            entity.setSubPoQty(dto.getSubPoQty());
-            entity.setTotalValueOfPo(dto.getTotalValueOfPo());
-            entity.setTcQuantity(dto.getTcQuantity());
-            entity.setOfferedQty(dto.getOfferedQty());
-            entity.setColorCode(dto.getColorCode());
-            entity.setStatus(dto.getStatus());
             entity.setWeightOfferedMt(dto.getWeightOfferedMt());
             entity.setWeightAcceptedMt(dto.getWeightAcceptedMt());
             entity.setWeightRejectedMt(dto.getWeightRejectedMt());
@@ -164,6 +162,12 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             entity.setDimensionalStatus(dto.getDimensionalStatus());
             entity.setMaterialTestStatus(dto.getMaterialTestStatus());
             entity.setPackingStatus(dto.getPackingStatus());
+            entity.setStatus(dto.getStatus());
+            entity.setOverallStatus(dto.getOverallStatus());
+            entity.setTotalHeatsOffered(dto.getTotalHeatsOffered());
+            entity.setTotalQtyOfferedMt(dto.getTotalQtyOfferedMt());
+            entity.setNoOfBundles(dto.getNoOfBundles());
+            entity.setNoOfErcFinished(dto.getNoOfErcFinished());
             entity.setRemarks(dto.getRemarks());
             heatResultRepository.save(entity);
         }
@@ -327,21 +331,7 @@ public class RmInspectionServiceImpl implements RmInspectionService {
         for (RmHeatFinalResult entity : heatResults) {
             RmHeatFinalResultDto heatDto = new RmHeatFinalResultDto();
             heatDto.setInspectionCallNo(entity.getInspectionCallNo());
-            heatDto.setHeatIndex(entity.getHeatIndex());
             heatDto.setHeatNo(entity.getHeatNo());
-            heatDto.setTcNo(entity.getTcNo());
-            heatDto.setTcDate(formatDate(entity.getTcDate()));
-            heatDto.setManufacturerName(entity.getManufacturerName());
-            heatDto.setInvoiceNumber(entity.getInvoiceNumber());
-            heatDto.setInvoiceDate(formatDate(entity.getInvoiceDate()));
-            heatDto.setSubPoNumber(entity.getSubPoNumber());
-            heatDto.setSubPoDate(formatDate(entity.getSubPoDate()));
-            heatDto.setSubPoQty(entity.getSubPoQty());
-            heatDto.setTotalValueOfPo(entity.getTotalValueOfPo());
-            heatDto.setTcQuantity(entity.getTcQuantity());
-            heatDto.setOfferedQty(entity.getOfferedQty());
-            heatDto.setColorCode(entity.getColorCode());
-            heatDto.setStatus(entity.getStatus());
             heatDto.setWeightOfferedMt(entity.getWeightOfferedMt());
             heatDto.setWeightAcceptedMt(entity.getWeightAcceptedMt());
             heatDto.setWeightRejectedMt(entity.getWeightRejectedMt());
@@ -350,6 +340,12 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             heatDto.setDimensionalStatus(entity.getDimensionalStatus());
             heatDto.setMaterialTestStatus(entity.getMaterialTestStatus());
             heatDto.setPackingStatus(entity.getPackingStatus());
+            heatDto.setStatus(entity.getStatus());
+            heatDto.setOverallStatus(entity.getOverallStatus());
+            heatDto.setTotalHeatsOffered(entity.getTotalHeatsOffered());
+            heatDto.setTotalQtyOfferedMt(entity.getTotalQtyOfferedMt());
+            heatDto.setNoOfBundles(entity.getNoOfBundles());
+            heatDto.setNoOfErcFinished(entity.getNoOfErcFinished());
             heatDto.setRemarks(entity.getRemarks());
             heatResultDtos.add(heatDto);
         }
@@ -509,21 +505,7 @@ public class RmInspectionServiceImpl implements RmInspectionService {
         for (RmHeatFinalResult entity : entities) {
             RmHeatFinalResultDto dto = new RmHeatFinalResultDto();
             dto.setInspectionCallNo(entity.getInspectionCallNo());
-            dto.setHeatIndex(entity.getHeatIndex());
             dto.setHeatNo(entity.getHeatNo());
-            dto.setTcNo(entity.getTcNo());
-            dto.setTcDate(formatDate(entity.getTcDate()));
-            dto.setManufacturerName(entity.getManufacturerName());
-            dto.setInvoiceNumber(entity.getInvoiceNumber());
-            dto.setInvoiceDate(formatDate(entity.getInvoiceDate()));
-            dto.setSubPoNumber(entity.getSubPoNumber());
-            dto.setSubPoDate(formatDate(entity.getSubPoDate()));
-            dto.setSubPoQty(entity.getSubPoQty());
-            dto.setTotalValueOfPo(entity.getTotalValueOfPo());
-            dto.setTcQuantity(entity.getTcQuantity());
-            dto.setOfferedQty(entity.getOfferedQty());
-            dto.setColorCode(entity.getColorCode());
-            dto.setStatus(entity.getStatus());
             dto.setWeightOfferedMt(entity.getWeightOfferedMt());
             dto.setWeightAcceptedMt(entity.getWeightAcceptedMt());
             dto.setWeightRejectedMt(entity.getWeightRejectedMt());
@@ -532,6 +514,12 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             dto.setDimensionalStatus(entity.getDimensionalStatus());
             dto.setMaterialTestStatus(entity.getMaterialTestStatus());
             dto.setPackingStatus(entity.getPackingStatus());
+            dto.setStatus(entity.getStatus());
+            dto.setOverallStatus(entity.getOverallStatus());
+            dto.setTotalHeatsOffered(entity.getTotalHeatsOffered());
+            dto.setTotalQtyOfferedMt(entity.getTotalQtyOfferedMt());
+            dto.setNoOfBundles(entity.getNoOfBundles());
+            dto.setNoOfErcFinished(entity.getNoOfErcFinished());
             dto.setRemarks(entity.getRemarks());
             dtos.add(dto);
         }

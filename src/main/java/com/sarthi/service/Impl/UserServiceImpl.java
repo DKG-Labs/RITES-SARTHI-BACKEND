@@ -428,7 +428,9 @@ public UserDto createUser(userRequestDto userDto) {
                 user.getUsername(),
                 user.getRoleName(),
                 token,
-                rio
+                rio,
+                user.getShortName()  // Include shortName for IC number generation
+
         );
     }
 
