@@ -1,5 +1,6 @@
 package com.sarthi.service;
 
+import com.sarthi.dto.IcWorkflowTransitionDto;
 import com.sarthi.dto.WorkflowDto;
 import com.sarthi.dto.WorkflowDtos.TransitionActionReqDto;
 import com.sarthi.dto.WorkflowDtos.TransitionDto;
@@ -27,4 +28,6 @@ public interface WorkflowService {
     public WorkflowDto workflowByWorkflowName(String workflowName);
 
     public List<TransitionDto> transitionsByWorkflowId(Integer workflowId);
+
+    public List<IcWorkflowTransitionDto> getInspectionCompletedByCreatedUser(Integer createdBy);
 }

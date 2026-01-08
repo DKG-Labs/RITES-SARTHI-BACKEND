@@ -1,13 +1,11 @@
 package com.sarthi.service.Impl;
 
 import com.sarthi.constant.AppConstant;
-import com.sarthi.dto.IePinPoiDto;
-import com.sarthi.dto.LoginRequestDto;
-import com.sarthi.dto.LoginResponseDto;
-import com.sarthi.dto.UserDto;
+import com.sarthi.dto.*;
 import com.sarthi.dto.WorkflowDtos.userRequestDto;
 import com.sarthi.entity.*;
 import com.sarthi.entity.ProcessIeMapping;
+import com.sarthi.entity.ProcessIeUsers;
 import com.sarthi.exception.BusinessException;
 import com.sarthi.exception.ErrorDetails;
 import com.sarthi.repository.*;
@@ -57,6 +55,10 @@ public class UserServiceImpl implements UserService {
     private ieControllingManagerRepository ieControllingManagerRepository;
     @Autowired
     private RioUserRepository rioUserRepository;
+    @Autowired
+    private  ProcessIeUsersRepository processIeUsersRepository;
+    @Autowired
+    private IePoiMappingRepository iePoiMappingRepository;
 
 /*
     @Override
@@ -260,7 +262,7 @@ public UserDto createUser(userRequestDto userDto) {
             sbu.setSbuHeadUserId(userMaster.getUserId());
             regionSbuHeadRepository.save(sbu);
         }
-
+/*
         // Save Process IE + multiple IE mappings
         if (roleName.equalsIgnoreCase("Process IE")) {
 
@@ -288,7 +290,49 @@ public UserDto createUser(userRequestDto userDto) {
                 mapping.setCreatedBy(userDto.getCreatedBy());
                 processIeMappingRepository.save(mapping);
             }
+
+    }*/
+        if (roleName.equalsIgnoreCase("Process IE")) {
+
+            if (userDto.getIePoiMappings() == null || userDto.getIePoiMappings().isEmpty()) {
+                throw new BusinessException(new ErrorDetails(
+                        AppConstant.ERROR_CODE_RESOURCE,
+                        AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                        AppConstant.ERROR_TYPE_VALIDATION,
+                        "IE and POI mapping is required for Process IE"
+                ));
+            }
+
+
+            for (IePoiMappingDto ieDto : userDto.getIePoiMappings()) {
+
+                // Save Process IE → IE mapping
+                ProcessIeUsers map = new ProcessIeUsers();
+                map.setProcessUserId(userMaster.getUserId().longValue());
+                map.setIeUserId(ieDto.getIeUserId());
+                map.setCreatedBy(Long.valueOf(userDto.getCreatedBy()));
+                map.setCreatedDate(new Date());
+
+                processIeUsersRepository.save(map);
+
+                //  Save IE → multiple POIs (NEW TABLE)
+                if (ieDto.getPoiCodes() != null && !ieDto.getPoiCodes().isEmpty()) {
+
+                    for (String poi : ieDto.getPoiCodes()) {
+
+                        IePoiMapping poiMap = new IePoiMapping();
+                        poiMap.setIeUserId(ieDto.getIeUserId());
+                        poiMap.setPoiCode(poi);
+                        poiMap.setCreatedBy(Long.valueOf(userDto.getCreatedBy()));
+                        poiMap.setCreatedDate(new Date());
+
+                        iePoiMappingRepository.save(poiMap);
+                    }
+                }
+            }
+
         }
+
         boolean isIeRole = userDto.getRoleNames().stream()
                 .anyMatch(r -> r.equalsIgnoreCase("IE")
                         || r.equalsIgnoreCase("IE Secondary"));

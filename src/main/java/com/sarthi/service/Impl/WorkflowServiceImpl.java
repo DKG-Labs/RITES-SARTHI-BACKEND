@@ -1,6 +1,7 @@
 package com.sarthi.service.Impl;
 
 import com.sarthi.constant.AppConstant;
+import com.sarthi.dto.IcWorkflowTransitionDto;
 import com.sarthi.dto.WorkflowDto;
 import com.sarthi.dto.WorkflowDtos.TransitionActionReqDto;
 import com.sarthi.dto.WorkflowDtos.TransitionDto;
@@ -13,6 +14,7 @@ import com.sarthi.exception.InvalidInputException;
 import com.sarthi.repository.*;
 import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.service.WorkflowService;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -64,9 +66,13 @@ public class WorkflowServiceImpl implements WorkflowService {
     private PincodePoIMappingRepository pincodePoIMappingRepository;
     @Autowired
     private IePincodePoiMappingRepository iePincodePoiMappingRepository;
-@Autowired
+    @Autowired
     private ieControllingManagerRepository ieControllingManagerRepository;
 
+    @Autowired
+    private  ProcessIeUsersRepository processIeUsersRepository;
+    @Autowired
+    private IePoiMappingRepository iePoiMappingRepository;
 
 
 
@@ -249,6 +255,10 @@ public class WorkflowServiceImpl implements WorkflowService {
               String stage = null;
               if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
                   stage ="R";
+              }else if(ic.getTypeOfCall().equalsIgnoreCase("Process")){
+                  stage="P";
+              }else{
+                  stage="F";
               }
               String product ="ERC";
               String pinCode = poi.getPinCode();
@@ -714,14 +724,22 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
     );
     workflowTransitionRepository.save(verified);
 
-    String inspectionType ="RAW_MATERIAL";
+
+    Optional<InspectionCall> i = inspectionCallRepository.findByIcNumber(req.getRequestId());
+    InspectionCall insp = null;
+    if(i.isPresent()){
+        insp = i.get();
+    }
+
+
+    String inspectionType =insp.getTypeOfCall();
    // String  inspectionType ="PROCESS";
    // String inspectionType ="PROCESS";
     // Get actual inspection type
   //  String inspectionType = req.getInspectionType(); // RAW_MATERIAL / FINAL / PROCESS
 
     // RAW MATERIAL → Send to Finance
-    if ("RAW_MATERIAL".equalsIgnoreCase(inspectionType)) {
+    if ("Raw Material".equalsIgnoreCase(inspectionType)) {
 
         TransitionMaster paymentVerifyTransition =
                 transitionMasterRepository.findByTransitionName("PAYMENT_VERIFICATION");
@@ -756,7 +774,7 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
     if ("PROCESS".equalsIgnoreCase(inspectionType)) {
 
         // First time PROCESS IE assignment → use the Process IE user ID
-        Integer processIeUserId = getProcessIeUserFromCluster(req.getPincode());
+        Integer processIeUserId = getProcessIeUserFromPoi(insp.getPlaceOfInspection());
 
         callReg.setAssignedToUser(processIeUserId);
         callReg.setProcessIeUserId(processIeUserId);
@@ -1366,6 +1384,19 @@ private Integer assignIE(
             i = ic.get();
         }
         WorkflowTransitionDto dto = new WorkflowTransitionDto();
+        if(wt.getProcessIeUserId()!= null) {
+            int processIe = wt.getProcessIeUserId();
+            String poi = i.getPlaceOfInspection();
+
+            List<Integer> ieUsers = null;
+
+            ieUsers = getIeUsersByProcessIeAndPoi(processIe, poi);
+
+
+            ieUsers.add(processIe);
+            dto.setProcessIes(ieUsers);
+        }
+
         dto.setWorkflowTransitionId(wt.getWorkflowTransitionId());
         dto.setWorkflowId(wt.getWorkflowId());
         dto.setTransitionId(wt.getTransitionId());
@@ -1382,6 +1413,8 @@ private Integer assignIE(
         dto.setWorkflowSequence(wt.getWorkflowSequence());
         dto.setModifiedBy(wt.getModifiedBy());
         dto.setRio(wt.getRio());
+
+
         if(ic.isPresent()){
             dto.setPoNo(i.getPoNo());
             dto.setVendorName(i.getVendorId());
@@ -1391,6 +1424,53 @@ private Integer assignIE(
       //  dto.setTransitionOrder(wt.getTransitionOrder());
         return dto;
     }
+
+
+    private List<Integer> getIeUsersByProcessIeAndPoi(Integer processIeUserId, String poiCode) {
+
+        //  Get all IE mappings under Process IE
+        List<ProcessIeUsers> ieMappings =
+                processIeUsersRepository.findAllByProcessUserId(processIeUserId);
+
+        if (ieMappings.isEmpty()) {
+            throw new BusinessException(
+                    new ErrorDetails(
+                            AppConstant.ERROR_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "No IE mapped to Process IE: " + processIeUserId
+                    )
+            );
+        }
+
+        //  Filter IEs by POI
+        List<Integer> ieUserIds = new ArrayList<>();
+
+        for (ProcessIeUsers map : ieMappings) {
+            Integer ieUserId = Math.toIntExact(map.getIeUserId());
+
+            boolean poiExists =
+                    iePoiMappingRepository.existsByIeUserIdAndPoiCode(ieUserId, poiCode);
+
+            if (poiExists) {
+                ieUserIds.add(ieUserId);
+            }
+        }
+
+        if (ieUserIds.isEmpty()) {
+            throw new BusinessException(
+                    new ErrorDetails(
+                            AppConstant.ERROR_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "No IE found for POI " + poiCode + " under Process IE " + processIeUserId
+                    )
+            );
+        }
+
+        return ieUserIds;
+    }
+
 
 /*
     private Integer getCmUserFromIeUser(Integer ieUserId) {
@@ -1733,29 +1813,69 @@ private Integer assignIE(
 
 
 
-    private Integer getProcessIeUserFromCluster(String pincode) {
+//    private Integer getProcessIeUserFromCluster(String pincode) {
+//
+//        // 1. Find cluster
+//        PincodeCluster cluster = pincodeClusterRepository.findByPincode(pincode)
+//                .orElseThrow(() -> new BusinessException(
+//                        new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+//                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+//                                AppConstant.ERROR_TYPE_VALIDATION,
+//                                "Cluster not found for pincode: " + pincode)
+//                ));
+//
+//        // 2. Find Process IE mapped to that cluster
+//        ProcessIeMaster process = processIeMasterRepository
+//                .findByClusterName(cluster.getClusterName())
+//                .orElseThrow(() -> new BusinessException(
+//                        new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+//                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+//                                AppConstant.ERROR_TYPE_VALIDATION,
+//                                "No Process IE found for cluster: " + cluster.getClusterName())
+//                ));
+//
+//        return process.getProcessIeUserId();
+//    }
 
-        // 1. Find cluster
-        PincodeCluster cluster = pincodeClusterRepository.findByPincode(pincode)
-                .orElseThrow(() -> new BusinessException(
-                        new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
-                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
-                                AppConstant.ERROR_TYPE_VALIDATION,
-                                "Cluster not found for pincode: " + pincode)
-                ));
+    private Integer getProcessIeUserFromPoi(String poiCode) {
 
-        // 2. Find Process IE mapped to that cluster
-        ProcessIeMaster process = processIeMasterRepository
-                .findByClusterName(cluster.getClusterName())
-                .orElseThrow(() -> new BusinessException(
-                        new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
-                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
-                                AppConstant.ERROR_TYPE_VALIDATION,
-                                "No Process IE found for cluster: " + cluster.getClusterName())
-                ));
+        //  Find all IEs for the POI
+        List<IePoiMapping> poiMappings = iePoiMappingRepository
+                .findAllByPoiCode(poiCode);
 
-        return process.getProcessIeUserId();
+        if (poiMappings.isEmpty()) {
+            throw new BusinessException(
+                    new ErrorDetails(
+                            AppConstant.ERROR_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "No IE found for POI: " + poiCode
+                    )
+            );
+        }
+
+        //  Pick Process IE from mapped IEs (first match)
+        for (IePoiMapping poiMap : poiMappings) {
+
+            Optional<ProcessIeUsers> processIeOpt =
+                    processIeUsersRepository.findByIeUserId(poiMap.getIeUserId());
+
+            if (processIeOpt.isPresent()) {
+                return processIeOpt.get().getProcessUserId().intValue();
+            }
+        }
+
+        //  No Process IE found
+        throw new BusinessException(
+                new ErrorDetails(
+                        AppConstant.ERROR_CODE_RESOURCE,
+                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                        AppConstant.ERROR_TYPE_VALIDATION,
+                        "No Process IE mapped for POI: " + poiCode
+                )
+        );
     }
+
 
 
     @Override
@@ -2039,6 +2159,69 @@ private Integer assignIE(
 
         return sbu.getSbuHeadUserId();
     }
+
+
+    @Override
+    public List<IcWorkflowTransitionDto> getInspectionCompletedByCreatedUser(Integer createdBy) {
+
+        List<WorkflowTransition> entities =
+                workflowTransitionRepository
+                        .findAllByStatusAndCreatedBy(
+                                "INSPECTION_COMPLETE_CONFIRM",
+                                createdBy
+                        );
+
+        return entities.stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
+
+    private IcWorkflowTransitionDto mapToDto(WorkflowTransition wt) {
+
+        IcWorkflowTransitionDto dto = new IcWorkflowTransitionDto();
+
+        Optional<InspectionCall> ic = inspectionCallRepository.findByIcNumber(wt.getRequestId());
+
+        if(ic.isPresent()){
+            InspectionCall ins = ic.get();
+
+            dto.setPoNo(ins.getPoNo());
+            dto.setVendorName(ins.getVendorId());
+            dto.setProductType("ERC-RAW MATERIAL");
+            dto.setStage("Raw Material Inspection");
+
+        }
+        dto.setWorkflowTransitionId(wt.getWorkflowTransitionId());
+        dto.setWorkflowId(wt.getWorkflowId());
+        dto.setTransitionId(wt.getTransitionId());
+        dto.setRequestId(wt.getRequestId());
+
+        dto.setCurrentRole(wt.getCurrentRole());
+        dto.setNextRole(wt.getNextRole());
+        dto.setCurrentRoleName(wt.getCurrentRoleName());
+        dto.setNextRoleName(wt.getNextRoleName());
+
+        dto.setStatus(wt.getStatus());
+        dto.setAction(wt.getAction());
+        dto.setRemarks(wt.getRemarks());
+
+        dto.setCreatedBy(wt.getCreatedBy());
+        dto.setModifiedBy(wt.getModifiedBy());
+
+        dto.setAssignedToUser(wt.getAssignedToUser());
+        dto.setJobStatus(wt.getJobStatus());
+
+        dto.setProcessIeUserId(wt.getProcessIeUserId());
+
+        dto.setCreatedDate(wt.getCreatedDate());
+        dto.setWorkflowSequence(wt.getWorkflowSequence());
+
+        dto.setRio(wt.getRio());
+
+        return dto;
+    }
+
 
 
 }

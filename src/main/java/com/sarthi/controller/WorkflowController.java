@@ -58,5 +58,12 @@ public class WorkflowController {
     }
 
 
+    @GetMapping("/callCompleteddata")
+    public ResponseEntity<Object> getCallCompletedData(@RequestParam Integer createdBy) {
+        return new ResponseEntity<Object>(ResponseBuilder.getSuccessResponse(workflowService. getInspectionCompletedByCreatedUser(createdBy)), HttpStatus.OK);
+    }
+
+
+
 
 }

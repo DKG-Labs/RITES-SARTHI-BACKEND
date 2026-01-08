@@ -24,7 +24,8 @@ public class ProcessInspectionCallController {
     private static final Logger logger = LoggerFactory.getLogger(ProcessInspectionCallController.class);
 
     private final ProcessInspectionCallService processInspectionCallService;
-    private final WorkflowService workflowService;
+    @Autowired
+    private WorkflowService workflowService;
 
     @Autowired
     public ProcessInspectionCallController(
@@ -69,9 +70,15 @@ public class ProcessInspectionCallController {
                 }
 
                 if (createdByUserId != null) {
+//                    workflowService.initiateWorkflow(
+//                            ic.getIcNumber(),
+//                            createdByUserId,
+//                            workflowName,
+//                            "560001"
+//                    );
                     workflowService.initiateWorkflow(
                             ic.getIcNumber(),
-                            createdByUserId,
+                            Integer.valueOf(ic.getCreatedBy()),
                             workflowName,
                             "560001"
                     );

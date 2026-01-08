@@ -1,6 +1,7 @@
 package com.sarthi.dto.WorkflowDtos;
 
 import com.sarthi.dto.IePinPoiDto;
+import com.sarthi.dto.IePoiMappingDto;
 import lombok.Data;
 
 import java.util.List;
@@ -48,6 +49,11 @@ public class userRequestDto {
 
     // IE → Controlling Manager
     private Integer controllingManagerUserId;
+
+
+
+    private List<IePoiMappingDto> iePoiMappings;
+
 
 
 }

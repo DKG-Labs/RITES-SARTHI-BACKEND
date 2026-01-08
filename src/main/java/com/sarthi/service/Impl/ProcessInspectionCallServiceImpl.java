@@ -67,6 +67,7 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
         inspectionCall.setPoSerialNo(icRequest.getPoSerialNo());
         inspectionCall.setTypeOfCall(icRequest.getTypeOfCall());
         inspectionCall.setStatus(icRequest.getStatus());
+        inspectionCall.setPlaceOfInspection("POI1");
 
         inspectionCall.setDesiredInspectionDate(
                 LocalDate.parse(icRequest.getDesiredInspectionDate())

@@ -78,4 +78,6 @@ public interface WorkflowTransitionRepository extends JpaRepository<WorkflowTran
     @Query("SELECT w FROM WorkflowTransition w WHERE w.status = 'BLOCKED'")
     List<WorkflowTransition> findBlockedTransitions();
 
+    List<WorkflowTransition> findAllByStatusAndCreatedBy(String status, Integer createdBy);
+
 }
