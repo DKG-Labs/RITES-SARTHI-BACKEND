@@ -82,6 +82,26 @@ public class WorkflowServiceImpl implements WorkflowService {
         // Validate vendor
       //  userService.validateUser(createdBy);
         validateUser(createdBy);
+
+        // 🔧 UPDATE INSPECTION CALL CREATED_BY FIELD
+        // When workflow is initiated, update the inspection_call.created_by to the actual user ID
+        try {
+            InspectionCall inspectionCall = inspectionCallRepository.findByIcNumber(requestId).orElse(null);
+            if (inspectionCall != null &&
+                (inspectionCall.getCreatedBy() == null ||
+                 inspectionCall.getCreatedBy().equalsIgnoreCase("system") ||
+                 inspectionCall.getCreatedBy().equals("0"))) {
+
+                inspectionCall.setCreatedBy(String.valueOf(createdBy));
+                inspectionCall.setUpdatedBy(String.valueOf(createdBy));
+                inspectionCallRepository.save(inspectionCall);
+                System.out.println("✅ Updated inspection_call.created_by to: " + createdBy + " for IC: " + requestId);
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Could not update inspection_call.created_by: " + e.getMessage());
+            // Don't fail the workflow if this update fails
+        }
+
         // Fetch workflow
          WorkflowMaster workflow = workflowMasterRepository.findByWorkflowName(workflowName);
 
