@@ -39,7 +39,7 @@ public class InspectionInitiationDto {
     private String initiatedBy;
     private LocalDateTime initiatedAt;
 
-    private int workflowTranstionId;
+    private int workflowTransitionId;
     private int actionBy;
 }
 

@@ -340,6 +340,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         // Validate user
        validateUser(req.getActionBy());
 
+       System.out.print(req);
         // Fetch current workflow transition
        WorkflowTransition current = workflowTransitionRepository
                 .findById(req.getWorkflowTransitionId())

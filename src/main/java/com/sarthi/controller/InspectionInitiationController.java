@@ -40,12 +40,13 @@ public class InspectionInitiationController {
 
         TransitionActionReqDto req = new TransitionActionReqDto();
 
-        req.setWorkflowTransitionId(dto.getWorkflowTranstionId());
+        req.setWorkflowTransitionId(dto.getWorkflowTransitionId());
         req.setRequestId(dto.getCallNo());
         req.setAction("ENTRY_INSPECTION_RESULTS");
         req.setActionBy(dto.getActionBy());
         req.setRemarks(dto.getRemarks());
 
+        System.out.print(req +""+ dto.getWorkflowTransitionId());
         workflowService.performTransitionAction(req);
 
 
