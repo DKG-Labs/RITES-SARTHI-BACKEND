@@ -26,8 +26,9 @@ public class VendorInspectionRequestDto {
     private String poUnit;
     private String amendmentNo;
     private String amendmentDate;
-    
-    // Vendor Contact
+
+    // Vendor Information
+    private String vendorCode;
     private String vendorContactName;
     private String vendorContactPhone;
     

@@ -217,6 +217,7 @@ public class VendorInspectionRequestServiceImpl implements VendorInspectionReque
         entity.setAmendmentNo(dto.getAmendmentNo());
         entity.setAmendmentDate(parseDate(dto.getAmendmentDate()));
 
+        entity.setVendorCode(dto.getVendorCode());
         entity.setVendorContactName(dto.getVendorContactName());
         entity.setVendorContactPhone(dto.getVendorContactPhone());
 
@@ -307,6 +308,7 @@ public class VendorInspectionRequestServiceImpl implements VendorInspectionReque
         dto.setAmendmentNo(entity.getAmendmentNo());
         dto.setAmendmentDate(formatDate(entity.getAmendmentDate()));
 
+        dto.setVendorCode(entity.getVendorCode());
         dto.setVendorContactName(entity.getVendorContactName());
         dto.setVendorContactPhone(entity.getVendorContactPhone());
 
