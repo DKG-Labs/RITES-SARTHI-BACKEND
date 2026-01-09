@@ -41,6 +41,10 @@ public interface InspectionCallRepository extends JpaRepository<InspectionCall, 
 
     List<InspectionCall> findByCompanyNameContainingIgnoreCaseOrderByCreatedAtDesc(String companyName);
 
+    /* ==================== Find by Vendor ID ==================== */
+
+    List<InspectionCall> findByVendorIdOrderByCreatedAtDesc(String vendorId);
+
     /* ==================== Custom Queries ==================== */
 
     /**
