@@ -39,4 +39,7 @@ public class WorkflowTransitionDto {
     private String rio;
 
     private List<Integer> processIes;
+
+    private List<Integer> finalIes;
+
 }

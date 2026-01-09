@@ -7,6 +7,7 @@ import com.sarthi.dto.WorkflowDtos.TransitionActionReqDto;
 import com.sarthi.dto.WorkflowDtos.TransitionDto;
 import com.sarthi.dto.WorkflowDtos.WorkflowTransitionDto;
 import com.sarthi.entity.*;
+import com.sarthi.entity.FinalIeMapping;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.exception.BusinessException;
 import com.sarthi.exception.ErrorDetails;
@@ -77,6 +78,8 @@ public class WorkflowServiceImpl implements WorkflowService {
     @Autowired
     private InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository;
 
+    @Autowired
+    private FinalIeMappingRepository finalIeMappingRepository;
 
 
     public void validateUser(Integer userId) {
@@ -92,7 +95,7 @@ public class WorkflowServiceImpl implements WorkflowService {
       //  userService.validateUser(createdBy);
         validateUser(createdBy);
 
-        // 🔧 UPDATE INSPECTION CALL CREATED_BY FIELD
+        // UPDATE INSPECTION CALL CREATED_BY FIELD
         // When workflow is initiated, update the inspection_call.created_by to the actual user ID
         try {
             InspectionCall inspectionCall = inspectionCallRepository.findByIcNumber(requestId).orElse(null);
@@ -172,6 +175,12 @@ public class WorkflowServiceImpl implements WorkflowService {
                            createdBy.longValue()
                    );
 
+               }else if (inspectionType.equalsIgnoreCase("FINAL")) {
+
+                   validateFinalIeAction(
+                           last.getWorkflowTransitionId(),
+                           createdBy
+                   );
                }else {
                    if (last.getAssignedToUser() == null ||
                            !last.getAssignedToUser().equals(createdBy)) {// Only assigned IE can act
@@ -332,6 +341,30 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         return mapWorkflowTransition(entry);
     }
+
+
+    private void validateFinalIeAction(
+            Integer workflowTransitionId,
+            Integer actionBy
+    ) {
+        boolean allowed = finalIeMappingRepository
+                .existsByWorkflowTransitionIdAndIeUserId(
+                        workflowTransitionId,
+                        actionBy
+                );
+
+        if (!allowed) {
+            throw new InvalidInputException(
+                    new ErrorDetails(
+                            AppConstant.ACCESS_DENIED,
+                            AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "You are not authorized to act on this FINAL inspection."
+                    )
+            );
+        }
+    }
+
     private void validateProcessIeAction(Long processIeUserId, Long actionBy) {
 
         List<ProcessIeUsers> mappings =
@@ -939,7 +972,35 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
         callReg.setAssignedToUser(processIeUserId);
         callReg.setProcessIeUserId(processIeUserId);
 
-    } else {
+    } else if("Final".equalsIgnoreCase(inspectionType)) {
+
+
+        //  Fetch IE mappings using POI code
+        List<IePincodePoiMapping> ieMappings =
+                iePincodePoiMappingRepository.findByPoiCode(insp.getPlaceOfInspection());
+
+        for (IePincodePoiMapping mapping : ieMappings) {
+
+            String employeeCode = mapping.getEmployeeCode();
+
+            // Fetch userId using employeeCode
+            UserMaster userOpt =
+                    userMasterRepository.findByEmployeeCode(employeeCode);
+
+                Integer userId = userOpt.getUserId();
+
+                //  Save into FINAL_IE_MAPPING
+                FinalIeMapping finalMapping = new FinalIeMapping();
+                finalMapping.setWorkflowTransitionId(
+                        callReg.getWorkflowTransitionId()
+                );
+                finalMapping.setIeUserId(userId);
+
+                finalIeMappingRepository.save(finalMapping);
+
+        }
+    }
+    else {
 
         InspectionCall ic = inspectionCallRepository.findByIcNumber(req.getRequestId())
                 .orElseThrow(() -> new BusinessException(
@@ -967,6 +1028,10 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
         String stage = null;
         if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
             stage ="R";
+        }else if(ic.getTypeOfCall().equalsIgnoreCase("Process")){
+            stage="P";
+        }else{
+            stage="F";
         }
 
 
@@ -1121,6 +1186,10 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
         String stage = null;
         if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
             stage ="R";
+        }else if(ic.getTypeOfCall().equalsIgnoreCase("Process")){
+            stage="P";
+        }else{
+            stage="F";
         }
         String product ="ERC";
         String pinCode = poi.getPinCode();
@@ -1557,6 +1626,19 @@ private Integer assignIE(
             dto.setProcessIes(ieUsers);
         }
 
+        if (i != null && "Final".equalsIgnoreCase(i.getTypeOfCall())) {
+
+            List<FinalIeMapping> mappings =
+                    finalIeMappingRepository
+                            .findByWorkflowTransitionId(wt.getWorkflowTransitionId());
+
+            List<Integer> finalIes = mappings.stream()
+                    .map(FinalIeMapping::getIeUserId)
+                    .collect(Collectors.toList());
+
+            dto.setFinalIes(finalIes);
+        }
+
         dto.setWorkflowTransitionId(wt.getWorkflowTransitionId());
         dto.setWorkflowId(wt.getWorkflowId());
         dto.setTransitionId(wt.getTransitionId());
@@ -1867,6 +1949,10 @@ private Integer assignIE(
         String stage = null;
         if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
             stage ="R";
+        }else if(ic.getTypeOfCall().equalsIgnoreCase("Process")){
+            stage="P";
+        }else{
+            stage="F";
         }
         // RAW / FINAL → normal IE assignment
         // callReg.setAssignedToUser(assignIE(req.getPincode()));
@@ -1916,6 +2002,10 @@ private Integer assignIE(
         String stage = null;
         if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
             stage ="R";
+        }else if(ic.getTypeOfCall().equalsIgnoreCase("Process")){
+            stage="P";
+        }else{
+            stage="F";
         }
 
         // RAW / FINAL → normal IE assignment
@@ -2365,6 +2455,8 @@ private Integer assignIE(
             stage ="R";
         }else if(ic.getTypeOfCall().equalsIgnoreCase("Process")){
             stage="P";
+        }else{
+            stage="F";
         }
         String product ="ERC";
         String pinCode = poi.getPinCode();

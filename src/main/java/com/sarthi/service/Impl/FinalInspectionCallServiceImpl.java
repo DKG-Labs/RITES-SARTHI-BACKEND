@@ -74,6 +74,7 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
         inspectionCall.setTypeOfCall(icRequest.getTypeOfCall());
         inspectionCall.setErcType(icRequest.getErcType());
         inspectionCall.setStatus(icRequest.getStatus());
+        inspectionCall.setPlaceOfInspection("POI1");
 
         inspectionCall.setDesiredInspectionDate(
                 LocalDate.parse(icRequest.getDesiredInspectionDate())
@@ -99,7 +100,7 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
 
         // Save inspection call first to get the ID
         inspectionCall = inspectionCallRepository.save(inspectionCall);
-        logger.info("✅ Inspection Call saved with ID: {}", inspectionCall.getId());
+        logger.info(" Inspection Call saved with ID: {}", inspectionCall.getId());
 
         // ================== 2. CREATE FINAL INSPECTION DETAILS ==================
         FinalInspectionDetails finalInspectionDetails = new FinalInspectionDetails();
@@ -131,7 +132,7 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
         finalInspectionDetails.setTotalRejectedQty(null); // Will be set after inspection
 
         finalInspectionDetails = finalInspectionDetailsRepository.save(finalInspectionDetails);
-        logger.info("✅ Final Inspection Details saved with ID: {}", finalInspectionDetails.getId());
+        logger.info(" Final Inspection Details saved with ID: {}", finalInspectionDetails.getId());
 
         // ================== 3. CREATE FINAL INSPECTION LOT DETAILS ==================
         if (lotDetailsList != null && !lotDetailsList.isEmpty()) {
