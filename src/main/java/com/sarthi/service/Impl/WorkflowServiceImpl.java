@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -73,6 +74,8 @@ public class WorkflowServiceImpl implements WorkflowService {
     private  ProcessIeUsersRepository processIeUsersRepository;
     @Autowired
     private IePoiMappingRepository iePoiMappingRepository;
+    @Autowired
+    private InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository;
 
 
 
@@ -636,6 +639,81 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 
             workflowTransitionRepository.save(next);
+
+            workflowTransitionRepository.save(next);
+
+            /*SAVE WHEN INSPECTION IS COMPLETED */
+            if ("INSPECTION_COMPLETE_CONFIRM".equalsIgnoreCase(next.getStatus())) {
+
+                InspectionCall ic = inspectionCallRepository
+                        .findByIcNumber(next.getRequestId())
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Inspection Call not found"
+                                )
+                        ));
+                UserMaster user = userMasterRepository
+                        .findByUserId(next.getModifiedBy())
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "User not found"
+                                )
+                        ));
+
+                PincodePoIMapping poi =
+                        pincodePoIMappingRepository.findByPoiCode(ic.getPlaceOfInspection())
+                                .orElseThrow(() -> new BusinessException(
+                                        new ErrorDetails(
+                                                AppConstant.ERROR_CODE_RESOURCE,
+                                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                                AppConstant.ERROR_TYPE_VALIDATION,
+                                                "Invalid POI code"
+                                        )
+                                ));
+                String stage = null;
+                if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
+                    stage ="R";
+                }else if(ic.getTypeOfCall().equalsIgnoreCase("Process")){
+                    stage="P";
+                }else{
+                    stage="F";
+                }
+                String product ="ERC";
+                String pinCode = poi.getPinCode();
+
+                IEFieldsMapping mapping =
+                        ieFieldsMappingRepository
+                                .findByPinCodeProductAndStageMatch(pinCode, product, stage)
+                                .orElseThrow(() -> new BusinessException(
+                                        new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                                AppConstant.ERROR_TYPE_VALIDATION,
+                                                "No IE mapping for given pin/product/stage")));
+
+                String  rio =mapping.getRio();
+                InspectionCompleteDetails details = new InspectionCompleteDetails();
+
+                //  Call No
+                details.setCallNo(ic.getIcNumber());
+
+                //  PO No
+                details.setPoNo(ic.getPoNo());
+
+                details.setCertificateNo(generateCertificateNo(rio, ic.getIcNumber(),user.getShortName()));
+
+                details.setCreatedOn(LocalDateTime.now());
+
+               inspectionCompleteDetailsRepository.save(details);
+            }
+
+
+
             return mapWorkflowTransition(next);
 
         }
@@ -701,6 +779,21 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         }
     }
+
+    private String generateCertificateNo(String rioName,
+                                         String callNo,
+                                         String userShortName) {
+
+
+        String rioFirstLetter = (rioName != null && !rioName.isEmpty())
+                ? rioName.substring(0, 1).toUpperCase()
+                : "X";
+
+        return rioFirstLetter
+                + "/" + callNo
+                + "/" + userShortName.toUpperCase();
+    }
+
 
     private WorkflowTransitionDto confirmCancelAfterPayment(WorkflowTransition current, TransitionActionReqDto req) {
 
@@ -2270,6 +2363,8 @@ private Integer assignIE(
         String stage = null;
         if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
             stage ="R";
+        }else if(ic.getTypeOfCall().equalsIgnoreCase("Process")){
+            stage="P";
         }
         String product ="ERC";
         String pinCode = poi.getPinCode();
