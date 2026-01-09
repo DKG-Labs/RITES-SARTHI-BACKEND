@@ -24,17 +24,42 @@ public class CertificateController {
     private CertificateService certificateService;
 
     /**
-     * Generate Raw Material Inspection Certificate by IC Number
-     * 
+     * Generate Raw Material Inspection Certificate by IC Number (Query Parameter)
+     *
+     * @param icNumber - Inspection Call Number (e.g., RM-IC-1767772023499 or N/RM-IC-1767618858167/RAJK)
+     * @return RawMaterialCertificateDto with all certificate data
+     *
+     * Example: GET /api/certificate/raw-material?icNumber=N/RM-IC-1767618858167/RAJK
+     */
+    @GetMapping("/raw-material")
+    public ResponseEntity<?> generateRawMaterialCertificateByQuery(@RequestParam String icNumber) {
+        try {
+            logger.info("Generating Raw Material Certificate for IC Number (query param): {}", icNumber);
+            RawMaterialCertificateDto certificate = certificateService.generateRawMaterialCertificate(icNumber);
+            return ResponseEntity.ok(certificate);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error generating certificate: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error generating certificate", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating certificate: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generate Raw Material Inspection Certificate by IC Number (Path Variable - for simple IC numbers without slashes)
+     *
      * @param icNumber - Inspection Call Number (e.g., RM-IC-1767772023499)
      * @return RawMaterialCertificateDto with all certificate data
-     * 
+     *
      * Example: GET /api/certificate/raw-material/RM-IC-1767772023499
      */
     @GetMapping("/raw-material/{icNumber}")
     public ResponseEntity<?> generateRawMaterialCertificate(@PathVariable String icNumber) {
         try {
-            logger.info("Generating Raw Material Certificate for IC Number: {}", icNumber);
+            logger.info("Generating Raw Material Certificate for IC Number (path variable): {}", icNumber);
             RawMaterialCertificateDto certificate = certificateService.generateRawMaterialCertificate(icNumber);
             return ResponseEntity.ok(certificate);
         } catch (IllegalArgumentException e) {
