@@ -1,7 +1,9 @@
 package com.sarthi.controller;
 
 import com.sarthi.dto.InspectionInitiationDto;
+import com.sarthi.dto.WorkflowDtos.TransitionActionReqDto;
 import com.sarthi.service.InspectionInitiationService;
+import com.sarthi.service.WorkflowService;
 import com.sarthi.util.ResponseBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +27,8 @@ public class InspectionInitiationController {
 
     @Autowired
     private InspectionInitiationService service;
+    @Autowired
+    private WorkflowService workflowService;
 
     /**
      * Create or update inspection initiation
@@ -33,6 +37,20 @@ public class InspectionInitiationController {
     public ResponseEntity<Object> create(@RequestBody InspectionInitiationDto dto) {
         logger.info("POST /api/inspection-initiation - Creating initiation for call: {}", dto.getCallNo());
         InspectionInitiationDto created = service.createInitiation(dto);
+
+        TransitionActionReqDto req = new TransitionActionReqDto();
+
+        req.setWorkflowTransitionId(dto.getWorkflowTransitionId());
+        req.setRequestId(dto.getCallNo());
+        req.setAction("ENTRY_INSPECTION_RESULTS");
+        req.setActionBy(dto.getActionBy());
+        req.setRemarks(dto.getRemarks());
+
+        System.out.print(req +""+ dto.getWorkflowTransitionId());
+        workflowService.performTransitionAction(req);
+
+
+
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(created), HttpStatus.CREATED);
     }
 

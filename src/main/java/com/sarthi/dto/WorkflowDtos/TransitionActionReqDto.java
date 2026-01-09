@@ -16,6 +16,8 @@ public class TransitionActionReqDto {
 
     private String pincode;
 
+    private String rioRouteChange;
+
 
     private String poStatus;         // OK / NOT_OK
     private String cmDecision;       // APPROVED / REJECTED

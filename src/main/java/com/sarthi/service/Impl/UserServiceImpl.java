@@ -1,13 +1,11 @@
 package com.sarthi.service.Impl;
 
 import com.sarthi.constant.AppConstant;
-import com.sarthi.dto.IePinPoiDto;
-import com.sarthi.dto.LoginRequestDto;
-import com.sarthi.dto.LoginResponseDto;
-import com.sarthi.dto.UserDto;
+import com.sarthi.dto.*;
 import com.sarthi.dto.WorkflowDtos.userRequestDto;
 import com.sarthi.entity.*;
 import com.sarthi.entity.ProcessIeMapping;
+import com.sarthi.entity.ProcessIeUsers;
 import com.sarthi.exception.BusinessException;
 import com.sarthi.exception.ErrorDetails;
 import com.sarthi.repository.*;
@@ -55,7 +53,12 @@ public class UserServiceImpl implements UserService {
     private IePincodePoiMappingRepository iePincodePoiMappingRepository;
     @Autowired
     private ieControllingManagerRepository ieControllingManagerRepository;
-
+    @Autowired
+    private RioUserRepository rioUserRepository;
+    @Autowired
+    private  ProcessIeUsersRepository processIeUsersRepository;
+    @Autowired
+    private IePoiMappingRepository iePoiMappingRepository;
 
 /*
     @Override
@@ -156,7 +159,7 @@ public UserDto createUser(userRequestDto userDto) {
 
 
         // Validate cluster-region mapping (only for role types)
-        if (roleName.equalsIgnoreCase("RIO Help Desk")
+      /*  if (roleName.equalsIgnoreCase("RIO Help Desk")
                // || roleName.equalsIgnoreCase("IE")
               //  || roleName.equalsIgnoreCase("IE Secondary")
           ) {
@@ -178,16 +181,23 @@ public UserDto createUser(userRequestDto userDto) {
                                 "Region mismatch for cluster: " + userDto.getClusterName())
                 );
             }
-        }
+        }*/
 
         // Save RIO mapping
         if (roleName.equalsIgnoreCase("RIO Help Desk")) {
 
-            ClusterRioUser map = new ClusterRioUser();
-            map.setClusterName(userDto.getClusterName());
-            map.setRioUserId(userMaster.getUserId());
-            clusterRioUserRepository.save(map);
+//            ClusterRioUser map = new ClusterRioUser();
+//            map.setClusterName(userDto.getClusterName());
+//            map.setRioUserId(userMaster.getUserId());
+//            clusterRioUserRepository.save(map);
+
+            RioUser rio = new RioUser();
+            rio.setRio(userDto.getRio());
+            rio.setEmployeeCode(userDto.getEmployeeCode());
+
+            rioUserRepository.save(rio);
         }
+
 
         // Save primary IE
 //        if (roleName.equalsIgnoreCase("IE")) {
@@ -252,7 +262,7 @@ public UserDto createUser(userRequestDto userDto) {
             sbu.setSbuHeadUserId(userMaster.getUserId());
             regionSbuHeadRepository.save(sbu);
         }
-
+/*
         // Save Process IE + multiple IE mappings
         if (roleName.equalsIgnoreCase("Process IE")) {
 
@@ -280,7 +290,49 @@ public UserDto createUser(userRequestDto userDto) {
                 mapping.setCreatedBy(userDto.getCreatedBy());
                 processIeMappingRepository.save(mapping);
             }
+
+    }*/
+        if (roleName.equalsIgnoreCase("Process IE")) {
+
+            if (userDto.getIePoiMappings() == null || userDto.getIePoiMappings().isEmpty()) {
+                throw new BusinessException(new ErrorDetails(
+                        AppConstant.ERROR_CODE_RESOURCE,
+                        AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                        AppConstant.ERROR_TYPE_VALIDATION,
+                        "IE and POI mapping is required for Process IE"
+                ));
+            }
+
+
+            for (IePoiMappingDto ieDto : userDto.getIePoiMappings()) {
+
+                // Save Process IE → IE mapping
+                ProcessIeUsers map = new ProcessIeUsers();
+                map.setProcessUserId(userMaster.getUserId().longValue());
+                map.setIeUserId(ieDto.getIeUserId());
+                map.setCreatedBy(Long.valueOf(userDto.getCreatedBy()));
+                map.setCreatedDate(new Date());
+
+                processIeUsersRepository.save(map);
+
+                //  Save IE → multiple POIs (NEW TABLE)
+                if (ieDto.getPoiCodes() != null && !ieDto.getPoiCodes().isEmpty()) {
+
+                    for (String poi : ieDto.getPoiCodes()) {
+
+                        IePoiMapping poiMap = new IePoiMapping();
+                        poiMap.setIeUserId(ieDto.getIeUserId());
+                        poiMap.setPoiCode(poi);
+                        poiMap.setCreatedBy(Long.valueOf(userDto.getCreatedBy()));
+                        poiMap.setCreatedDate(new Date());
+
+                        iePoiMappingRepository.save(poiMap);
+                    }
+                }
+            }
+
         }
+
         boolean isIeRole = userDto.getRoleNames().stream()
                 .anyMatch(r -> r.equalsIgnoreCase("IE")
                         || r.equalsIgnoreCase("IE Secondary"));
@@ -345,10 +397,10 @@ public UserDto createUser(userRequestDto userDto) {
     @Override
     public LoginResponseDto login(LoginRequestDto loginRequestDto) {
 
-
         UserMaster user = userMasterRepository.findByUserId(loginRequestDto.getUserId())
                 .orElseThrow(() -> new BusinessException(
-                        new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
+                        new ErrorDetails(
+                                AppConstant.ERROR_CODE_INVALID,
                                 AppConstant.ERROR_TYPE_CODE_INVALID,
                                 AppConstant.ERROR_TYPE_INVALID,
                                 "Invalid login credentials.")
@@ -356,12 +408,18 @@ public UserDto createUser(userRequestDto userDto) {
 
         if (!loginRequestDto.getPassword().equals(user.getPassword())) {
             throw new BusinessException(
-                    new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
+                    new ErrorDetails(
+                            AppConstant.ERROR_CODE_INVALID,
                             AppConstant.ERROR_TYPE_CODE_INVALID,
                             AppConstant.ERROR_TYPE_INVALID,
                             "Invalid login credentials.")
             );
         }
+
+        String rio = rioUserRepository
+                .findByEmployeeCode(user.getEmployeeCode())
+                .map(RioUser::getRio)
+                .orElse(null);
 
         String token = jwtService.generateToken(user);
 
@@ -370,15 +428,21 @@ public UserDto createUser(userRequestDto userDto) {
                 user.getUsername(),
                 user.getRoleName(),
                 token,
+                rio,
                 user.getShortName()  // Include shortName for IC number generation
+
         );
     }
+
 
 
     public UserDetails loadUserByUsername(Integer userId) throws UsernameNotFoundException {
         return userMasterRepository.findByUserId(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("user not found " + userId));
     }
+
+
+
 
 
 }

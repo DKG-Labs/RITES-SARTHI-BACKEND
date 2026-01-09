@@ -75,6 +75,15 @@ public interface InspectionCallRepository extends JpaRepository<InspectionCall, 
     long countByTypeOfCall(@Param("type") String type);
 
     /**
+     * Count calls by type and created date (for daily sequence)
+     * Counts ICs created on a specific date for a given type
+     */
+    @Query("SELECT COUNT(ic) FROM InspectionCall ic " +
+           "WHERE ic.typeOfCall = :type " +
+           "AND FUNCTION('DATE', ic.createdAt) = :date")
+    long countByTypeOfCallAndCreatedDate(@Param("type") String type, @Param("date") java.time.LocalDate date);
+
+    /**
      * Check if IC number exists
      */
     boolean existsByIcNumber(String icNumber);

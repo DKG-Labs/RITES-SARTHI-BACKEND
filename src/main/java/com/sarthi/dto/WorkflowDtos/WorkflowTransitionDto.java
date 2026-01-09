@@ -4,6 +4,7 @@ import lombok.Data;
 
 import jakarta.persistence.Column;
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class WorkflowTransitionDto {
@@ -34,4 +35,8 @@ public class WorkflowTransitionDto {
     private String vendorName;
     private String productType;
     private String desiredInspectionDate;
+
+    private String rio;
+
+    private List<Integer> processIes;
 }
