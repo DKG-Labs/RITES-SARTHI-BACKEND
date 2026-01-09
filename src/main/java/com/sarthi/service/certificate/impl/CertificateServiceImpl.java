@@ -1,6 +1,7 @@
 package com.sarthi.service.certificate.impl;
 
 import com.sarthi.dto.certificate.RawMaterialCertificateDto;
+import com.sarthi.entity.InspectionCompleteDetails;
 import com.sarthi.entity.MainPoInformation;
 import com.sarthi.entity.PoHeader;
 import com.sarthi.entity.PoItem;
@@ -8,6 +9,7 @@ import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.entity.rawmaterial.RmHeatQuantity;
 import com.sarthi.entity.rawmaterial.RmInspectionDetails;
 import com.sarthi.entity.RmHeatFinalResult;
+import com.sarthi.repository.InspectionCompleteDetailsRepository;
 import com.sarthi.repository.MainPoInformationRepository;
 import com.sarthi.repository.PoHeaderRepository;
 import com.sarthi.repository.PoItemRepository;
@@ -62,6 +64,9 @@ public class CertificateServiceImpl implements CertificateService {
 
     @Autowired
     private MainPoInformationRepository mainPoInformationRepository;
+
+    @Autowired
+    private InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository;
 
     @Override
     public RawMaterialCertificateDto generateRawMaterialCertificate(String icNumber) {
@@ -166,15 +171,17 @@ public class CertificateServiceImpl implements CertificateService {
 
     /**
      * Generate Certificate Number
-     * NOTE: Frontend generates the full certificate number with nomenclature
+     * Fetches from inspection_complete_details table if available
      * Format: {RIO_First_Letter}/{IC_Number}/{IE_Short_Name}
      * Example: N/RM-IC-1767618858167/RAJK
      *
-     * Backend returns a placeholder that will be overridden by frontend
+     * Falls back to IC number if not found in inspection_complete_details
      */
     private String generateCertificateNumber(InspectionCall inspectionCall) {
-        // Return IC number - frontend will generate the full certificate number
-        return inspectionCall.getIcNumber() != null ? inspectionCall.getIcNumber() : "";
+        // Try to fetch from inspection_complete_details table
+        return inspectionCompleteDetailsRepository.findByCallNo(inspectionCall.getIcNumber())
+                .map(InspectionCompleteDetails::getCertificateNo)
+                .orElse(inspectionCall.getIcNumber() != null ? inspectionCall.getIcNumber() : "");
     }
 
     /**
