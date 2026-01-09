@@ -21,6 +21,7 @@ public class InspectionCall {
     @EqualsAndHashCode.Include
     private Long id;
 
+    @Column(name = "vendor_id")
     private String vendorId;
 
     private String icNumber;
@@ -38,6 +39,7 @@ public class InspectionCall {
     private LocalDate actualInspectionDate;
 
     // ---- LOCATION ----
+    @Column(name = "place_of_inspection")
     private String placeOfInspection;
 
     private Integer companyId;

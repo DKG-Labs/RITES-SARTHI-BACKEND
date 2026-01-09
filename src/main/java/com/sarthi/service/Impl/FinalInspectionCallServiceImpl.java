@@ -74,7 +74,10 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
         inspectionCall.setTypeOfCall(icRequest.getTypeOfCall());
         inspectionCall.setErcType(icRequest.getErcType());
         inspectionCall.setStatus(icRequest.getStatus());
+
         inspectionCall.setPlaceOfInspection("POI1");
+
+        inspectionCall.setVendorId(icRequest.getVendorId());
 
         inspectionCall.setDesiredInspectionDate(
                 LocalDate.parse(icRequest.getDesiredInspectionDate())

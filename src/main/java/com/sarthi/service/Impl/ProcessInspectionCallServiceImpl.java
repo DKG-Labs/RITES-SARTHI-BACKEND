@@ -51,6 +51,7 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
     ) {
         logger.info("========== CREATE PROCESS INSPECTION CALL ==========");
         logger.info("IC Request: {}", icRequest);
+        logger.info("ERC Type from Request: {}", icRequest.getErcType());
         logger.info("Process Details Count: {}", processDetailsList != null ? processDetailsList.size() : 0);
 
         // ================== 1. CREATE INSPECTION CALL ==================
@@ -62,12 +63,18 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
         String icNumber = icNumberGenerator.generateIcNumber("Process", dailySequence);
         logger.info("Generated IC Number: {} (Daily Sequence: {})", icNumber, dailySequence);
 
+        logger.info("🔍 DEBUG: icRequest.getErcType() = {}", icRequest.getErcType());
+
         inspectionCall.setIcNumber(icNumber);
         inspectionCall.setPoNo(icRequest.getPoNo());
         inspectionCall.setPoSerialNo(icRequest.getPoSerialNo());
         inspectionCall.setTypeOfCall(icRequest.getTypeOfCall());
+        inspectionCall.setErcType(icRequest.getErcType());
         inspectionCall.setStatus(icRequest.getStatus());
         inspectionCall.setPlaceOfInspection("POI1");
+
+        logger.info("🔍 DEBUG: After setting - inspectionCall.getErcType() = {}", inspectionCall.getErcType());
+        inspectionCall.setVendorId(icRequest.getVendorId());
 
         inspectionCall.setDesiredInspectionDate(
                 LocalDate.parse(icRequest.getDesiredInspectionDate())
