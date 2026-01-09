@@ -145,6 +145,74 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                 .orElse(null);
     }
 
+    @Override
+    @Transactional
+    public InventoryEntryResponseDto updateInventoryEntry(Long id, InventoryEntryRequestDto requestDto) {
+        logger.info("Updating inventory entry with ID: {}", id);
+
+        // Validate request
+        validateInventoryRequest(requestDto);
+
+        // Find existing entry
+        InventoryEntry existingEntry = inventoryEntryRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_RESOURCE,
+                                "Inventory entry not found with ID: " + id)
+                ));
+
+        // Only allow updates for FRESH_PO status
+        if (existingEntry.getStatus() != InventoryEntry.InventoryStatus.FRESH_PO) {
+            throw new BusinessException(
+                    new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
+                            AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "Cannot update inventory entry with status: " + existingEntry.getStatus() +
+                            ". Only FRESH_PO entries can be modified.")
+            );
+        }
+
+        // Update entity with new data
+        mapRequestToEntity(requestDto, existingEntry);
+
+        // Save updated entry
+        InventoryEntry updatedEntry = inventoryEntryRepository.save(existingEntry);
+        logger.info("Inventory entry updated successfully with ID: {}", updatedEntry.getId());
+
+        return mapEntityToResponse(updatedEntry);
+    }
+
+    @Override
+    @Transactional
+    public void deleteInventoryEntry(Long id) {
+        logger.info("Deleting inventory entry with ID: {}", id);
+
+        // Find existing entry
+        InventoryEntry existingEntry = inventoryEntryRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_RESOURCE,
+                                "Inventory entry not found with ID: " + id)
+                ));
+
+        // Only allow deletion for FRESH_PO status
+        if (existingEntry.getStatus() != InventoryEntry.InventoryStatus.FRESH_PO) {
+            throw new BusinessException(
+                    new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
+                            AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "Cannot delete inventory entry with status: " + existingEntry.getStatus() +
+                            ". Only FRESH_PO entries can be deleted.")
+            );
+        }
+
+        // Delete the entry
+        inventoryEntryRepository.delete(existingEntry);
+        logger.info("Inventory entry deleted successfully with ID: {}", id);
+    }
+
     /**
      * Validate inventory request DTO
      */

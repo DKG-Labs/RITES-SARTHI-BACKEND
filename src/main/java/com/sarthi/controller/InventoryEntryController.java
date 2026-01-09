@@ -1,7 +1,9 @@
 package com.sarthi.controller;
 
+import com.sarthi.constant.AppConstant;
 import com.sarthi.dto.InventoryEntryRequestDto;
 import com.sarthi.dto.InventoryEntryResponseDto;
+import com.sarthi.exception.ErrorDetails;
 import com.sarthi.service.InventoryEntryService;
 import com.sarthi.util.ResponseBuilder;
 import org.slf4j.Logger;
@@ -137,6 +139,71 @@ public class InventoryEntryController {
             return new ResponseEntity<>(
                 ResponseBuilder.getSuccessResponse(null),
                 HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    /**
+     * Update an existing inventory entry
+     * PUT /api/vendor/inventory/entries/{id}
+     *
+     * Note: Only entries with status = FRESH_PO can be updated
+     */
+    @PutMapping("/entries/{id}")
+    public ResponseEntity<Object> updateInventoryEntry(
+            @PathVariable Long id,
+            @RequestBody InventoryEntryRequestDto requestDto) {
+        logger.info("Received request to update inventory entry with ID: {}", id);
+
+        try {
+            InventoryEntryResponseDto updatedEntry = inventoryEntryService.updateInventoryEntry(id, requestDto);
+            logger.info("Inventory entry updated successfully with ID: {}", id);
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(updatedEntry), HttpStatus.OK);
+
+        } catch (Exception e) {
+            logger.error("Error updating inventory entry: {}", e.getMessage(), e);
+            ErrorDetails errorDetails = new ErrorDetails(
+                AppConstant.ERROR_CODE_INVALID,
+                AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                AppConstant.ERROR_TYPE_VALIDATION,
+                e.getMessage()
+            );
+            return new ResponseEntity<>(
+                ResponseBuilder.getErrorResponse(errorDetails),
+                HttpStatus.BAD_REQUEST
+            );
+        }
+    }
+
+    /**
+     * Delete an inventory entry
+     * DELETE /api/vendor/inventory/entries/{id}
+     *
+     * Note: Only entries with status = FRESH_PO can be deleted
+     */
+    @DeleteMapping("/entries/{id}")
+    public ResponseEntity<Object> deleteInventoryEntry(@PathVariable Long id) {
+        logger.info("Received request to delete inventory entry with ID: {}", id);
+
+        try {
+            inventoryEntryService.deleteInventoryEntry(id);
+            logger.info("Inventory entry deleted successfully with ID: {}", id);
+            return new ResponseEntity<>(
+                ResponseBuilder.getSuccessResponse("Inventory entry deleted successfully"),
+                HttpStatus.OK
+            );
+
+        } catch (Exception e) {
+            logger.error("Error deleting inventory entry: {}", e.getMessage(), e);
+            ErrorDetails errorDetails = new ErrorDetails(
+                AppConstant.ERROR_CODE_INVALID,
+                AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                AppConstant.ERROR_TYPE_VALIDATION,
+                e.getMessage()
+            );
+            return new ResponseEntity<>(
+                ResponseBuilder.getErrorResponse(errorDetails),
+                HttpStatus.BAD_REQUEST
             );
         }
     }

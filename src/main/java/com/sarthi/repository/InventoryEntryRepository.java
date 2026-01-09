@@ -58,5 +58,13 @@ public interface InventoryEntryRepository extends JpaRepository<InventoryEntry, 
      * @return Optional inventory entry matching both criteria
      */
     Optional<InventoryEntry> findByHeatNumberAndTcNumber(String heatNumber, String tcNumber);
+
+    /**
+     * Find all inventory entries for a vendor with FRESH_PO status (available inventory)
+     * @param vendorCode The vendor code
+     * @param status The inventory status (FRESH_PO for available)
+     * @return List of available inventory entries
+     */
+    List<InventoryEntry> findByVendorCodeAndStatusOrderByCreatedDateDesc(String vendorCode, InventoryEntry.InventoryStatus status);
 }
 

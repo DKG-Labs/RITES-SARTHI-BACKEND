@@ -17,7 +17,8 @@ import java.util.List;
     @Index(name = "idx_po_no", columnList = "po_no"),
     @Index(name = "idx_po_serial_no", columnList = "po_serial_no"),
     @Index(name = "idx_type_of_call", columnList = "type_of_call"),
-    @Index(name = "idx_status", columnList = "status")
+    @Index(name = "idx_status", columnList = "status"),
+    @Index(name = "idx_vendor_code", columnList = "vendor_code")
 })
 @Data
 public class VendorInspectionRequest {
@@ -51,7 +52,10 @@ public class VendorInspectionRequest {
     @Column(name = "amendment_date")
     private LocalDate amendmentDate;
 
-    // Vendor Contact
+    // Vendor Information
+    @Column(name = "vendor_code", length = 50)
+    private String vendorCode;
+
     @Column(name = "vendor_contact_name", length = 100)
     private String vendorContactName;
 

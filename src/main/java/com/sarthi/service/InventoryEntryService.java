@@ -46,5 +46,20 @@ public interface InventoryEntryService {
      * @return The inventory entry matching both criteria, or null if not found
      */
     InventoryEntryResponseDto getInventoryEntryByHeatAndTc(String heatNumber, String tcNumber);
+
+    /**
+     * Update an existing inventory entry
+     * @param id The inventory entry ID
+     * @param requestDto The updated inventory entry data
+     * @return The updated inventory entry
+     */
+    InventoryEntryResponseDto updateInventoryEntry(Long id, InventoryEntryRequestDto requestDto);
+
+    /**
+     * Delete an inventory entry
+     * Only allowed for entries with status = FRESH_PO
+     * @param id The inventory entry ID
+     */
+    void deleteInventoryEntry(Long id);
 }
 

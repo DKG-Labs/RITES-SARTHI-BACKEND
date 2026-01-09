@@ -134,7 +134,8 @@ public class InventoryEntry {
         FRESH_PO,
         UNDER_INSPECTION,
         ACCEPTED,
-        REJECTED
+        REJECTED,
+        EXHAUSTED
     }
 }
 
