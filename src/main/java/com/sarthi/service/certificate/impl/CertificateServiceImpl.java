@@ -1,12 +1,14 @@
 package com.sarthi.service.certificate.impl;
 
 import com.sarthi.dto.certificate.RawMaterialCertificateDto;
+import com.sarthi.entity.MainPoInformation;
 import com.sarthi.entity.PoHeader;
 import com.sarthi.entity.PoItem;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.entity.rawmaterial.RmHeatQuantity;
 import com.sarthi.entity.rawmaterial.RmInspectionDetails;
 import com.sarthi.entity.RmHeatFinalResult;
+import com.sarthi.repository.MainPoInformationRepository;
 import com.sarthi.repository.PoHeaderRepository;
 import com.sarthi.repository.PoItemRepository;
 import com.sarthi.repository.RmHeatFinalResultRepository;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +40,7 @@ import java.util.stream.Collectors;
 public class CertificateServiceImpl implements CertificateService {
 
     private static final Logger logger = LoggerFactory.getLogger(CertificateServiceImpl.class);
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     @Autowired
     private InspectionCallRepository inspectionCallRepository;
@@ -56,6 +59,9 @@ public class CertificateServiceImpl implements CertificateService {
 
     @Autowired
     private PoItemRepository poItemRepository;
+
+    @Autowired
+    private MainPoInformationRepository mainPoInformationRepository;
 
     @Override
     public RawMaterialCertificateDto generateRawMaterialCertificate(String icNumber) {
@@ -106,7 +112,20 @@ public class CertificateServiceImpl implements CertificateService {
 			poItems = poItemRepository.findByPoHeader_Id(poHeader.getId());
         }
 
-        // 6. Build Certificate DTO
+        // 6. Fetch Section A data (Main PO Information) for Bill Paying Officer
+        MainPoInformation mainPoInfo = mainPoInformationRepository
+                .findByInspectionCallNo(inspectionCall.getIcNumber())
+                .orElse(null);
+
+        if (mainPoInfo != null) {
+            logger.info("✅ Section A data found for IC: {}", inspectionCall.getIcNumber());
+            logger.info("   Bill Paying Officer: {}", mainPoInfo.getBillPayingOfficer());
+            logger.info("   Purchasing Authority: {}", mainPoInfo.getPurchasingAuthority());
+        } else {
+            logger.warn("⚠️ Section A data NOT found for IC: {}", inspectionCall.getIcNumber());
+        }
+
+        // 7. Build Certificate DTO
         return RawMaterialCertificateDto.builder()
                 .certificateNo(generateCertificateNumber(inspectionCall))
                 .certificateDate(formatDate(LocalDate.now()))
@@ -117,10 +136,10 @@ public class CertificateServiceImpl implements CertificateService {
                 .placeOfInspection(inspectionCall.getPlaceOfInspection())
                 .contractRef(buildContractRef(poHeader))
                 .contractorPo(buildContractorPo(rmDetails))
-                .billPayingOfficer("") // Keep blank for now
+                .billPayingOfficer(buildBillPayingOfficer(mainPoInfo))
                 .consigneeRailway(buildConsigneeRailway(poItems))
                 .consigneeManufacturer(buildConsigneeManufacturer(poHeader))
-                .purchasingAuthority("") // Keep blank for now
+                .purchasingAuthority(buildPurchasingAuthority(poHeader, mainPoInfo))
                 .description(buildDescription(inspectionCall))
                 .drgNo("") // Keep blank
                 .specNo("IRS T-31-2025")
@@ -135,7 +154,7 @@ public class CertificateServiceImpl implements CertificateService {
                 .remarks(buildRemarks(inspectionCall))
                 .dateOfCall(buildDateOfCall(inspectionCall))
                 .noOfVisits("") // Keep blank for now
-                .dateOfInspection(formatDate(inspectionCall.getActualInspectionDate()))
+                .dateOfInspection(buildDateOfInspection(heatResults))
                 .sealingPattern(buildSealingPattern())
                 .sealFacsimile("") // Blank for stamp
                 .inspectingEngineer("") // Keep blank for now (DSC signature)
@@ -147,11 +166,15 @@ public class CertificateServiceImpl implements CertificateService {
 
     /**
      * Generate Certificate Number
-     * Format: SM/ER1/001 (Region/Product/Railway/Year/Sequence)
+     * NOTE: Frontend generates the full certificate number with nomenclature
+     * Format: {RIO_First_Letter}/{IC_Number}/{IE_Short_Name}
+     * Example: N/RM-IC-1767618858167/RAJK
+     *
+     * Backend returns a placeholder that will be overridden by frontend
      */
     private String generateCertificateNumber(InspectionCall inspectionCall) {
-        // For now, return a placeholder - will be enhanced with actual logic
-        return "SM/ER1/" + String.format("%03d", inspectionCall.getId());
+        // Return IC number - frontend will generate the full certificate number
+        return inspectionCall.getIcNumber() != null ? inspectionCall.getIcNumber() : "";
     }
 
     /**
@@ -402,6 +425,64 @@ public class CertificateServiceImpl implements CertificateService {
         }
 
         return heatDetails;
+    }
+
+    /**
+     * Build Bill Paying Officer
+     * Priority: Section A > Empty
+     */
+    private String buildBillPayingOfficer(MainPoInformation mainPoInfo) {
+        if (mainPoInfo != null && mainPoInfo.getBillPayingOfficer() != null) {
+            return mainPoInfo.getBillPayingOfficer();
+        }
+        return "";
+    }
+
+    /**
+     * Build Purchasing Authority
+     * Priority: PO Header (purchaser_detail + purchaser_code) > Section A > Empty
+     * Format: "PURCHASER_DETAIL (PURCHASER_CODE)"
+     */
+    private String buildPurchasingAuthority(PoHeader poHeader, MainPoInformation mainPoInfo) {
+        // Try PO Header first
+        if (poHeader != null) {
+            String purchaserDetail = poHeader.getPurchaserDetail();
+            String purchaserCode = poHeader.getPurchaserCode();
+
+            if (purchaserDetail != null && !purchaserDetail.isEmpty()) {
+                if (purchaserCode != null && !purchaserCode.isEmpty()) {
+                    return purchaserDetail + " (" + purchaserCode + ")";
+                }
+                return purchaserDetail;
+            }
+        }
+
+        // Fallback to Section A
+        if (mainPoInfo != null && mainPoInfo.getPurchasingAuthority() != null) {
+            return mainPoInfo.getPurchasingAuthority();
+        }
+
+        return "";
+    }
+
+    /**
+     * Build Date of Inspection
+     * Use created_at from rm_heat_final_result table (earliest date if multiple heats)
+     */
+    private String buildDateOfInspection(List<RmHeatFinalResult> heatResults) {
+        if (heatResults == null || heatResults.isEmpty()) {
+            return "";
+        }
+
+        // Find the earliest created_at from heat results
+        LocalDate earliestDate = heatResults.stream()
+                .map(RmHeatFinalResult::getCreatedAt)
+                .filter(dateTime -> dateTime != null)
+                .map(LocalDateTime::toLocalDate)
+                .min(LocalDate::compareTo)
+                .orElse(null);
+
+        return formatDate(earliestDate);
     }
 
     /**
