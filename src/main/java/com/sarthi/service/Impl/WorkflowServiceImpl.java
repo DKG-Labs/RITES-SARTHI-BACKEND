@@ -167,15 +167,20 @@ public class WorkflowServiceImpl implements WorkflowService {
 
             System.out.print(last);
          //    String inspectionType ="PROCESS";
-            String inspectionType ="Raw Material";
-               if(inspectionType.equalsIgnoreCase("PROCESS") && last.getNextRoleName().equalsIgnoreCase("IE")){
+          Optional<InspectionCall> i = inspectionCallRepository.findByIcNumber(requestId);
+
+          InspectionCall ic =null;
+          if(i.isPresent()){
+              ic= i.get();
+          }
+               if(ic.getTypeOfCall().equalsIgnoreCase("PROCESS") && last.getNextRoleName().equalsIgnoreCase("IE")){
                  //  validateProcessIeAction(last.getProcessIeUserId(),createdBy);
                    validateProcessIeAction(
                            last.getProcessIeUserId().longValue(),
                            createdBy.longValue()
                    );
 
-               }else if (inspectionType.equalsIgnoreCase("FINAL")) {
+               }else if (ic.getTypeOfCall().equalsIgnoreCase("FINAL")) {
 
                    validateFinalIeAction(
                            last.getWorkflowTransitionId(),
