@@ -145,8 +145,33 @@ public class RawMaterialInspectionController {
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(heat), HttpStatus.OK);
     }
 
+    /* ==================== Process IC Support Endpoints ==================== */
 
+    /**
+     * Get completed RM IC numbers for Process IC dropdown
+     * GET /api/raw-material/completed-rm-ics
+     */
+    @GetMapping("/completed-rm-ics")
+    @Operation(summary = "Get completed RM ICs", description = "Fetches completed RM IC numbers from inspection_complete_details table for Process IC dropdown")
+    public ResponseEntity<APIResponse> getCompletedRmIcNumbers() {
+        logger.info("Request: Get completed RM IC numbers");
+        List<String> completedRmIcs = rmService.getCompletedRmIcNumbers();
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(completedRmIcs), HttpStatus.OK);
+    }
 
+    /**
+     * Get heat numbers by RM IC number
+     * GET /api/raw-material/heats-by-rm-ic/{rmIcNumber}
+     */
+    @GetMapping("/heats-by-rm-ic/{rmIcNumber}")
+    @Operation(summary = "Get heat numbers by RM IC", description = "Fetches heat numbers from rm_heat_quantities table for a specific RM IC number")
+    public ResponseEntity<APIResponse> getHeatNumbersByRmIcNumber(@PathVariable String rmIcNumber) {
+        logger.info("Request: Get heat numbers for RM IC: {}", rmIcNumber);
+        List<RmHeatQuantityDto> heatNumbers = rmService.getHeatNumbersByRmIcNumber(rmIcNumber);
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(heatNumbers), HttpStatus.OK);
+    }
+
+    /* ==================== Inspection Call Creation ==================== */
 
     // @PostMapping("/inspectionCall")
     // public ResponseEntity<Object> createInspectionCall(@RequestBody InspectionCallRequestDto icRequest,

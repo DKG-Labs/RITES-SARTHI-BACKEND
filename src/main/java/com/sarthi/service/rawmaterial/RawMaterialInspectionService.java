@@ -69,5 +69,22 @@ public interface RawMaterialInspectionService {
      * @return Heat details
      */
     RmHeatQuantityDto getHeatQuantityById(Integer heatId);
+
+    /* ==================== Process IC Support Operations ==================== */
+
+    /**
+     * Get completed RM IC numbers from inspection_complete_details table
+     * Used for Process IC dropdown when call type is "Process"
+     * @return List of completed RM IC numbers
+     */
+    List<String> getCompletedRmIcNumbers();
+
+    /**
+     * Get heat numbers for a specific RM IC number
+     * Fetches from rm_heat_quantities table based on the RM IC's ic_id
+     * @param rmIcNumber RM IC Number
+     * @return List of heat numbers with details
+     */
+    List<RmHeatQuantityDto> getHeatNumbersByRmIcNumber(String rmIcNumber);
 }
 

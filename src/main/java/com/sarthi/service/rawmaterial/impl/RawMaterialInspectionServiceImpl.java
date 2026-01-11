@@ -2,9 +2,11 @@ package com.sarthi.service.rawmaterial.impl;
 
 import com.sarthi.constant.AppConstant;
 import com.sarthi.dto.rawmaterial.*;
+import com.sarthi.entity.InspectionCompleteDetails;
 import com.sarthi.entity.rawmaterial.*;
 import com.sarthi.exception.BusinessException;
 import com.sarthi.exception.ErrorDetails;
+import com.sarthi.repository.InspectionCompleteDetailsRepository;
 import com.sarthi.repository.rawmaterial.*;
 import com.sarthi.service.rawmaterial.RawMaterialInspectionService;
 import org.slf4j.Logger;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,15 +32,18 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
     private final InspectionCallRepository inspectionCallRepository;
     private final RmInspectionDetailsRepository rmDetailsRepository;
     private final RmHeatQuantityRepository heatQuantityRepository;
+    private final InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository;
 
     @Autowired
     public RawMaterialInspectionServiceImpl(
             InspectionCallRepository inspectionCallRepository,
             RmInspectionDetailsRepository rmDetailsRepository,
-            RmHeatQuantityRepository heatQuantityRepository) {
+            RmHeatQuantityRepository heatQuantityRepository,
+            InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository) {
         this.inspectionCallRepository = inspectionCallRepository;
         this.rmDetailsRepository = rmDetailsRepository;
         this.heatQuantityRepository = heatQuantityRepository;
+        this.inspectionCompleteDetailsRepository = inspectionCompleteDetailsRepository;
     }
 
     /* ==================== Inspection Call Operations ==================== */
@@ -103,6 +109,49 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
         RmHeatQuantity heat = heatQuantityRepository.findById(heatId)
                 .orElseThrow(() -> createNotFoundException("Heat quantity not found with ID: " + heatId));
         return mapToHeatDto(heat);
+    }
+
+    /* ==================== Process IC Support Operations ==================== */
+
+    @Override
+    public List<String> getCompletedRmIcNumbers() {
+        logger.info("Fetching completed RM IC numbers (ER numbers) from inspection_complete_details");
+        List<InspectionCompleteDetails> completedDetails = inspectionCompleteDetailsRepository.findAll();
+
+        // Extract call_no (ER numbers) from the completed details
+        // Filter only ER numbers (Examination Reports for completed RM inspections - those starting with "ER-")
+        return completedDetails.stream()
+                .map(InspectionCompleteDetails::getCallNo)
+                .filter(callNo -> callNo != null && callNo.startsWith("ER-"))
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<RmHeatQuantityDto> getHeatNumbersByRmIcNumber(String erNumber) {
+        logger.info("Fetching heat numbers for ER number: {}", erNumber);
+
+        // 1. Find the inspection call by ER number (ic_number column in inspection_calls table)
+        InspectionCall inspectionCall = inspectionCallRepository.findByIcNumber(erNumber)
+                .orElseThrow(() -> createNotFoundException("ER number not found in inspection_calls: " + erNumber));
+
+        logger.info("Found inspection call with id: {} for ER number: {}", inspectionCall.getId(), erNumber);
+
+        // 2. Get the RM inspection details for this call using ic_id
+        RmInspectionDetails rmDetails = rmDetailsRepository.findByIcId(inspectionCall.getId())
+                .orElseThrow(() -> createNotFoundException("RM details not found for ER number: " + erNumber));
+
+        logger.info("Found RM inspection details with id: {} for ic_id: {}", rmDetails.getId(), inspectionCall.getId());
+
+        // 3. Get all heat quantities for this RM detail using rm_detail_id
+        List<RmHeatQuantity> heatQuantities = heatQuantityRepository.findByRmDetailId(Math.toIntExact(rmDetails.getId()));
+
+        logger.info("Found {} heat quantities for RM detail id: {}", heatQuantities.size(), rmDetails.getId());
+
+        // 4. Map to DTOs and return
+        return heatQuantities.stream()
+                .map(this::mapToHeatDto)
+                .collect(Collectors.toList());
     }
 
     /* ==================== Private Mapping Methods ==================== */
