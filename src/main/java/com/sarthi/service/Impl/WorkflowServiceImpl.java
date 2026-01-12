@@ -546,6 +546,12 @@ public class WorkflowServiceImpl implements WorkflowService {
                         req.getActionBy().longValue()
                 );
 
+            }else if (call.getTypeOfCall().equalsIgnoreCase("FINAL")) {
+
+                validateFinalIeAction(
+                        last.getWorkflowTransitionId(),
+                        req.getActionBy()
+                );
             }else if (last.getAssignedToUser() == null ||
                     !last.getAssignedToUser().equals(req.getActionBy())) {
 
@@ -737,6 +743,7 @@ public class WorkflowServiceImpl implements WorkflowService {
             }
             else if ("FINAL".equalsIgnoreCase(inspectionType)) {
 
+                workflowTransitionRepository.save(next);
                 List<IePincodePoiMapping> ieMappings =
                         iePincodePoiMappingRepository
                                 .findByPoiCode(im.getPlaceOfInspection());
@@ -2255,8 +2262,18 @@ private Integer assignIE(
     @Override
     public List<WorkflowTransitionDto> allPendingWorkflowTransition(String roleName) {
 
-        List<WorkflowTransition> pending =
-                workflowTransitionRepository.findPendingByRole(roleName);
+        List<WorkflowTransition> pending;
+
+        if ("IE".equalsIgnoreCase(roleName)) {
+
+            pending = workflowTransitionRepository
+                    .findPendingByRoles(List.of("IE", "Process IE"));
+
+        } else {
+            pending = workflowTransitionRepository
+                    .findPendingByRole(roleName);
+        }
+        System.out.println(pending);
 
         return pending.stream()
                 .sorted(Comparator.comparing(WorkflowTransition::getRequestId)
