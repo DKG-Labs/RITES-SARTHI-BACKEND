@@ -173,7 +173,8 @@ public class WorkflowServiceImpl implements WorkflowService {
           if(i.isPresent()){
               ic= i.get();
           }
-               if(ic.getTypeOfCall().equalsIgnoreCase("PROCESS") && last.getNextRoleName().equalsIgnoreCase("IE")){
+               if(ic.getTypeOfCall().equalsIgnoreCase("PROCESS")){
+                  //  && last.getNextRoleName().equalsIgnoreCase("IE")
                  //  validateProcessIeAction(last.getProcessIeUserId(),createdBy);
                    validateProcessIeAction(
                            last.getProcessIeUserId().longValue(),
