@@ -227,11 +227,44 @@ public class WorkflowServiceImpl implements WorkflowService {
             entry.setNextRole(String.valueOf(transitionMaster.getNextRoleId()));
             entry.setCurrentRoleName(roleNameById(transitionMaster.getCurrentRoleId()));
             entry.setNextRoleName(roleNameById(transitionMaster.getNextRoleId()));
-            entry.setAssignedToUser(createdBy);
+            if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
+                entry.setAssignedToUser(createdBy);
+            }else{
+                entry.setAssignedToUser(null);
+            }
             entry.setJobStatus("ASSIGNED");
             entry.setProcessIeUserId(last.getProcessIeUserId());
             entry.setWorkflowSequence(last.getWorkflowSequence()+1);
             workflowTransitionRepository.save(entry);
+
+            if("Final".equalsIgnoreCase(ic.getTypeOfCall())) {
+
+
+                //  Fetch IE mappings using POI code
+                List<IePincodePoiMapping> ieMappings =
+                        iePincodePoiMappingRepository.findByPoiCode(ic.getPlaceOfInspection());
+
+                for (IePincodePoiMapping mapping : ieMappings) {
+
+                    String employeeCode = mapping.getEmployeeCode();
+
+                    // Fetch userId using employeeCode
+                    UserMaster userOpt =
+                            userMasterRepository.findByEmployeeCode(employeeCode);
+
+                    Integer userId = userOpt.getUserId();
+
+                    //  Save into FINAL_IE_MAPPING
+                    FinalIeMapping finalMapping = new FinalIeMapping();
+                    finalMapping.setWorkflowTransitionId(
+                            entry.getWorkflowTransitionId()
+                    );
+                    finalMapping.setIeUserId(userId);
+
+                    finalIeMappingRepository.save(finalMapping);
+
+                }
+            }
 
             return mapWorkflowTransition(entry);
         }
@@ -498,8 +531,15 @@ public class WorkflowServiceImpl implements WorkflowService {
           }
 
 //            String inspectionType ="PROCESS";
-            String inspectionType ="Raw Material";
-            if(inspectionType.equalsIgnoreCase("PROCESS")){
+            Optional<InspectionCall> insp = inspectionCallRepository.findByIcNumber(req.getRequestId());
+
+            InspectionCall call =null;
+          if(insp.isPresent()){
+              call=insp.get();
+          }
+
+         //   String inspectionType ="Raw Material";
+            if(call.getTypeOfCall().equalsIgnoreCase("PROCESS")){
               //  validateProcessIeAction(last.getProcessIeUserId(),req.getActionBy());
                 validateProcessIeAction(
                         last.getProcessIeUserId().longValue(),
@@ -538,6 +578,83 @@ public class WorkflowServiceImpl implements WorkflowService {
                         req.getRemarks(),
                         req
                 );
+
+                // IE ASSIGNMENT LOGIC
+                InspectionCall ic = inspectionCallRepository
+                        .findByIcNumber(req.getRequestId())
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Inspection Call not found"
+                                )
+                        ));
+
+                String inspectionType = ic.getTypeOfCall();
+
+                if ("PROCESS".equalsIgnoreCase(inspectionType)) {
+
+                    Integer processIeUserId =
+                            getProcessIeUserFromPoi(ic.getPlaceOfInspection());
+
+                    next.setAssignedToUser(processIeUserId);
+                    next.setProcessIeUserId(processIeUserId);
+                }
+                else if ("FINAL".equalsIgnoreCase(inspectionType)) {
+
+                    List<IePincodePoiMapping> ieMappings =
+                            iePincodePoiMappingRepository
+                                    .findByPoiCode(ic.getPlaceOfInspection());
+
+                    for (IePincodePoiMapping mapping : ieMappings) {
+
+                        UserMaster user =
+                                userMasterRepository
+                                        .findByEmployeeCode(mapping.getEmployeeCode());
+
+                        FinalIeMapping finalMapping = new FinalIeMapping();
+                        finalMapping.setWorkflowTransitionId(
+                                next.getWorkflowTransitionId()
+                        );
+                        finalMapping.setIeUserId(user.getUserId());
+
+                        finalIeMappingRepository.save(finalMapping);
+                    }
+                }
+                else {
+
+                    PincodePoIMapping poi =
+                            pincodePoIMappingRepository
+                                    .findByPoiCode(ic.getPlaceOfInspection())
+                                    .orElseThrow(() -> new BusinessException(
+                                            new ErrorDetails(
+                                                    AppConstant.ERROR_CODE_RESOURCE,
+                                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                                    "Invalid POI code"
+                                            )
+                                    ));
+
+                    String stage;
+                    if (inspectionType.equalsIgnoreCase("Raw Material")) {
+                        stage = "R";
+                    } else if (inspectionType.equalsIgnoreCase("Process")) {
+                        stage = "P";
+                    } else {
+                        stage = "F";
+                    }
+
+                    next.setAssignedToUser(
+                            assignIE(
+                                    poi.getPinCode(),
+                                    "ERC",
+                                    stage,
+                                    ic.getPlaceOfInspection()
+                            )
+                    );
+                }
+
                 assignRescheduleUser(next, current, req);
 
                 workflowTransitionRepository.save(next);
@@ -595,6 +712,82 @@ public class WorkflowServiceImpl implements WorkflowService {
                     req.getRemarks(),
                     req
             );
+
+            // IE ASSIGNMENT LOGIC
+            InspectionCall im = inspectionCallRepository
+                    .findByIcNumber(req.getRequestId())
+                    .orElseThrow(() -> new BusinessException(
+                            new ErrorDetails(
+                                    AppConstant.ERROR_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                    "Inspection Call not found"
+                            )
+                    ));
+
+            String inspectionType = im.getTypeOfCall();
+
+            if ("PROCESS".equalsIgnoreCase(inspectionType)) {
+
+                Integer processIeUserId =
+                        getProcessIeUserFromPoi(im.getPlaceOfInspection());
+
+                next.setAssignedToUser(processIeUserId);
+                next.setProcessIeUserId(processIeUserId);
+            }
+            else if ("FINAL".equalsIgnoreCase(inspectionType)) {
+
+                List<IePincodePoiMapping> ieMappings =
+                        iePincodePoiMappingRepository
+                                .findByPoiCode(im.getPlaceOfInspection());
+
+                for (IePincodePoiMapping mapping : ieMappings) {
+
+                    UserMaster user =
+                            userMasterRepository
+                                    .findByEmployeeCode(mapping.getEmployeeCode());
+
+                    FinalIeMapping finalMapping = new FinalIeMapping();
+                    finalMapping.setWorkflowTransitionId(
+                            next.getWorkflowTransitionId()
+                    );
+                    finalMapping.setIeUserId(user.getUserId());
+
+                    finalIeMappingRepository.save(finalMapping);
+                }
+            }
+            else {
+
+                PincodePoIMapping poi =
+                        pincodePoIMappingRepository
+                                .findByPoiCode(im.getPlaceOfInspection())
+                                .orElseThrow(() -> new BusinessException(
+                                        new ErrorDetails(
+                                                AppConstant.ERROR_CODE_RESOURCE,
+                                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                                AppConstant.ERROR_TYPE_VALIDATION,
+                                                "Invalid POI code"
+                                        )
+                                ));
+
+                String stage;
+                if (inspectionType.equalsIgnoreCase("Raw Material")) {
+                    stage = "R";
+                } else if (inspectionType.equalsIgnoreCase("Process")) {
+                    stage = "P";
+                } else {
+                    stage = "F";
+                }
+
+                next.setAssignedToUser(
+                        assignIE(
+                                poi.getPinCode(),
+                                "ERC",
+                                stage,
+                                im.getPlaceOfInspection()
+                        )
+                );
+            }
 
             if (req.getAction().equalsIgnoreCase("VERIFY_MATERIAL_AVAILABILITY")
                     && "NO".equalsIgnoreCase(req.getMaterialAvailable())) {
@@ -678,7 +871,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
             workflowTransitionRepository.save(next);
 
-            workflowTransitionRepository.save(next);
+           // workflowTransitionRepository.save(next);
 
             /*SAVE WHEN INSPECTION IS COMPLETED */
             if ("INSPECTION_COMPLETE_CONFIRM".equalsIgnoreCase(next.getStatus())) {
@@ -1361,7 +1554,20 @@ System.out.print(last);
         next.setCreatedBy(current.getCreatedBy());
         next.setModifiedBy(req.getActionBy());
       //  String inspectionType = "PROCESS";
-        String inspectionType ="Raw Material";
+     //   String inspectionType ="Raw Material";
+
+        InspectionCall ic = inspectionCallRepository
+                .findByIcNumber(req.getRequestId())
+                .orElseThrow(() -> new BusinessException(
+                        new ErrorDetails(
+                                AppConstant.ERROR_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_VALIDATION,
+                                "Inspection Call not found"
+                        )
+                ));
+
+        String inspectionType = ic.getTypeOfCall();
         //PROCESS IE ROLE OVERRIDE
         if (inspectionType != null
                 && inspectionType.equalsIgnoreCase("PROCESS")) {
@@ -1391,14 +1597,21 @@ System.out.print(last);
             next.setNextRoleName(roleNameById(transition.getNextRoleId()));
         }
 
-        next.setAssignedToUser(current.getAssignedToUser());
-
-        if(inspectionType.equalsIgnoreCase("PROCESS")){
+        if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
+            next.setAssignedToUser(current.getAssignedToUser());
+        }else if(ic.getTypeOfCall().equalsIgnoreCase("Process")){
             next.setProcessIeUserId(current.getProcessIeUserId());
+        }else{
+            next.setAssignedToUser(null);
         }
+
+
+//        if(inspectionType.equalsIgnoreCase("PROCESS")){
+//            next.setProcessIeUserId(current.getProcessIeUserId());
+//        }
         next.setJobStatus(determineJobStatus(req.getAction()));
         next.setWorkflowSequence(last.getWorkflowSequence()+1);
-        workflowTransitionRepository.save(next);
+     //   workflowTransitionRepository.save(next);
 
         return next;
     }
