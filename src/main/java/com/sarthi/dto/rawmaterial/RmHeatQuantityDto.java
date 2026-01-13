@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -28,6 +29,10 @@ public class RmHeatQuantityDto {
     /* ==================== Quantity Details ==================== */
 
     private Double offeredQty;
+
+    /* ==================== Weight from RM Heat Final Result ==================== */
+
+    private BigDecimal weightOfferedMt; // From rm_heat_final_result table
 
     /* ==================== TC Details ==================== */
 

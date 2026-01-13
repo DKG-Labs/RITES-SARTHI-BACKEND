@@ -14,4 +14,10 @@ public interface InspectionCompleteDetailsRepository extends JpaRepository<Inspe
      * Find InspectionCompleteDetails by call number
      */
     Optional<InspectionCompleteDetails> findByCallNo(String callNo);
+
+    /**
+     * Find InspectionCompleteDetails by certificate number
+     * Used to resolve certificate numbers (e.g., N/ER-01080001/RAJK) to call numbers (e.g., ER-01080001)
+     */
+    Optional<InspectionCompleteDetails> findByCertificateNo(String certificateNo);
 }

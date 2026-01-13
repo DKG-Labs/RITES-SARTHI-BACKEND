@@ -3,10 +3,12 @@ package com.sarthi.service.rawmaterial.impl;
 import com.sarthi.constant.AppConstant;
 import com.sarthi.dto.rawmaterial.*;
 import com.sarthi.entity.InspectionCompleteDetails;
+import com.sarthi.entity.RmHeatFinalResult;
 import com.sarthi.entity.rawmaterial.*;
 import com.sarthi.exception.BusinessException;
 import com.sarthi.exception.ErrorDetails;
 import com.sarthi.repository.InspectionCompleteDetailsRepository;
+import com.sarthi.repository.RmHeatFinalResultRepository;
 import com.sarthi.repository.rawmaterial.*;
 import com.sarthi.service.rawmaterial.RawMaterialInspectionService;
 import org.slf4j.Logger;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -33,17 +36,20 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
     private final RmInspectionDetailsRepository rmDetailsRepository;
     private final RmHeatQuantityRepository heatQuantityRepository;
     private final InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository;
+    private final RmHeatFinalResultRepository rmHeatFinalResultRepository;
 
     @Autowired
     public RawMaterialInspectionServiceImpl(
             InspectionCallRepository inspectionCallRepository,
             RmInspectionDetailsRepository rmDetailsRepository,
             RmHeatQuantityRepository heatQuantityRepository,
-            InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository) {
+            InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository,
+            RmHeatFinalResultRepository rmHeatFinalResultRepository) {
         this.inspectionCallRepository = inspectionCallRepository;
         this.rmDetailsRepository = rmDetailsRepository;
         this.heatQuantityRepository = heatQuantityRepository;
         this.inspectionCompleteDetailsRepository = inspectionCompleteDetailsRepository;
+        this.rmHeatFinalResultRepository = rmHeatFinalResultRepository;
     }
 
     /* ==================== Inspection Call Operations ==================== */
@@ -115,21 +121,33 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
 
     @Override
     public List<String> getCompletedRmIcNumbers() {
-        logger.info("Fetching completed RM IC numbers (ER numbers) from inspection_complete_details");
+        logger.info("Fetching completed RM IC certificate numbers from inspection_complete_details");
         List<InspectionCompleteDetails> completedDetails = inspectionCompleteDetailsRepository.findAll();
 
-        // Extract call_no (ER numbers) from the completed details
+        // Extract certificate_no from the completed details
         // Filter only ER numbers (Examination Reports for completed RM inspections - those starting with "ER-")
         return completedDetails.stream()
-                .map(InspectionCompleteDetails::getCallNo)
-                .filter(callNo -> callNo != null && callNo.startsWith("ER-"))
+                .filter(detail -> detail.getCallNo() != null && detail.getCallNo().startsWith("ER-"))
+                .map(InspectionCompleteDetails::getCertificateNo)
+                .filter(certificateNo -> certificateNo != null && !certificateNo.isEmpty())
                 .distinct()
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<RmHeatQuantityDto> getHeatNumbersByRmIcNumber(String erNumber) {
-        logger.info("Fetching heat numbers for ER number: {}", erNumber);
+    public List<RmHeatQuantityDto> getHeatNumbersByRmIcNumber(String icNumberOrCertificateNo) {
+        logger.info("Fetching heat numbers for IC number or certificate number: {}", icNumberOrCertificateNo);
+
+        // Check if the input is a certificate number by trying to find it in inspection_complete_details
+        Optional<InspectionCompleteDetails> completeDetails = inspectionCompleteDetailsRepository.findByCertificateNo(icNumberOrCertificateNo);
+        final String erNumber;
+        if (completeDetails.isPresent()) {
+            erNumber = completeDetails.get().getCallNo();
+            logger.info("Resolved certificate number {} to ER number: {}", icNumberOrCertificateNo, erNumber);
+        } else {
+            erNumber = icNumberOrCertificateNo;
+            logger.info("Input is not a certificate number, treating as ER number: {}", icNumberOrCertificateNo);
+        }
 
         // 1. Find the inspection call by ER number (ic_number column in inspection_calls table)
         InspectionCall inspectionCall = inspectionCallRepository.findByIcNumber(erNumber)
@@ -148,9 +166,28 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
 
         logger.info("Found {} heat quantities for RM detail id: {}", heatQuantities.size(), rmDetails.getId());
 
-        // 4. Map to DTOs and return
+        // 4. Get heat final results to include weight_offered_mt
+        List<RmHeatFinalResult> heatFinalResults = rmHeatFinalResultRepository.findByInspectionCallNo(erNumber);
+        logger.info("Found {} heat final results for ER number: {}", heatFinalResults.size(), erNumber);
+
+        // 5. Map to DTOs and enrich with weight_offered_mt from rm_heat_final_result
         return heatQuantities.stream()
-                .map(this::mapToHeatDto)
+                .map(heatQuantity -> {
+                    RmHeatQuantityDto dto = mapToHeatDto(heatQuantity);
+
+                    // Find matching heat final result to get weight_offered_mt
+                    heatFinalResults.stream()
+                            .filter(finalResult -> finalResult.getHeatNo().equals(heatQuantity.getHeatNumber()))
+                            .findFirst()
+                            .ifPresent(finalResult -> {
+                                // Add weight_offered_mt to the DTO
+                                dto.setWeightOfferedMt(finalResult.getWeightOfferedMt());
+                                logger.debug("Enriched heat {} with weight_offered_mt: {}",
+                                        heatQuantity.getHeatNumber(), finalResult.getWeightOfferedMt());
+                            });
+
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
