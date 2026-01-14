@@ -1,6 +1,7 @@
 package com.sarthi.service.certificate;
 
 import com.sarthi.dto.certificate.RawMaterialCertificateDto;
+import com.sarthi.dto.certificate.ProcessMaterialCertificateDto;
 
 /**
  * Service interface for generating Inspection Certificates.
@@ -14,12 +15,26 @@ public interface CertificateService {
      * @return RawMaterialCertificateDto with all certificate data
      */
     RawMaterialCertificateDto generateRawMaterialCertificate(String icNumber);
-    
+
     /**
      * Generate Raw Material Inspection Certificate data by Call ID
      * @param callId - Inspection Call ID
      * @return RawMaterialCertificateDto with all certificate data
      */
     RawMaterialCertificateDto generateRawMaterialCertificateById(Long callId);
+
+    /**
+     * Generate Process Material Inspection Certificate data by IC Number
+     * @param icNumber - Inspection Call Number (e.g., PM-IC-1767772023499)
+     * @return ProcessMaterialCertificateDto with all certificate data
+     */
+    ProcessMaterialCertificateDto generateProcessMaterialCertificate(String icNumber);
+
+    /**
+     * Generate Process Material Inspection Certificate data by Call ID
+     * @param callId - Inspection Call ID
+     * @return ProcessMaterialCertificateDto with all certificate data
+     */
+    ProcessMaterialCertificateDto generateProcessMaterialCertificateById(Long callId);
 }
 

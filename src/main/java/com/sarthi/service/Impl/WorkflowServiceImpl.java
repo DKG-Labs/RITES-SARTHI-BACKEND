@@ -173,7 +173,8 @@ public class WorkflowServiceImpl implements WorkflowService {
           if(i.isPresent()){
               ic= i.get();
           }
-               if(ic.getTypeOfCall().equalsIgnoreCase("PROCESS") && last.getNextRoleName().equalsIgnoreCase("IE")){
+               if(ic.getTypeOfCall().equalsIgnoreCase("PROCESS")){
+                  //  && last.getNextRoleName().equalsIgnoreCase("IE")
                  //  validateProcessIeAction(last.getProcessIeUserId(),createdBy);
                    validateProcessIeAction(
                            last.getProcessIeUserId().longValue(),
@@ -227,11 +228,44 @@ public class WorkflowServiceImpl implements WorkflowService {
             entry.setNextRole(String.valueOf(transitionMaster.getNextRoleId()));
             entry.setCurrentRoleName(roleNameById(transitionMaster.getCurrentRoleId()));
             entry.setNextRoleName(roleNameById(transitionMaster.getNextRoleId()));
-            entry.setAssignedToUser(createdBy);
+            if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
+                entry.setAssignedToUser(createdBy);
+            }else{
+                entry.setAssignedToUser(null);
+            }
             entry.setJobStatus("ASSIGNED");
             entry.setProcessIeUserId(last.getProcessIeUserId());
             entry.setWorkflowSequence(last.getWorkflowSequence()+1);
             workflowTransitionRepository.save(entry);
+
+            if("Final".equalsIgnoreCase(ic.getTypeOfCall())) {
+
+
+                //  Fetch IE mappings using POI code
+                List<IePincodePoiMapping> ieMappings =
+                        iePincodePoiMappingRepository.findByPoiCode(ic.getPlaceOfInspection());
+
+                for (IePincodePoiMapping mapping : ieMappings) {
+
+                    String employeeCode = mapping.getEmployeeCode();
+
+                    // Fetch userId using employeeCode
+                    UserMaster userOpt =
+                            userMasterRepository.findByEmployeeCode(employeeCode);
+
+                    Integer userId = userOpt.getUserId();
+
+                    //  Save into FINAL_IE_MAPPING
+                    FinalIeMapping finalMapping = new FinalIeMapping();
+                    finalMapping.setWorkflowTransitionId(
+                            entry.getWorkflowTransitionId()
+                    );
+                    finalMapping.setIeUserId(userId);
+
+                    finalIeMappingRepository.save(finalMapping);
+
+                }
+            }
 
             return mapWorkflowTransition(entry);
         }
@@ -498,14 +532,27 @@ public class WorkflowServiceImpl implements WorkflowService {
           }
 
 //            String inspectionType ="PROCESS";
-            String inspectionType ="Raw Material";
-            if(inspectionType.equalsIgnoreCase("PROCESS")){
+            Optional<InspectionCall> insp = inspectionCallRepository.findByIcNumber(req.getRequestId());
+
+            InspectionCall call =null;
+          if(insp.isPresent()){
+              call=insp.get();
+          }
+
+         //   String inspectionType ="Raw Material";
+            if(call.getTypeOfCall().equalsIgnoreCase("PROCESS")){
               //  validateProcessIeAction(last.getProcessIeUserId(),req.getActionBy());
                 validateProcessIeAction(
                         last.getProcessIeUserId().longValue(),
                         req.getActionBy().longValue()
                 );
 
+            }else if (call.getTypeOfCall().equalsIgnoreCase("FINAL")) {
+
+                validateFinalIeAction(
+                        last.getWorkflowTransitionId(),
+                        req.getActionBy()
+                );
             }else if (last.getAssignedToUser() == null ||
                     !last.getAssignedToUser().equals(req.getActionBy())) {
 
@@ -538,6 +585,83 @@ public class WorkflowServiceImpl implements WorkflowService {
                         req.getRemarks(),
                         req
                 );
+
+                // IE ASSIGNMENT LOGIC
+                InspectionCall ic = inspectionCallRepository
+                        .findByIcNumber(req.getRequestId())
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Inspection Call not found"
+                                )
+                        ));
+
+                String inspectionType = ic.getTypeOfCall();
+
+                if ("PROCESS".equalsIgnoreCase(inspectionType)) {
+
+                    Integer processIeUserId =
+                            getProcessIeUserFromPoi(ic.getPlaceOfInspection());
+
+                    next.setAssignedToUser(processIeUserId);
+                    next.setProcessIeUserId(processIeUserId);
+                }
+                else if ("FINAL".equalsIgnoreCase(inspectionType)) {
+
+                    List<IePincodePoiMapping> ieMappings =
+                            iePincodePoiMappingRepository
+                                    .findByPoiCode(ic.getPlaceOfInspection());
+
+                    for (IePincodePoiMapping mapping : ieMappings) {
+
+                        UserMaster user =
+                                userMasterRepository
+                                        .findByEmployeeCode(mapping.getEmployeeCode());
+
+                        FinalIeMapping finalMapping = new FinalIeMapping();
+                        finalMapping.setWorkflowTransitionId(
+                                next.getWorkflowTransitionId()
+                        );
+                        finalMapping.setIeUserId(user.getUserId());
+
+                        finalIeMappingRepository.save(finalMapping);
+                    }
+                }
+                else {
+
+                    PincodePoIMapping poi =
+                            pincodePoIMappingRepository
+                                    .findByPoiCode(ic.getPlaceOfInspection())
+                                    .orElseThrow(() -> new BusinessException(
+                                            new ErrorDetails(
+                                                    AppConstant.ERROR_CODE_RESOURCE,
+                                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                                    "Invalid POI code"
+                                            )
+                                    ));
+
+                    String stage;
+                    if (inspectionType.equalsIgnoreCase("Raw Material")) {
+                        stage = "R";
+                    } else if (inspectionType.equalsIgnoreCase("Process")) {
+                        stage = "P";
+                    } else {
+                        stage = "F";
+                    }
+
+                    next.setAssignedToUser(
+                            assignIE(
+                                    poi.getPinCode(),
+                                    "ERC",
+                                    stage,
+                                    ic.getPlaceOfInspection()
+                            )
+                    );
+                }
+
                 assignRescheduleUser(next, current, req);
 
                 workflowTransitionRepository.save(next);
@@ -595,6 +719,83 @@ public class WorkflowServiceImpl implements WorkflowService {
                     req.getRemarks(),
                     req
             );
+
+            // IE ASSIGNMENT LOGIC
+            InspectionCall im = inspectionCallRepository
+                    .findByIcNumber(req.getRequestId())
+                    .orElseThrow(() -> new BusinessException(
+                            new ErrorDetails(
+                                    AppConstant.ERROR_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                    "Inspection Call not found"
+                            )
+                    ));
+
+            String inspectionType = im.getTypeOfCall();
+
+            if ("PROCESS".equalsIgnoreCase(inspectionType)) {
+
+                Integer processIeUserId =
+                        getProcessIeUserFromPoi(im.getPlaceOfInspection());
+
+                next.setAssignedToUser(processIeUserId);
+                next.setProcessIeUserId(processIeUserId);
+            }
+            else if ("FINAL".equalsIgnoreCase(inspectionType)) {
+
+                workflowTransitionRepository.save(next);
+                List<IePincodePoiMapping> ieMappings =
+                        iePincodePoiMappingRepository
+                                .findByPoiCode(im.getPlaceOfInspection());
+
+                for (IePincodePoiMapping mapping : ieMappings) {
+
+                    UserMaster user =
+                            userMasterRepository
+                                    .findByEmployeeCode(mapping.getEmployeeCode());
+
+                    FinalIeMapping finalMapping = new FinalIeMapping();
+                    finalMapping.setWorkflowTransitionId(
+                            next.getWorkflowTransitionId()
+                    );
+                    finalMapping.setIeUserId(user.getUserId());
+
+                    finalIeMappingRepository.save(finalMapping);
+                }
+            }
+            else {
+
+                PincodePoIMapping poi =
+                        pincodePoIMappingRepository
+                                .findByPoiCode(im.getPlaceOfInspection())
+                                .orElseThrow(() -> new BusinessException(
+                                        new ErrorDetails(
+                                                AppConstant.ERROR_CODE_RESOURCE,
+                                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                                AppConstant.ERROR_TYPE_VALIDATION,
+                                                "Invalid POI code"
+                                        )
+                                ));
+
+                String stage;
+                if (inspectionType.equalsIgnoreCase("Raw Material")) {
+                    stage = "R";
+                } else if (inspectionType.equalsIgnoreCase("Process")) {
+                    stage = "P";
+                } else {
+                    stage = "F";
+                }
+
+                next.setAssignedToUser(
+                        assignIE(
+                                poi.getPinCode(),
+                                "ERC",
+                                stage,
+                                im.getPlaceOfInspection()
+                        )
+                );
+            }
 
             if (req.getAction().equalsIgnoreCase("VERIFY_MATERIAL_AVAILABILITY")
                     && "NO".equalsIgnoreCase(req.getMaterialAvailable())) {
@@ -678,7 +879,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
             workflowTransitionRepository.save(next);
 
-            workflowTransitionRepository.save(next);
+           // workflowTransitionRepository.save(next);
 
             /*SAVE WHEN INSPECTION IS COMPLETED */
             if ("INSPECTION_COMPLETE_CONFIRM".equalsIgnoreCase(next.getStatus())) {
@@ -1361,7 +1562,20 @@ System.out.print(last);
         next.setCreatedBy(current.getCreatedBy());
         next.setModifiedBy(req.getActionBy());
       //  String inspectionType = "PROCESS";
-        String inspectionType ="Raw Material";
+     //   String inspectionType ="Raw Material";
+
+        InspectionCall ic = inspectionCallRepository
+                .findByIcNumber(req.getRequestId())
+                .orElseThrow(() -> new BusinessException(
+                        new ErrorDetails(
+                                AppConstant.ERROR_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_VALIDATION,
+                                "Inspection Call not found"
+                        )
+                ));
+
+        String inspectionType = ic.getTypeOfCall();
         //PROCESS IE ROLE OVERRIDE
         if (inspectionType != null
                 && inspectionType.equalsIgnoreCase("PROCESS")) {
@@ -1391,14 +1605,21 @@ System.out.print(last);
             next.setNextRoleName(roleNameById(transition.getNextRoleId()));
         }
 
-        next.setAssignedToUser(current.getAssignedToUser());
-
-        if(inspectionType.equalsIgnoreCase("PROCESS")){
+        if(ic.getTypeOfCall().equalsIgnoreCase("Raw Material")){
+            next.setAssignedToUser(current.getAssignedToUser());
+        }else if(ic.getTypeOfCall().equalsIgnoreCase("Process")){
             next.setProcessIeUserId(current.getProcessIeUserId());
+        }else{
+            next.setAssignedToUser(null);
         }
+
+
+//        if(inspectionType.equalsIgnoreCase("PROCESS")){
+//            next.setProcessIeUserId(current.getProcessIeUserId());
+//        }
         next.setJobStatus(determineJobStatus(req.getAction()));
         next.setWorkflowSequence(last.getWorkflowSequence()+1);
-        workflowTransitionRepository.save(next);
+     //   workflowTransitionRepository.save(next);
 
         return next;
     }
@@ -1667,8 +1888,130 @@ private Integer assignIE(
             dto.setVendorName(i.getVendorId());
             dto.setProductType(i.getTypeOfCall());
             dto.setDesiredInspectionDate(String.valueOf(i.getDesiredInspectionDate()));
+
+                // Compute inspection date range from workflow transitions for this request
+                try {
+                        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy");
+                        List<WorkflowTransition> transitions = workflowTransitionRepository.findByRequestId(wt.getRequestId());
+
+                        java.util.Set<String> startStatuses = new java.util.HashSet<>(java.util.Arrays.asList("INITIATE_INSPECTION", "IE_SCHEDULED", "INSPECTION_IN_PROGRESS"));
+                        java.util.Set<String> endStatuses = new java.util.HashSet<>(java.util.Arrays.asList("INSPECTION_COMPLETE_CONFIRM", "INSPECTION_COMPLETE"));
+
+                        java.util.Date start = transitions.stream()
+                                .filter(t -> t.getStatus() != null && startStatuses.contains(t.getStatus().toUpperCase()))
+                                .map(WorkflowTransition::getCreatedDate)
+                                .min(java.util.Date::compareTo)
+                                .orElse(null);
+
+                        java.util.Date end = transitions.stream()
+                                .filter(t -> t.getStatus() != null && endStatuses.contains(t.getStatus().toUpperCase()))
+                                .map(WorkflowTransition::getCreatedDate)
+                                .max(java.util.Date::compareTo)
+                                .orElse(null);
+
+                        if (start != null && end != null) {
+                                dto.setInspectionDate(sdf.format(start) + " - " + sdf.format(end));
+                        } else if (start != null) {
+                                dto.setInspectionDate(sdf.format(start));
+                        }
+                } catch (Exception ex) {
+                        // ignore
+                }
         }
       //  dto.setTransitionOrder(wt.getTransitionOrder());
+        return dto;
+    }
+
+    /**
+     * Optimized version of mapWorkflowTransition that uses pre-fetched data
+     * to avoid N+1 query problem
+     */
+    private WorkflowTransitionDto mapWorkflowTransitionOptimized(
+            WorkflowTransition wt,
+            Map<String, InspectionCall> inspectionCallMap,
+            Map<Integer, List<Integer>> finalIeMappings) {
+
+        InspectionCall i = inspectionCallMap.get(wt.getRequestId());
+
+        WorkflowTransitionDto dto = new WorkflowTransitionDto();
+
+        // Handle Process IE mappings (skip for now to avoid additional queries)
+        if (wt.getProcessIeUserId() != null && i != null) {
+            int processIe = wt.getProcessIeUserId();
+            String poi = i.getPlaceOfInspection();
+
+            try {
+                List<Integer> ieUsers = getIeUsersByProcessIeAndPoi(processIe, poi);
+                ieUsers.add(processIe);
+                dto.setProcessIes(ieUsers);
+            } catch (Exception e) {
+                // Silently handle errors to avoid breaking the entire list
+                dto.setProcessIes(Collections.singletonList(processIe));
+            }
+        }
+
+        // Handle Final IE mappings using pre-fetched data
+        if (i != null && "Final".equalsIgnoreCase(i.getTypeOfCall())) {
+            List<Integer> finalIes = finalIeMappings.getOrDefault(
+                    wt.getWorkflowTransitionId(),
+                    Collections.emptyList()
+            );
+            dto.setFinalIes(finalIes);
+        }
+
+        // Map basic fields
+        dto.setWorkflowTransitionId(wt.getWorkflowTransitionId());
+        dto.setWorkflowId(wt.getWorkflowId());
+        dto.setTransitionId(wt.getTransitionId());
+        dto.setRequestId(wt.getRequestId());
+        dto.setStatus(wt.getStatus());
+        dto.setAction(wt.getAction());
+        dto.setRemarks(wt.getRemarks());
+        dto.setCreatedBy(wt.getCreatedBy());
+        dto.setCreatedDate(wt.getCreatedDate());
+        dto.setCurrentRole(wt.getCurrentRole());
+        dto.setNextRole(wt.getNextRole());
+        dto.setAssignedToUser(wt.getAssignedToUser());
+        dto.setWorkflowSequence(wt.getWorkflowSequence());
+        dto.setModifiedBy(wt.getModifiedBy());
+        dto.setRio(wt.getRio());
+
+        // Map inspection call data using pre-fetched data
+        if (i != null) {
+            dto.setPoNo(i.getPoNo());
+            dto.setVendorName(i.getVendorId());
+            dto.setProductType(i.getTypeOfCall());
+            dto.setDesiredInspectionDate(String.valueOf(i.getDesiredInspectionDate()));
+                        // Compute inspection date range from workflow transitions for this request
+                        try {
+                                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy");
+                                List<WorkflowTransition> transitions = workflowTransitionRepository.findByRequestId(wt.getRequestId());
+
+                                java.util.Set<String> startStatuses = new java.util.HashSet<>(java.util.Arrays.asList("INITIATE_INSPECTION", "IE_SCHEDULED", "INSPECTION_IN_PROGRESS"));
+                                java.util.Set<String> endStatuses = new java.util.HashSet<>(java.util.Arrays.asList("INSPECTION_COMPLETE_CONFIRM", "INSPECTION_COMPLETE"));
+
+                                java.util.Date start = transitions.stream()
+                                                .filter(t -> t.getStatus() != null && startStatuses.contains(t.getStatus().toUpperCase()))
+                                                .map(WorkflowTransition::getCreatedDate)
+                                                .min(java.util.Date::compareTo)
+                                                .orElse(null);
+
+                                java.util.Date end = transitions.stream()
+                                                .filter(t -> t.getStatus() != null && endStatuses.contains(t.getStatus().toUpperCase()))
+                                                .map(WorkflowTransition::getCreatedDate)
+                                                .max(java.util.Date::compareTo)
+                                                .orElse(null);
+
+                                if (start != null && end != null) {
+                                        dto.setInspectionDate(sdf.format(start) + " - " + sdf.format(end));
+                                } else if (start != null) {
+                                        dto.setInspectionDate(sdf.format(start));
+                                }
+                        } catch (Exception ex) {
+                                // ignore
+                        }
+        }
+
         return dto;
     }
 
@@ -2042,13 +2385,53 @@ private Integer assignIE(
     @Override
     public List<WorkflowTransitionDto> allPendingWorkflowTransition(String roleName) {
 
-        List<WorkflowTransition> pending =
-                workflowTransitionRepository.findPendingByRole(roleName);
+        List<WorkflowTransition> pending;
 
+        if ("IE".equalsIgnoreCase(roleName)) {
+
+            pending = workflowTransitionRepository
+                    .findPendingByRoles(List.of("IE", "Process IE"));
+
+        } else {
+            pending = workflowTransitionRepository
+                    .findPendingByRole(roleName);
+        }
+
+        if (pending.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // PERFORMANCE OPTIMIZATION: Batch fetch all related data to avoid N+1 queries
+        // Extract all request IDs
+        List<String> requestIds = pending.stream()
+                .map(WorkflowTransition::getRequestId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // Batch fetch all inspection calls (1 query instead of N queries)
+        Map<String, InspectionCall> inspectionCallMap = inspectionCallRepository
+                .findByIcNumberIn(requestIds)
+                .stream()
+                .collect(Collectors.toMap(InspectionCall::getIcNumber, ic -> ic));
+
+        // Batch fetch all final IE mappings (1 query instead of N queries)
+        List<Integer> workflowTransitionIds = pending.stream()
+                .map(WorkflowTransition::getWorkflowTransitionId)
+                .collect(Collectors.toList());
+
+        Map<Integer, List<Integer>> finalIeMappings = finalIeMappingRepository
+                .findByWorkflowTransitionIdIn(workflowTransitionIds)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        FinalIeMapping::getWorkflowTransitionId,
+                        Collectors.mapping(FinalIeMapping::getIeUserId, Collectors.toList())
+                ));
+
+        // Now map with cached data
         return pending.stream()
                 .sorted(Comparator.comparing(WorkflowTransition::getRequestId)
                         .thenComparing(WorkflowTransition::getCreatedDate))
-                .map(this::mapWorkflowTransition)
+                .map(wt -> mapWorkflowTransitionOptimized(wt, inspectionCallMap, finalIeMappings))
                 .collect(Collectors.toList());
     }
 
@@ -2506,8 +2889,8 @@ private Integer assignIE(
 
         dto.setPoNo(ic.getPoNo());
         dto.setVendorName(ic.getVendorId());
-        dto.setProductType("ERC-RAW MATERIAL");
-        dto.setStage("Raw Material Inspection");
+        dto.setProductType("ERC-"+ ic.getTypeOfCall());
+        dto.setStage(ic.getTypeOfCall());
 
         return dto;
     }

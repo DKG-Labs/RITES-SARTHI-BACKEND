@@ -26,6 +26,7 @@ public class AppConstant {
     public static final String ERROR_TYPE_ERROR = "error";
     public static final String ERROR_TYPE_VALIDATION = "validation";
     public static final String ERROR_TYPE_RESOURCE = "missing resource";
+    public static final String ERROR_TYPE_INTERNAL = "internal error";
 
     // Error Codes for Email Failures
     public static final int EMAIL_NOT_SENT_ERROR_CODE = 2001;
@@ -35,6 +36,7 @@ public class AppConstant {
 
     public static final int ERROR_TYPE_CODE_RESOURCE = 5001;
     public static final int INTER_SERVER_ERROR = 1000;
+    public static final int ERROR_CODE_INTERNAL = 1000; // Internal server error code
 
     public static final int WORKFLOW_NOT_FOUND = 1001;
     public static final int USER_INVALID_INPUT = 1002;

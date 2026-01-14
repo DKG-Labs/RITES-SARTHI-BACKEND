@@ -44,6 +44,12 @@ public interface SubPoDetailsRepository extends JpaRepository<SubPoDetails, Long
     List<SubPoDetails> findByInspectionCallDetailsId(Long inspectionCallDetailsId);
 
     /**
+     * Find a SubPoDetails record by inspection call number and sub PO number.
+     * Used for upsert behavior when saving batch data.
+     */
+    java.util.Optional<SubPoDetails> findByInspectionCallNoAndSubPoNo(String inspectionCallNo, String subPoNo);
+
+    /**
      * Delete all SubPoDetails by inspection call number
      */
     void deleteByInspectionCallNo(String inspectionCallNo);

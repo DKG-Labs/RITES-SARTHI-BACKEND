@@ -34,7 +34,9 @@ public class InspectionSectionController {
 
     @PostMapping("/section-a")
     public ResponseEntity<Object> saveSectionA(@Valid @RequestBody MainPoInformationDto dto, Principal principal) {
-        String userId = principal != null ? principal.getName() : "system";
+        // Use createdBy from DTO if provided, otherwise fallback to principal
+        String userId = dto.getCreatedBy() != null ? dto.getCreatedBy() :
+                        (principal != null ? principal.getName() : "system");
         logger.info("POST /api/inspection-sections/section-a - Saving for call: {} by user: {}", dto.getInspectionCallNo(), userId);
         MainPoInformationDto saved = service.saveMainPoInformation(dto, userId);
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
@@ -103,7 +105,9 @@ public class InspectionSectionController {
 
     @PostMapping("/section-b")
     public ResponseEntity<Object> saveSectionB(@Valid @RequestBody InspectionCallDetailsDto dto, Principal principal) {
-        String userId = principal != null ? principal.getName() : "system";
+        // Use createdBy from DTO if provided, otherwise fallback to principal
+        String userId = (dto.getCreatedBy() != null && !dto.getCreatedBy().isEmpty()) ? dto.getCreatedBy() :
+                        (principal != null ? principal.getName() : "system");
         logger.info("POST /api/inspection-sections/section-b - Saving for call: {} by user: {}", dto.getInspectionCallNo(), userId);
         InspectionCallDetailsDto saved = service.saveInspectionCallDetails(dto, userId);
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
@@ -179,7 +183,9 @@ public class InspectionSectionController {
 
     @PostMapping("/section-c")
     public ResponseEntity<Object> saveSectionC(@Valid @RequestBody SubPoDetailsDto dto, Principal principal) {
-        String userId = principal != null ? principal.getName() : "system";
+        // Use createdBy from DTO if provided, otherwise fallback to principal
+        String userId = (dto.getCreatedBy() != null && !dto.getCreatedBy().isEmpty()) ? dto.getCreatedBy() :
+                        (principal != null ? principal.getName() : "system");
         logger.info("POST /api/inspection-sections/section-c - Saving for call: {} by user: {}", dto.getInspectionCallNo(), userId);
         SubPoDetailsDto saved = service.saveSubPoDetails(dto, userId);
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
@@ -187,7 +193,10 @@ public class InspectionSectionController {
 
     @PostMapping("/section-c/batch")
     public ResponseEntity<Object> saveSectionCBatch(@Valid @RequestBody List<SubPoDetailsDto> dtos, Principal principal) {
-        String userId = principal != null ? principal.getName() : "system";
+        // Use createdBy from first DTO if provided, otherwise fallback to principal
+        String userId = (!dtos.isEmpty() && dtos.get(0).getCreatedBy() != null && !dtos.get(0).getCreatedBy().isEmpty())
+                        ? dtos.get(0).getCreatedBy()
+                        : (principal != null ? principal.getName() : "system");
         logger.info("POST /api/inspection-sections/section-c/batch - Saving {} records by user: {}", dtos.size(), userId);
         List<SubPoDetailsDto> saved = service.saveSubPoDetailsBatch(dtos, userId);
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);

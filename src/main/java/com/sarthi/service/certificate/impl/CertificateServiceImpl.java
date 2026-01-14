@@ -1,6 +1,7 @@
 package com.sarthi.service.certificate.impl;
 
 import com.sarthi.dto.certificate.RawMaterialCertificateDto;
+import com.sarthi.dto.certificate.ProcessMaterialCertificateDto;
 import com.sarthi.entity.InspectionCompleteDetails;
 import com.sarthi.entity.MainPoInformation;
 import com.sarthi.entity.PoHeader;
@@ -9,6 +10,8 @@ import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.entity.rawmaterial.RmHeatQuantity;
 import com.sarthi.entity.rawmaterial.RmInspectionDetails;
 import com.sarthi.entity.RmHeatFinalResult;
+import com.sarthi.entity.processmaterial.ProcessInspectionDetails;
+import com.sarthi.entity.processmaterial.ProcessLineFinalResult;
 import com.sarthi.repository.InspectionCompleteDetailsRepository;
 import com.sarthi.repository.MainPoInformationRepository;
 import com.sarthi.repository.PoHeaderRepository;
@@ -17,6 +20,10 @@ import com.sarthi.repository.RmHeatFinalResultRepository;
 import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.repository.rawmaterial.RmHeatQuantityRepository;
 import com.sarthi.repository.rawmaterial.RmInspectionDetailsRepository;
+import com.sarthi.repository.processmaterial.ProcessInspectionDetailsRepository;
+import com.sarthi.repository.processmaterial.ProcessLineFinalResultRepository;
+import com.sarthi.repository.processmaterial.ProcessRmIcMappingRepository;
+import com.sarthi.entity.processmaterial.ProcessRmIcMapping;
 import com.sarthi.service.certificate.CertificateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +74,15 @@ public class CertificateServiceImpl implements CertificateService {
 
     @Autowired
     private InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository;
+
+    @Autowired
+    private ProcessInspectionDetailsRepository processInspectionDetailsRepository;
+
+    @Autowired
+    private ProcessLineFinalResultRepository processLineFinalResultRepository;
+
+    @Autowired
+    private ProcessRmIcMappingRepository processRmIcMappingRepository;
 
     @Override
     public RawMaterialCertificateDto generateRawMaterialCertificate(String icNumber) {
@@ -497,6 +513,209 @@ public class CertificateServiceImpl implements CertificateService {
      */
     private String formatDate(LocalDate date) {
         return date != null ? date.format(DATE_FORMATTER) : "";
+    }
+
+    /* ==================== PROCESS MATERIAL CERTIFICATE METHODS ==================== */
+
+    @Override
+    public ProcessMaterialCertificateDto generateProcessMaterialCertificate(String icNumber) {
+        logger.info("Generating Process Material Certificate for IC Number: {}", icNumber);
+
+        // 1. Fetch Inspection Call
+        InspectionCall inspectionCall = inspectionCallRepository.findByIcNumber(icNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Process inspection call not found: " + icNumber));
+
+        return buildProcessCertificateDto(inspectionCall);
+    }
+
+    @Override
+    public ProcessMaterialCertificateDto generateProcessMaterialCertificateById(Long callId) {
+        logger.info("Generating Process Material Certificate for Call ID: {}", callId);
+
+        // 1. Fetch Inspection Call
+        InspectionCall inspectionCall = inspectionCallRepository.findById(Math.toIntExact(callId))
+                .orElseThrow(() -> new IllegalArgumentException("Process inspection call not found with ID: " + callId));
+
+        return buildProcessCertificateDto(inspectionCall);
+    }
+
+    /**
+     * Build the complete Process Material certificate DTO from inspection call data
+     */
+    private ProcessMaterialCertificateDto buildProcessCertificateDto(InspectionCall inspectionCall) {
+        logger.info("Building Process Material certificate DTO for IC: {}", inspectionCall.getIcNumber());
+
+        // 2. Fetch Process Inspection Details
+        ProcessInspectionDetails processDetails = processInspectionDetailsRepository.findByIcId(
+                Long.valueOf(inspectionCall.getId()))
+                .orElse(null);
+
+        // 3. Fetch PO Information
+        PoHeader poHeader = poHeaderRepository.findByPoNo(inspectionCall.getPoNo()).orElse(null);
+        List<PoItem> poItems = new ArrayList<>();
+        if (poHeader != null) {
+            poItems = poItemRepository.findByPoHeader_Id(poHeader.getId());
+        }
+        PoItem poItem = poItems.isEmpty() ? null : poItems.get(0);
+        List<MainPoInformation> mainPoInfos = mainPoInformationRepository.findByPoNo(inspectionCall.getPoNo());
+        MainPoInformation mainPoInfo = mainPoInfos.isEmpty() ? null : mainPoInfos.get(0);
+
+        // 4. Fetch Inspection Complete Details (for certificate number)
+        InspectionCompleteDetails completeDetails = inspectionCompleteDetailsRepository
+                .findByCallNo(inspectionCall.getIcNumber())
+                .orElse(null);
+
+        // 5. Fetch Process Line Final Results (for lot details)
+        List<ProcessLineFinalResult> lineFinalResults = processLineFinalResultRepository
+                .findByInspectionCallNo(inspectionCall.getIcNumber());
+
+        // 6. Build Lot Details
+        List<ProcessMaterialCertificateDto.LotDetailDto> lots = buildProcessLotDetails(lineFinalResults);
+
+        // 7. Build Certificate DTO
+        return ProcessMaterialCertificateDto.builder()
+                .certificateNo(completeDetails != null ? completeDetails.getCertificateNo() : "")
+                .certificateDate(formatDate(LocalDate.now()))
+                .offeredInstNo(calculateOfferedInstallment(inspectionCall))
+                .passedInstNo(calculatePassedInstallment(inspectionCall))
+                .contractor(inspectionCall.getCompanyName() != null ? inspectionCall.getCompanyName() : "")
+                .manufacturer(processDetails != null ? processDetails.getManufacturer() : "")
+                .contractRef(buildContractRef(poHeader))
+                .poDetails(buildPoDetails(poHeader))
+                .billPayingOfficer(mainPoInfo != null ? mainPoInfo.getBillPayingOfficer() : "")
+                .consigneeRailway(poItem != null ? poItem.getConsigneeDetail() : "")
+                .consigneeManufacturer(inspectionCall.getCompanyName() != null ? inspectionCall.getCompanyName() : "")
+                .purchasingAuthority("")
+                .description(buildProcessDescription(inspectionCall))
+                .drgNo(getDrgNoForErc(inspectionCall))
+                .specNo("IRS T-31-2025")
+                .qapNo("RAILWAY BOARD's Letter No. 2024/RS(G)/779/12(E3482675),\nDtd. 06.01.2025")
+                .inspectionType("Checking Length of Cut Bars/ Turning Length/ MPI Test/Checking of Die/Quenching Temp. & Duration/Quenching Hardness/ Tempering Temperature & Duration/Dimensional Check/Hardness of Finished ERC/ Documentation")
+                .ercType(inspectionCall.getErcType())
+                .chpClause(buildProcessDescription(inspectionCall))
+                .lots(lots)
+                .reference(buildProcessReference(inspectionCall))
+                .callDate(formatDate(inspectionCall.getDesiredInspectionDate()))
+                .inspectionDate(buildInspectionDateRange(inspectionCall))
+                .manDays("")
+                .sealingPattern(buildProcessSealingPattern())
+                .inspectingEngineer("")
+                .build();
+    }
+
+    /**
+     * Build lot details from Process Line Final Results
+     */
+    private List<ProcessMaterialCertificateDto.LotDetailDto> buildProcessLotDetails(
+            List<ProcessLineFinalResult> lineFinalResults) {
+
+        List<ProcessMaterialCertificateDto.LotDetailDto> lots = new ArrayList<>();
+
+        for (ProcessLineFinalResult result : lineFinalResults) {
+            String heatNum = result.getHeatNumber();
+            String lotNum = result.getLotNumber();
+            String heatLot;
+            if (heatNum != null && !heatNum.isBlank()) {
+                heatLot = heatNum;
+                if (lotNum != null && !lotNum.isBlank() && !lotNum.equals(heatNum)) {
+                    heatLot = heatLot + " - " + lotNum;
+                }
+            } else {
+                heatLot = lotNum != null ? lotNum : "";
+            }
+
+            ProcessMaterialCertificateDto.LotDetailDto lot = ProcessMaterialCertificateDto.LotDetailDto.builder()
+                    .heatNo(heatLot)
+                    .totalProcessed(result.getTotalManufactured() != null ? result.getTotalManufactured() : 0)
+                    .acceptedQty(result.getTotalAccepted() != null ? result.getTotalAccepted() : 0)
+                    .rejectedQty(result.getTotalRejected() != null ? result.getTotalRejected() : 0)
+                    .build();
+            lots.add(lot);
+        }
+
+        return lots;
+    }
+
+    /**
+     * Build process description based on ERC type
+     */
+    private String buildProcessDescription(InspectionCall inspectionCall) {
+        String ercType = inspectionCall.getErcType();
+        if (ercType != null && !ercType.isBlank()) {
+            // Normalize spacing and present as: PROCESS INSPECTION OF ELASTIC RAIL CLIP + <ERC_TYPE>
+            return "PROCESS INSPECTION OF ELASTIC RAIL CLIP  + " + ercType.trim();
+        }
+        return "PROCESS INSPECTION OF ELASTIC RAIL CLIP";
+    }
+
+    /**
+     * Build process reference
+     */
+    private String buildProcessReference(InspectionCall inspectionCall) {
+        // Try to gather RM IC mappings for this process call
+        List<ProcessRmIcMapping> mappings = processRmIcMappingRepository.findByProcessIcId(Long.valueOf(inspectionCall.getId()));
+
+        if (mappings == null || mappings.isEmpty()) {
+            return "Call No: " + inspectionCall.getIcNumber();
+        }
+
+        // Use the process call's createdAt as the date to display for all RM IC entries
+        LocalDate processCallDate = inspectionCall.getCreatedAt() != null ? inspectionCall.getCreatedAt().toLocalDate() : null;
+        String processDateStr = formatDate(processCallDate);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Raw Material STAGE IC No. ");
+
+        for (int i = 0; i < mappings.size(); i++) {
+            ProcessRmIcMapping m = mappings.get(i);
+            String rmIc = m.getRmIcNumber() != null ? m.getRmIcNumber() : "";
+
+            sb.append(rmIc);
+            if (!processDateStr.isBlank()) sb.append(", Dt.").append(processDateStr);
+
+            if (m.getBookSetNo() != null && !m.getBookSetNo().isBlank()) {
+                sb.append(" (Book/Set No - ").append(m.getBookSetNo()).append(")");
+            }
+
+            if (i < mappings.size() - 1) sb.append("; ");
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Return drawing number based on ERC type
+     */
+    private String getDrgNoForErc(InspectionCall inspectionCall) {
+        String ercType = inspectionCall.getErcType();
+        if (ercType == null) return "";
+        if (ercType.toUpperCase().contains("MK-III") || ercType.toUpperCase().contains("MK III")) {
+            return "RT-3701";
+        }
+        return "";
+    }
+
+    /**
+     * Build PO details for process certificate
+     */
+    private String buildPoDetails(PoHeader poHeader) {
+        if (poHeader == null) return "";
+        return poHeader.getPoNo() + " dated " + formatDate(poHeader.getPoDate() != null ? poHeader.getPoDate().toLocalDate() : null);
+    }
+
+    /**
+     * Build inspection date range for process certificate
+     */
+    private String buildInspectionDateRange(InspectionCall inspectionCall) {
+        // For now, return the desired inspection date
+        return formatDate(inspectionCall.getDesiredInspectionDate());
+    }
+
+    /**
+     * Build process sealing pattern
+     */
+    private String buildProcessSealingPattern() {
+        return "IT IS TO CERTIFY THAT 01 (ONE) RITES IE IS ENGAGED PER SHIFT PER LINE FOR PROCESS INSPECTION OF ERCs AT FIRM PREMISES.";
     }
 }
 

@@ -10,5 +10,10 @@ import java.util.List;
 public interface FinalIeMappingRepository extends JpaRepository<FinalIeMapping, Long> {
     List<FinalIeMapping> findByWorkflowTransitionId(Integer workflowTransitionId);
 
+    /**
+     * Batch fetch final IE mappings by workflow transition IDs (for performance optimization)
+     */
+    List<FinalIeMapping> findByWorkflowTransitionIdIn(List<Integer> workflowTransitionIds);
+
     boolean existsByWorkflowTransitionIdAndIeUserId(Integer workflowTransitionId, Integer actionBy);
 }

@@ -57,7 +57,10 @@ public class InspectionSectionServiceImpl implements InspectionSectionService {
         }
 
         MainPoInformation entity = mapToMainPoEntity(dto);
-        entity.setCreatedBy(userId);
+        // Use createdBy from DTO if provided, otherwise use userId parameter
+        String createdBy = (dto.getCreatedBy() != null && !dto.getCreatedBy().isEmpty())
+                          ? dto.getCreatedBy() : userId;
+        entity.setCreatedBy(createdBy);
         MainPoInformation saved = mainPoRepo.save(entity);
         logger.info("Created MainPoInformation with ID: {}", saved.getId());
         return mapToMainPoDto(saved);
@@ -149,7 +152,10 @@ public class InspectionSectionServiceImpl implements InspectionSectionService {
         }
 
         InspectionCallDetails entity = mapToCallDetailsEntity(dto);
-        entity.setCreatedBy(userId);
+        // Use createdBy from DTO if provided, otherwise use userId parameter
+        String createdBy = (dto.getCreatedBy() != null && !dto.getCreatedBy().isEmpty())
+                          ? dto.getCreatedBy() : userId;
+        entity.setCreatedBy(createdBy);
 
         if (dto.getMainPoId() != null) {
             MainPoInformation mainPo = mainPoRepo.findById(dto.getMainPoId())
@@ -255,9 +261,21 @@ public class InspectionSectionServiceImpl implements InspectionSectionService {
     public SubPoDetailsDto saveSubPoDetails(SubPoDetailsDto dto, String userId) {
         logger.info("Saving SubPoDetails for call: {} by user: {}", dto.getInspectionCallNo(), userId);
         validateCallNo(dto.getInspectionCallNo());
+        // If a record exists for same call + subPoNo, update it instead of creating a duplicate
+        if (dto.getSubPoNo() != null && !dto.getSubPoNo().trim().isEmpty()) {
+            java.util.Optional<SubPoDetails> existingOpt = subPoRepo.findByInspectionCallNoAndSubPoNo(dto.getInspectionCallNo(), dto.getSubPoNo());
+            if (existingOpt.isPresent()) {
+                SubPoDetails existing = existingOpt.get();
+                logger.info("Found existing SubPoDetails (ID: {}) for call:{} subPo:{} - updating", existing.getId(), dto.getInspectionCallNo(), dto.getSubPoNo());
+                return updateSubPoEntity(existing, dto, userId);
+            }
+        }
 
         SubPoDetails entity = mapToSubPoEntity(dto);
-        entity.setCreatedBy(userId);
+        // Use createdBy from DTO if provided, otherwise use userId parameter
+        String createdBy = (dto.getCreatedBy() != null && !dto.getCreatedBy().isEmpty())
+                          ? dto.getCreatedBy() : userId;
+        entity.setCreatedBy(createdBy);
 
         if (dto.getInspectionCallDetailsId() != null) {
             InspectionCallDetails callDetails = callDetailsRepo.findById(dto.getInspectionCallDetailsId())

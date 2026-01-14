@@ -1,6 +1,7 @@
 package com.sarthi.controller.certificate;
 
 import com.sarthi.dto.certificate.RawMaterialCertificateDto;
+import com.sarthi.dto.certificate.ProcessMaterialCertificateDto;
 import com.sarthi.service.certificate.CertificateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,8 +100,83 @@ public class CertificateController {
     }
 
     /**
+     * Generate Process Material Inspection Certificate by IC Number (Query Parameter)
+     *
+     * @param icNumber - Inspection Call Number (e.g., EP-01090004)
+     * @return ProcessMaterialCertificateDto with all certificate data
+     *
+     * Example: GET /api/certificate/process-material?icNumber=EP-01090004
+     */
+    @GetMapping("/process-material")
+    public ResponseEntity<?> generateProcessMaterialCertificateByQuery(@RequestParam String icNumber) {
+        try {
+            logger.info("Generating Process Material Certificate for IC Number (query param): {}", icNumber);
+            ProcessMaterialCertificateDto certificate = certificateService.generateProcessMaterialCertificate(icNumber);
+            return ResponseEntity.ok(certificate);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error generating process material certificate: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error generating process material certificate", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating process material certificate: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generate Process Material Inspection Certificate by IC Number (Path Variable)
+     *
+     * @param icNumber - Inspection Call Number (e.g., EP-01090004)
+     * @return ProcessMaterialCertificateDto with all certificate data
+     *
+     * Example: GET /api/certificate/process-material/EP-01090004
+     */
+    @GetMapping("/process-material/{icNumber}")
+    public ResponseEntity<?> generateProcessMaterialCertificate(@PathVariable String icNumber) {
+        try {
+            logger.info("Generating Process Material Certificate for IC Number (path variable): {}", icNumber);
+            ProcessMaterialCertificateDto certificate = certificateService.generateProcessMaterialCertificate(icNumber);
+            return ResponseEntity.ok(certificate);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error generating process material certificate: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error generating process material certificate", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating process material certificate: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generate Process Material Inspection Certificate by Call ID
+     *
+     * @param callId - Inspection Call ID
+     * @return ProcessMaterialCertificateDto with all certificate data
+     *
+     * Example: GET /api/certificate/process-material/by-id/1
+     */
+    @GetMapping("/process-material/by-id/{callId}")
+    public ResponseEntity<?> generateProcessMaterialCertificateById(@PathVariable Long callId) {
+        try {
+            logger.info("Generating Process Material Certificate for Call ID: {}", callId);
+            ProcessMaterialCertificateDto certificate = certificateService.generateProcessMaterialCertificateById(callId);
+            return ResponseEntity.ok(certificate);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error generating process material certificate: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error generating process material certificate", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating process material certificate: " + e.getMessage());
+        }
+    }
+
+    /**
      * Health check endpoint
-     * 
+     *
      * Example: GET /api/certificate/health
      */
     @GetMapping("/health")

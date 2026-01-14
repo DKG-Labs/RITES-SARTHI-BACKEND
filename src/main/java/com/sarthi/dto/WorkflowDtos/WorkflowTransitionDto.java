@@ -36,6 +36,9 @@ public class WorkflowTransitionDto {
     private String productType;
     private String desiredInspectionDate;
 
+    // Inspection date range (start - end)
+    private String inspectionDate;
+
     private String rio;
 
     private List<Integer> processIes;
