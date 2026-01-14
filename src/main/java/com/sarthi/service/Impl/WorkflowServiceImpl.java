@@ -2737,8 +2737,8 @@ private Integer assignIE(
 
         dto.setPoNo(ic.getPoNo());
         dto.setVendorName(ic.getVendorId());
-        dto.setProductType("ERC-RAW MATERIAL");
-        dto.setStage("Raw Material Inspection");
+        dto.setProductType(ic.getTypeOfCall());
+        dto.setStage(ic.getTypeOfCall());
 
         return dto;
     }
