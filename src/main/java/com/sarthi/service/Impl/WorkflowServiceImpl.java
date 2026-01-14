@@ -7,7 +7,6 @@ import com.sarthi.dto.WorkflowDtos.TransitionActionReqDto;
 import com.sarthi.dto.WorkflowDtos.TransitionDto;
 import com.sarthi.dto.WorkflowDtos.WorkflowTransitionDto;
 import com.sarthi.entity.*;
-import com.sarthi.entity.FinalIeMapping;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.exception.BusinessException;
 import com.sarthi.exception.ErrorDetails;
@@ -1830,7 +1829,192 @@ private Integer assignIE(
         }
     }
 
-    private WorkflowTransitionDto mapWorkflowTransition(WorkflowTransition wt) {
+//     private WorkflowTransitionDto mapWorkflowTransition(WorkflowTransition wt) {
+
+//         Optional<InspectionCall> ic = inspectionCallRepository.findByIcNumber(wt.getRequestId());
+
+//         InspectionCall i =null;
+//         if(ic.isPresent()){
+//             i = ic.get();
+//         }
+//         WorkflowTransitionDto dto = new WorkflowTransitionDto();
+//         if(wt.getProcessIeUserId()!= null) {
+//             int processIe = wt.getProcessIeUserId();
+//             String poi = i.getPlaceOfInspection();
+
+//             List<Integer> ieUsers = null;
+
+//             ieUsers = getIeUsersByProcessIeAndPoi(processIe, poi);
+
+
+//             ieUsers.add(processIe);
+//             dto.setProcessIes(ieUsers);
+//         }
+
+//         if (i != null && "Final".equalsIgnoreCase(i.getTypeOfCall())) {
+
+//             List<FinalIeMapping> mappings =
+//                     finalIeMappingRepository
+//                             .findByWorkflowTransitionId(wt.getWorkflowTransitionId());
+
+//             List<Integer> finalIes = mappings.stream()
+//                     .map(FinalIeMapping::getIeUserId)
+//                     .collect(Collectors.toList());
+
+//             dto.setFinalIes(finalIes);
+//         }
+
+//         dto.setWorkflowTransitionId(wt.getWorkflowTransitionId());
+//         dto.setWorkflowId(wt.getWorkflowId());
+//         dto.setTransitionId(wt.getTransitionId());
+//         dto.setRequestId(wt.getRequestId());
+//         dto.setStatus(wt.getStatus());
+//         dto.setAction(wt.getAction());
+//         //dto.setAction(wt.getStatus());
+//         dto.setRemarks(wt.getRemarks());
+//         dto.setCreatedBy(wt.getCreatedBy());
+//         dto.setCreatedDate(wt.getCreatedDate());
+//         dto.setCurrentRole(wt.getCurrentRole());
+//         dto.setNextRole(wt.getNextRole());
+//         dto.setAssignedToUser(wt.getAssignedToUser());
+//         dto.setWorkflowSequence(wt.getWorkflowSequence());
+//         dto.setModifiedBy(wt.getModifiedBy());
+//         dto.setRio(wt.getRio());
+
+
+//         if(ic.isPresent()){
+//             dto.setPoNo(i.getPoNo());
+//             dto.setVendorName(i.getVendorId());
+//             dto.setProductType(i.getTypeOfCall());
+//             dto.setDesiredInspectionDate(String.valueOf(i.getDesiredInspectionDate()));
+
+//                 // Compute inspection date range from workflow transitions for this request
+//                 try {
+//                         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy");
+//                         List<WorkflowTransition> transitions = workflowTransitionRepository.findByRequestId(wt.getRequestId());
+
+//                         java.util.Set<String> startStatuses = new java.util.HashSet<>(java.util.Arrays.asList("INITIATE_INSPECTION", "IE_SCHEDULED", "INSPECTION_IN_PROGRESS"));
+//                         java.util.Set<String> endStatuses = new java.util.HashSet<>(java.util.Arrays.asList("INSPECTION_COMPLETE_CONFIRM", "INSPECTION_COMPLETE"));
+
+//                         java.util.Date start = transitions.stream()
+//                                 .filter(t -> t.getStatus() != null && startStatuses.contains(t.getStatus().toUpperCase()))
+//                                 .map(WorkflowTransition::getCreatedDate)
+//                                 .min(java.util.Date::compareTo)
+//                                 .orElse(null);
+
+//                         java.util.Date end = transitions.stream()
+//                                 .filter(t -> t.getStatus() != null && endStatuses.contains(t.getStatus().toUpperCase()))
+//                                 .map(WorkflowTransition::getCreatedDate)
+//                                 .max(java.util.Date::compareTo)
+//                                 .orElse(null);
+
+//                         if (start != null && end != null) {
+//                                 dto.setInspectionDate(sdf.format(start) + " - " + sdf.format(end));
+//                         } else if (start != null) {
+//                                 dto.setInspectionDate(sdf.format(start));
+//                         }
+//                 } catch (Exception ex) {
+//                         // ignore
+//                 }
+//         }
+//       //  dto.setTransitionOrder(wt.getTransitionOrder());
+//         return dto;
+//     }
+
+//     /**
+//      * Optimized version of mapWorkflowTransition that uses pre-fetched data
+//      * to avoid N+1 query problem
+//      */
+//     private WorkflowTransitionDto mapWorkflowTransitionOptimized(
+//             WorkflowTransition wt,
+//             Map<String, InspectionCall> inspectionCallMap,
+//             Map<Integer, List<Integer>> finalIeMappings) {
+
+//         InspectionCall i = inspectionCallMap.get(wt.getRequestId());
+
+//         WorkflowTransitionDto dto = new WorkflowTransitionDto();
+
+//         // Handle Process IE mappings (skip for now to avoid additional queries)
+//         if (wt.getProcessIeUserId() != null && i != null) {
+//             int processIe = wt.getProcessIeUserId();
+//             String poi = i.getPlaceOfInspection();
+
+//             try {
+//                 List<Integer> ieUsers = getIeUsersByProcessIeAndPoi(processIe, poi);
+//                 ieUsers.add(processIe);
+//                 dto.setProcessIes(ieUsers);
+//             } catch (Exception e) {
+//                 // Silently handle errors to avoid breaking the entire list
+//                 dto.setProcessIes(Collections.singletonList(processIe));
+//             }
+//         }
+
+//         // Handle Final IE mappings using pre-fetched data
+//         if (i != null && "Final".equalsIgnoreCase(i.getTypeOfCall())) {
+//             List<Integer> finalIes = finalIeMappings.getOrDefault(
+//                     wt.getWorkflowTransitionId(),
+//                     Collections.emptyList()
+//             );
+//             dto.setFinalIes(finalIes);
+//         }
+
+//         // Map basic fields
+//         dto.setWorkflowTransitionId(wt.getWorkflowTransitionId());
+//         dto.setWorkflowId(wt.getWorkflowId());
+//         dto.setTransitionId(wt.getTransitionId());
+//         dto.setRequestId(wt.getRequestId());
+//         dto.setStatus(wt.getStatus());
+//         dto.setAction(wt.getAction());
+//         dto.setRemarks(wt.getRemarks());
+//         dto.setCreatedBy(wt.getCreatedBy());
+//         dto.setCreatedDate(wt.getCreatedDate());
+//         dto.setCurrentRole(wt.getCurrentRole());
+//         dto.setNextRole(wt.getNextRole());
+//         dto.setAssignedToUser(wt.getAssignedToUser());
+//         dto.setWorkflowSequence(wt.getWorkflowSequence());
+//         dto.setModifiedBy(wt.getModifiedBy());
+//         dto.setRio(wt.getRio());
+
+//         // Map inspection call data using pre-fetched data
+//         if (i != null) {
+//             dto.setPoNo(i.getPoNo());
+//             dto.setVendorName(i.getVendorId());
+//             dto.setProductType(i.getTypeOfCall());
+//             dto.setDesiredInspectionDate(String.valueOf(i.getDesiredInspectionDate()));
+//                         // Compute inspection date range from workflow transitions for this request
+//                         try {
+//                                 java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy");
+//                                 List<WorkflowTransition> transitions = workflowTransitionRepository.findByRequestId(wt.getRequestId());
+
+//                                 java.util.Set<String> startStatuses = new java.util.HashSet<>(java.util.Arrays.asList("INITIATE_INSPECTION", "IE_SCHEDULED", "INSPECTION_IN_PROGRESS"));
+//                                 java.util.Set<String> endStatuses = new java.util.HashSet<>(java.util.Arrays.asList("INSPECTION_COMPLETE_CONFIRM", "INSPECTION_COMPLETE"));
+
+//                                 java.util.Date start = transitions.stream()
+//                                                 .filter(t -> t.getStatus() != null && startStatuses.contains(t.getStatus().toUpperCase()))
+//                                                 .map(WorkflowTransition::getCreatedDate)
+//                                                 .min(java.util.Date::compareTo)
+//                                                 .orElse(null);
+
+//                                 java.util.Date end = transitions.stream()
+//                                                 .filter(t -> t.getStatus() != null && endStatuses.contains(t.getStatus().toUpperCase()))
+//                                                 .map(WorkflowTransition::getCreatedDate)
+//                                                 .max(java.util.Date::compareTo)
+//                                                 .orElse(null);
+
+//                                 if (start != null && end != null) {
+//                                         dto.setInspectionDate(sdf.format(start) + " - " + sdf.format(end));
+//                                 } else if (start != null) {
+//                                         dto.setInspectionDate(sdf.format(start));
+//                                 }
+//                         } catch (Exception ex) {
+//                                 // ignore
+//                         }
+//         }
+
+//         return dto;
+//     }
+
+private WorkflowTransitionDto mapWorkflowTransition(WorkflowTransition wt) {
 
         Optional<InspectionCall> ic = inspectionCallRepository.findByIcNumber(wt.getRequestId());
 
@@ -1888,133 +2072,10 @@ private Integer assignIE(
             dto.setVendorName(i.getVendorId());
             dto.setProductType(i.getTypeOfCall());
             dto.setDesiredInspectionDate(String.valueOf(i.getDesiredInspectionDate()));
-
-                // Compute inspection date range from workflow transitions for this request
-                try {
-                        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy");
-                        List<WorkflowTransition> transitions = workflowTransitionRepository.findByRequestId(wt.getRequestId());
-
-                        java.util.Set<String> startStatuses = new java.util.HashSet<>(java.util.Arrays.asList("INITIATE_INSPECTION", "IE_SCHEDULED", "INSPECTION_IN_PROGRESS"));
-                        java.util.Set<String> endStatuses = new java.util.HashSet<>(java.util.Arrays.asList("INSPECTION_COMPLETE_CONFIRM", "INSPECTION_COMPLETE"));
-
-                        java.util.Date start = transitions.stream()
-                                .filter(t -> t.getStatus() != null && startStatuses.contains(t.getStatus().toUpperCase()))
-                                .map(WorkflowTransition::getCreatedDate)
-                                .min(java.util.Date::compareTo)
-                                .orElse(null);
-
-                        java.util.Date end = transitions.stream()
-                                .filter(t -> t.getStatus() != null && endStatuses.contains(t.getStatus().toUpperCase()))
-                                .map(WorkflowTransition::getCreatedDate)
-                                .max(java.util.Date::compareTo)
-                                .orElse(null);
-
-                        if (start != null && end != null) {
-                                dto.setInspectionDate(sdf.format(start) + " - " + sdf.format(end));
-                        } else if (start != null) {
-                                dto.setInspectionDate(sdf.format(start));
-                        }
-                } catch (Exception ex) {
-                        // ignore
-                }
         }
       //  dto.setTransitionOrder(wt.getTransitionOrder());
         return dto;
     }
-
-    /**
-     * Optimized version of mapWorkflowTransition that uses pre-fetched data
-     * to avoid N+1 query problem
-     */
-    private WorkflowTransitionDto mapWorkflowTransitionOptimized(
-            WorkflowTransition wt,
-            Map<String, InspectionCall> inspectionCallMap,
-            Map<Integer, List<Integer>> finalIeMappings) {
-
-        InspectionCall i = inspectionCallMap.get(wt.getRequestId());
-
-        WorkflowTransitionDto dto = new WorkflowTransitionDto();
-
-        // Handle Process IE mappings (skip for now to avoid additional queries)
-        if (wt.getProcessIeUserId() != null && i != null) {
-            int processIe = wt.getProcessIeUserId();
-            String poi = i.getPlaceOfInspection();
-
-            try {
-                List<Integer> ieUsers = getIeUsersByProcessIeAndPoi(processIe, poi);
-                ieUsers.add(processIe);
-                dto.setProcessIes(ieUsers);
-            } catch (Exception e) {
-                // Silently handle errors to avoid breaking the entire list
-                dto.setProcessIes(Collections.singletonList(processIe));
-            }
-        }
-
-        // Handle Final IE mappings using pre-fetched data
-        if (i != null && "Final".equalsIgnoreCase(i.getTypeOfCall())) {
-            List<Integer> finalIes = finalIeMappings.getOrDefault(
-                    wt.getWorkflowTransitionId(),
-                    Collections.emptyList()
-            );
-            dto.setFinalIes(finalIes);
-        }
-
-        // Map basic fields
-        dto.setWorkflowTransitionId(wt.getWorkflowTransitionId());
-        dto.setWorkflowId(wt.getWorkflowId());
-        dto.setTransitionId(wt.getTransitionId());
-        dto.setRequestId(wt.getRequestId());
-        dto.setStatus(wt.getStatus());
-        dto.setAction(wt.getAction());
-        dto.setRemarks(wt.getRemarks());
-        dto.setCreatedBy(wt.getCreatedBy());
-        dto.setCreatedDate(wt.getCreatedDate());
-        dto.setCurrentRole(wt.getCurrentRole());
-        dto.setNextRole(wt.getNextRole());
-        dto.setAssignedToUser(wt.getAssignedToUser());
-        dto.setWorkflowSequence(wt.getWorkflowSequence());
-        dto.setModifiedBy(wt.getModifiedBy());
-        dto.setRio(wt.getRio());
-
-        // Map inspection call data using pre-fetched data
-        if (i != null) {
-            dto.setPoNo(i.getPoNo());
-            dto.setVendorName(i.getVendorId());
-            dto.setProductType(i.getTypeOfCall());
-            dto.setDesiredInspectionDate(String.valueOf(i.getDesiredInspectionDate()));
-                        // Compute inspection date range from workflow transitions for this request
-                        try {
-                                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy");
-                                List<WorkflowTransition> transitions = workflowTransitionRepository.findByRequestId(wt.getRequestId());
-
-                                java.util.Set<String> startStatuses = new java.util.HashSet<>(java.util.Arrays.asList("INITIATE_INSPECTION", "IE_SCHEDULED", "INSPECTION_IN_PROGRESS"));
-                                java.util.Set<String> endStatuses = new java.util.HashSet<>(java.util.Arrays.asList("INSPECTION_COMPLETE_CONFIRM", "INSPECTION_COMPLETE"));
-
-                                java.util.Date start = transitions.stream()
-                                                .filter(t -> t.getStatus() != null && startStatuses.contains(t.getStatus().toUpperCase()))
-                                                .map(WorkflowTransition::getCreatedDate)
-                                                .min(java.util.Date::compareTo)
-                                                .orElse(null);
-
-                                java.util.Date end = transitions.stream()
-                                                .filter(t -> t.getStatus() != null && endStatuses.contains(t.getStatus().toUpperCase()))
-                                                .map(WorkflowTransition::getCreatedDate)
-                                                .max(java.util.Date::compareTo)
-                                                .orElse(null);
-
-                                if (start != null && end != null) {
-                                        dto.setInspectionDate(sdf.format(start) + " - " + sdf.format(end));
-                                } else if (start != null) {
-                                        dto.setInspectionDate(sdf.format(start));
-                                }
-                        } catch (Exception ex) {
-                                // ignore
-                        }
-        }
-
-        return dto;
-    }
-
 
     private List<Integer> getIeUsersByProcessIeAndPoi(Integer processIeUserId, String poiCode) {
 
@@ -2382,7 +2443,7 @@ private Integer assignIE(
         return mapWorkflowTransition(next);
     }
 
-    @Override
+     @Override
     public List<WorkflowTransitionDto> allPendingWorkflowTransition(String roleName) {
 
         List<WorkflowTransition> pending;
@@ -2396,42 +2457,12 @@ private Integer assignIE(
             pending = workflowTransitionRepository
                     .findPendingByRole(roleName);
         }
+        System.out.println(pending);
 
-        if (pending.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // PERFORMANCE OPTIMIZATION: Batch fetch all related data to avoid N+1 queries
-        // Extract all request IDs
-        List<String> requestIds = pending.stream()
-                .map(WorkflowTransition::getRequestId)
-                .distinct()
-                .collect(Collectors.toList());
-
-        // Batch fetch all inspection calls (1 query instead of N queries)
-        Map<String, InspectionCall> inspectionCallMap = inspectionCallRepository
-                .findByIcNumberIn(requestIds)
-                .stream()
-                .collect(Collectors.toMap(InspectionCall::getIcNumber, ic -> ic));
-
-        // Batch fetch all final IE mappings (1 query instead of N queries)
-        List<Integer> workflowTransitionIds = pending.stream()
-                .map(WorkflowTransition::getWorkflowTransitionId)
-                .collect(Collectors.toList());
-
-        Map<Integer, List<Integer>> finalIeMappings = finalIeMappingRepository
-                .findByWorkflowTransitionIdIn(workflowTransitionIds)
-                .stream()
-                .collect(Collectors.groupingBy(
-                        FinalIeMapping::getWorkflowTransitionId,
-                        Collectors.mapping(FinalIeMapping::getIeUserId, Collectors.toList())
-                ));
-
-        // Now map with cached data
         return pending.stream()
                 .sorted(Comparator.comparing(WorkflowTransition::getRequestId)
                         .thenComparing(WorkflowTransition::getCreatedDate))
-                .map(wt -> mapWorkflowTransitionOptimized(wt, inspectionCallMap, finalIeMappings))
+                .map(this::mapWorkflowTransition)
                 .collect(Collectors.toList());
     }
 
