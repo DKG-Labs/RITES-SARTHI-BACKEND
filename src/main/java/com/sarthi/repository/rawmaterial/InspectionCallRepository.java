@@ -1,6 +1,8 @@
 package com.sarthi.repository.rawmaterial;
 
+import com.sarthi.dto.InspectionDataDto;
 import com.sarthi.entity.rawmaterial.InspectionCall;
+import org.hibernate.query.SelectionQuery;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -96,5 +98,23 @@ public interface InspectionCallRepository extends JpaRepository<InspectionCall, 
      * Check if IC number exists
      */
     boolean existsByIcNumber(String icNumber);
+
+    @Query("""
+SELECT new com.sarthi.dto.InspectionDataDto(
+    ic.icNumber,
+    ic.poNo,
+    ic.vendorId,
+    ic.typeOfCall,
+    ic.desiredInspectionDate,
+    ic.placeOfInspection
+)
+FROM InspectionCall ic
+WHERE ic.icNumber IN :icNumbers
+""")
+    List<InspectionDataDto> findLiteByIcNumberIn(
+            @Param("icNumbers") List<String> icNumbers
+    );
+
+
 }
 
