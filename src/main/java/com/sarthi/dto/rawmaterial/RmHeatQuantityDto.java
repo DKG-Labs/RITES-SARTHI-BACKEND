@@ -42,6 +42,11 @@ public class RmHeatQuantityDto {
     private String qtyRejected;
     private String rejectionReason;
 
+    /* ==================== Final Results (from rm_heat_final_result) ==================== */
+
+    private Double weightOfferedMt;  // Weight offered in MT (from rm_heat_final_result)
+    private Double weightAcceptedMt; // Weight accepted in MT (from rm_heat_final_result)
+
     /* ==================== Audit Fields ==================== */
 
     private String createdAt;

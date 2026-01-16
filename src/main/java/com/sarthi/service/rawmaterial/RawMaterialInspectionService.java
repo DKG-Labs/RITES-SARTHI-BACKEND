@@ -73,16 +73,18 @@ public interface RawMaterialInspectionService {
     /* ==================== Process IC Support Operations ==================== */
 
     /**
-     * Get completed RM IC numbers from inspection_complete_details table
+     * Get completed RM IC certificate numbers for Process IC dropdown
+     * Fetches certificate_no from inspection_complete_details table
+     * Filters by ER prefix in call_no (Raw Material inspections)
      * Used for Process IC dropdown when call type is "Process"
-     * @return List of completed RM IC numbers
+     * @return List of completed RM IC certificate numbers (e.g., "N/ER-01080001/RAJK")
      */
     List<String> getCompletedRmIcNumbers();
 
     /**
      * Get heat numbers for a specific RM IC number
      * Fetches from rm_heat_quantities table based on the RM IC's ic_id
-     * @param rmIcNumber RM IC Number
+     * @param rmIcNumber RM IC Number (call_no from inspection_complete_details, e.g., "ER-01080001")
      * @return List of heat numbers with details
      */
     List<RmHeatQuantityDto> getHeatNumbersByRmIcNumber(String rmIcNumber);

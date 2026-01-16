@@ -112,17 +112,32 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
             processDetails.setInspectionCall(inspectionCall);
 
             // Get RM IC details from the request
-            processDetails.setRmIcNumber(firstDetail.getRmIcNumber());
+            // rmIcNumber can be either certificate number (e.g., "N/ER-01080001/RAJK") or call number (e.g., "ER-01080001")
+            String rmIcNumberFromRequest = firstDetail.getRmIcNumber();
+            processDetails.setRmIcNumber(rmIcNumberFromRequest); // Store as-is (certificate number)
 
-            // Fetch RM IC to get rmIcId (optional - may not exist yet)
+            // Extract call number from certificate number if needed
+            // Certificate format: "N/ER-01080001/RAJK" → Call number: "ER-01080001"
+            String callNumber = rmIcNumberFromRequest;
+            if (rmIcNumberFromRequest != null && rmIcNumberFromRequest.startsWith("N/")) {
+                // Extract call number using regex: N/{CALL_NO}/{SUFFIX}
+                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("N/([^/]+)/");
+                java.util.regex.Matcher matcher = pattern.matcher(rmIcNumberFromRequest);
+                if (matcher.find()) {
+                    callNumber = matcher.group(1);
+                    logger.info("📋 Extracted call number '{}' from certificate number '{}'", callNumber, rmIcNumberFromRequest);
+                }
+            }
+
+            // Fetch RM IC to get rmIcId using the call number
             InspectionCall rmIc = null;
-            if (firstDetail.getRmIcNumber() != null && !firstDetail.getRmIcNumber().isEmpty()) {
-                rmIc = inspectionCallRepository.findByIcNumber(firstDetail.getRmIcNumber()).orElse(null);
+            if (callNumber != null && !callNumber.isEmpty()) {
+                rmIc = inspectionCallRepository.findByIcNumber(callNumber).orElse(null);
                 if (rmIc != null) {
                     processDetails.setRmIcId(rmIc.getId());
-                    logger.info("✅ Found RM IC: {} with ID: {}", firstDetail.getRmIcNumber(), rmIc.getId());
+                    logger.info("✅ Found RM IC with call number '{}' and ID: {}", callNumber, rmIc.getId());
                 } else {
-                    logger.warn("⚠️ RM IC not found: {}. Proceeding without RM IC reference.", firstDetail.getRmIcNumber());
+                    logger.warn("⚠️ RM IC not found for call number: {}. Proceeding without RM IC reference.", callNumber);
                 }
             }
 

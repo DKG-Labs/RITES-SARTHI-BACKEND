@@ -148,13 +148,13 @@ public class RawMaterialInspectionController {
     /* ==================== Process IC Support Endpoints ==================== */
 
     /**
-     * Get completed RM IC numbers for Process IC dropdown
+     * Get completed RM IC certificate numbers for Process IC dropdown
      * GET /api/raw-material/completed-rm-ics
      */
     @GetMapping("/completed-rm-ics")
-    @Operation(summary = "Get completed RM ICs", description = "Fetches completed RM IC numbers from inspection_complete_details table for Process IC dropdown")
+    @Operation(summary = "Get completed RM ICs", description = "Fetches completed RM IC certificate numbers from inspection_complete_details table filtered by ER prefix")
     public ResponseEntity<APIResponse> getCompletedRmIcNumbers() {
-        logger.info("Request: Get completed RM IC numbers");
+        logger.info("Request: Get completed RM IC certificate numbers");
         List<String> completedRmIcs = rmService.getCompletedRmIcNumbers();
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(completedRmIcs), HttpStatus.OK);
     }
