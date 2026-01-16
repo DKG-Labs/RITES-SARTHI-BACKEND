@@ -3,8 +3,18 @@ package com.sarthi.controller.finalmaterial;
 import com.sarthi.dto.IcDtos.CreateFinalInspectionCallRequestDto;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.util.ResponseBuilder;
+import com.sarthi.exception.ErrorDetails;
+import com.sarthi.constant.AppConstant;
 import com.sarthi.service.FinalInspectionCallService;
 import com.sarthi.service.WorkflowService;
+import com.sarthi.entity.rawmaterial.InspectionCall;
+import com.sarthi.entity.finalmaterial.FinalInspectionDetails;
+import com.sarthi.entity.finalmaterial.FinalInspectionLotDetails;
+import com.sarthi.entity.finalmaterial.FinalProcessIcMapping;
+import com.sarthi.repository.rawmaterial.InspectionCallRepository;
+import com.sarthi.repository.finalmaterial.FinalInspectionDetailsRepository;
+import com.sarthi.repository.finalmaterial.FinalInspectionLotDetailsRepository;
+import com.sarthi.repository.finalmaterial.FinalProcessIcMappingRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
@@ -30,6 +40,18 @@ public class FinalInspectionCallController {
 
     @Autowired
     private WorkflowService workflowService;
+
+    @Autowired
+    private InspectionCallRepository inspectionCallRepository;
+
+    @Autowired
+    private FinalInspectionDetailsRepository finalInspectionDetailsRepository;
+
+    @Autowired
+    private FinalInspectionLotDetailsRepository finalInspectionLotDetailsRepository;
+
+    @Autowired
+    private FinalProcessIcMappingRepository finalProcessIcMappingRepository;
 
     /**
      * Create a new Final Inspection Call with lot details
@@ -88,6 +110,50 @@ public class FinalInspectionCallController {
 
         logger.info("✅ Final Inspection Call created successfully: {}", ic.getIcNumber());
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(responseData), HttpStatus.CREATED);
+    }
+
+    /**
+     * Get final inspection initiation data by call number
+     * GET /api/final-material/inspection/{callNo}
+     */
+    @GetMapping("/inspection/{callNo}")
+    @Operation(summary = "Get Final inspection initiation data", description = "Returns inspection call, final details, lot details and process mappings for a call number")
+    public ResponseEntity<Object> getFinalInspectionByCallNo(@PathVariable String callNo) {
+        logger.info("GET /api/final-material/inspection/{} - Fetching final initiation data", callNo);
+
+        InspectionCall ic = inspectionCallRepository.findByIcNumber(callNo)
+                .orElse(null);
+
+        if (ic == null) {
+            logger.warn("Final initiation: Inspection call not found for callNo: {}", callNo);
+            ErrorDetails errorDetails = new ErrorDetails(
+                    AppConstant.ERROR_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_RESOURCE,
+                    "Inspection call not found for callNo: " + callNo
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.NOT_FOUND);
+        }
+
+        FinalInspectionDetails finalDetails = finalInspectionDetailsRepository.findByIcId(ic.getId().longValue())
+                .orElse(null);
+
+        java.util.List<FinalInspectionLotDetails> lotDetails = new java.util.ArrayList<>();
+        java.util.List<FinalProcessIcMapping> mappings = new java.util.ArrayList<>();
+
+        if (finalDetails != null) {
+            lotDetails = finalInspectionLotDetailsRepository.findByFinalDetailId(finalDetails.getId());
+        }
+
+        mappings = finalProcessIcMappingRepository.findByFinalIcId(ic.getId().longValue());
+
+        java.util.Map<String, Object> resp = new java.util.HashMap<>();
+        resp.put("inspectionCall", ic);
+        resp.put("finalInspectionDetails", finalDetails);
+        resp.put("finalLotDetails", lotDetails);
+        resp.put("finalProcessMappings", mappings);
+
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(resp), HttpStatus.OK);
     }
 
     /**
