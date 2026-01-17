@@ -32,7 +32,10 @@ public class InventoryEntryResponseDto {
     private String tcNumber;
     private LocalDate tcDate;
     private BigDecimal tcQuantity;
-    
+
+    private BigDecimal offeredQuantity;
+    private BigDecimal qtyLeftForInspection;
+
     private String subPoNumber;
     private LocalDate subPoDate;
     private BigDecimal subPoQty;
