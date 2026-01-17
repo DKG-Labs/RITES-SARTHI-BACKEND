@@ -2,6 +2,7 @@ package com.sarthi.service.Impl;
 
 import com.sarthi.constant.AppConstant;
 import com.sarthi.dto.IcWorkflowTransitionDto;
+import com.sarthi.dto.InspectionDataDto;
 import com.sarthi.dto.WorkflowDto;
 import com.sarthi.dto.WorkflowDtos.TransitionActionReqDto;
 import com.sarthi.dto.WorkflowDtos.TransitionDto;
@@ -16,8 +17,10 @@ import com.sarthi.repository.*;
 import com.sarthi.repository.processmaterial.ProcessInspectionDetailsRepository;
 import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.service.WorkflowService;
+
 import jakarta.persistence.criteria.CriteriaBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
@@ -26,7 +29,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static org.hibernate.query.sqm.tree.SqmNode.log;
 
 @Service
 public class WorkflowServiceImpl implements WorkflowService {
@@ -1334,34 +1342,8 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
         callReg.setAssignedToUser(processIeUserId);
         callReg.setProcessIeUserId(processIeUserId);
 
-    } else if("Final".equalsIgnoreCase(inspectionType)) {
-
-
-        //  Fetch IE mappings using POI code
-        List<IePincodePoiMapping> ieMappings =
-                iePincodePoiMappingRepository.findByPoiCode(insp.getPlaceOfInspection());
-
-        for (IePincodePoiMapping mapping : ieMappings) {
-
-            String employeeCode = mapping.getEmployeeCode();
-
-            // Fetch userId using employeeCode
-            UserMaster userOpt =
-                    userMasterRepository.findByEmployeeCode(employeeCode);
-
-                Integer userId = userOpt.getUserId();
-
-                //  Save into FINAL_IE_MAPPING
-                FinalIeMapping finalMapping = new FinalIeMapping();
-                finalMapping.setWorkflowTransitionId(
-                        callReg.getWorkflowTransitionId()
-                );
-                finalMapping.setIeUserId(userId);
-
-                finalIeMappingRepository.save(finalMapping);
-
-        }
     }
+
     else {
 
         InspectionCall ic = inspectionCallRepository.findByIcNumber(req.getRequestId())
@@ -1406,6 +1388,37 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
 
    // callReg.setAssignedToUser(assignIE(req.getPincode()));
     workflowTransitionRepository.save(callReg);
+
+     if("Final".equalsIgnoreCase(inspectionType)) {
+
+
+        //  Fetch IE mappings using POI code
+        List<IePincodePoiMapping> ieMappings =
+                iePincodePoiMappingRepository.findByPoiCode(insp.getPlaceOfInspection());
+
+        for (IePincodePoiMapping mapping : ieMappings) {
+
+
+
+            String employeeCode = mapping.getEmployeeCode();
+
+            // Fetch userId using employeeCode
+            UserMaster userOpt =
+                    userMasterRepository.findByEmployeeCode(employeeCode);
+
+            Integer userId = userOpt.getUserId();
+
+            //  Save into FINAL_IE_MAPPING
+            FinalIeMapping finalMapping = new FinalIeMapping();
+            finalMapping.setWorkflowTransitionId(
+                    callReg.getWorkflowTransitionId()
+            );
+            finalMapping.setIeUserId(userId);
+
+            finalIeMappingRepository.save(finalMapping);
+
+        }
+    }
 
     return mapWorkflowTransition(callReg);
 }
@@ -2186,7 +2199,7 @@ private WorkflowTransitionDto mapWorkflowTransition(WorkflowTransition wt) {
 
             List<Integer> ieUsers = null;
 
-            ieUsers = getIeUsersByProcessIeAndPoi(processIe, poi);
+            ieUsers = getIeUsersByProcessIeAndPlaceOfInsp(processIe, poi);
 
 
             ieUsers.add(processIe);
@@ -2233,6 +2246,41 @@ private WorkflowTransitionDto mapWorkflowTransition(WorkflowTransition wt) {
       //  dto.setTransitionOrder(wt.getTransitionOrder());
         return dto;
     }
+
+    @Cacheable(
+            value = "ieUsersByProcessPoi",
+            key = "#processIeUserId + '_' + #poiCode"
+    )
+    private List<Integer> getIeUsersByProcessIeAndPlaceOfInsp(
+            Integer processIeUserId,
+            String poiCode
+    ) {
+
+        List<Long> ieUserIds =
+                processIeUsersRepository
+                        .findIeUsersByProcessIeAndPoi(
+                                processIeUserId, poiCode);
+
+        if (ieUserIds.isEmpty()) {
+            throw new BusinessException(
+                    new ErrorDetails(
+                            AppConstant.ERROR_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "No IE found for POI " + poiCode +
+                                    " under Process IE " + processIeUserId
+                    )
+            );
+        }
+
+        return new ArrayList<>(
+                ieUserIds.stream()
+                        .map(Long::intValue)
+                        .toList()
+        );
+
+    }
+
 
     private List<Integer> getIeUsersByProcessIeAndPoi(Integer processIeUserId, String poiCode) {
 
@@ -2600,7 +2648,7 @@ private WorkflowTransitionDto mapWorkflowTransition(WorkflowTransition wt) {
 
         return mapWorkflowTransition(next);
     }
-
+/*
      @Override
     public List<WorkflowTransitionDto> allPendingWorkflowTransition(String roleName) {
 
@@ -2622,7 +2670,130 @@ private WorkflowTransitionDto mapWorkflowTransition(WorkflowTransition wt) {
                         .thenComparing(WorkflowTransition::getCreatedDate))
                 .map(this::mapWorkflowTransition)
                 .collect(Collectors.toList());
+    }*/
+@Override
+public List<WorkflowTransitionDto> allPendingWorkflowTransition(String roleName) {
+
+    long t1 = System.currentTimeMillis();
+    List<WorkflowTransition> pending =
+            "IE".equalsIgnoreCase(roleName)
+                    ? workflowTransitionRepository.findPendingByRoles(
+                    List.of("IE", "Process IE"))
+                    : workflowTransitionRepository.findPendingByRole(roleName);
+
+    log.info("Workflow query time = {} ms",
+            System.currentTimeMillis() - t1);
+
+    long t2 = System.currentTimeMillis();
+
+    List<String> requestIds = pending.stream()
+            .map(WorkflowTransition::getRequestId)
+            .distinct()
+            .toList();
+
+    List<Integer> wtIds = pending.stream()
+            .map(WorkflowTransition::getWorkflowTransitionId)
+            .toList();
+
+    Map<String, InspectionDataDto> inspectionMap =
+            inspectionCallRepository.findLiteByIcNumberIn(requestIds)
+                    .stream()
+                    .collect(Collectors.toMap(
+                            InspectionDataDto::icNumber,
+                            Function.identity()
+                    ));
+
+//    Map<String, InspectionCall> inspectionMap = inspectionCallRepository.findByIcNumberIn(requestIds) .stream()
+//            .collect(Collectors.toMap( InspectionCall::getIcNumber, Function.identity() ));
+
+
+
+    Map<Integer, List<Integer>> finalIeMap =
+            finalIeMappingRepository.findByWorkflowTransitionIdIn(wtIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(
+                            FinalIeMapping::getWorkflowTransitionId,
+                            Collectors.mapping(
+                                    FinalIeMapping::getIeUserId,
+                                    Collectors.toList()
+                            )
+                    ));
+    log.info("Workflow query time = {} ms",
+            System.currentTimeMillis() - t2);
+
+    return pending.stream()
+            .map(wt -> mapWorkflow(wt, inspectionMap, finalIeMap))
+            .collect(Collectors.toList());
+}
+
+    private WorkflowTransitionDto mapWorkflow(
+            WorkflowTransition wt,
+            Map<String, InspectionDataDto> inspectionMap,
+            Map<Integer, List<Integer>> finalIeMap
+    ) {
+        long t3 = System.currentTimeMillis();
+
+
+        InspectionDataDto i = inspectionMap.get(wt.getRequestId());
+        WorkflowTransitionDto dto = new WorkflowTransitionDto();
+
+        log.info("Workflow query time = {} ms",
+                System.currentTimeMillis() - t3);
+        long t4 = System.currentTimeMillis();
+        if (wt.getProcessIeUserId() != null && i != null) {
+            int processIe = wt.getProcessIeUserId();
+            String poi = i.placeOfInspection();
+
+            List<Integer> ieUsers =
+                    getIeUsersByProcessIeAndPlaceOfInsp(processIe, poi);
+
+            ieUsers.add(processIe);
+            dto.setProcessIes(ieUsers);
+        }
+
+        log.info("Workflow query time = {} ms",
+                System.currentTimeMillis() - t4);
+        long t5 = System.currentTimeMillis();
+        if (i != null && "Final".equalsIgnoreCase(i.typeOfCall())) {
+            dto.setFinalIes(
+                    finalIeMap.getOrDefault(
+                            wt.getWorkflowTransitionId(),
+                            Collections.emptyList()
+                    )
+            );
+        }
+        log.info("Workflow query time = {} ms",
+                System.currentTimeMillis() - t5);
+
+        dto.setWorkflowTransitionId(wt.getWorkflowTransitionId());
+        dto.setWorkflowId(wt.getWorkflowId());
+        dto.setTransitionId(wt.getTransitionId());
+        dto.setRequestId(wt.getRequestId());
+        dto.setStatus(wt.getStatus());
+        dto.setAction(wt.getAction());
+        dto.setRemarks(wt.getRemarks());
+        dto.setCreatedBy(wt.getCreatedBy());
+        dto.setCreatedDate(wt.getCreatedDate());
+        dto.setCurrentRole(wt.getCurrentRole());
+        dto.setNextRole(wt.getNextRole());
+        dto.setAssignedToUser(wt.getAssignedToUser());
+        dto.setWorkflowSequence(wt.getWorkflowSequence());
+        dto.setModifiedBy(wt.getModifiedBy());
+        dto.setRio(wt.getRio());
+
+        if (i != null) {
+            dto.setPoNo(i.poNo());
+            dto.setVendorName(i.vendorId());
+            dto.setProductType(i.typeOfCall());
+            dto.setDesiredInspectionDate(
+                    String.valueOf(i.desiredInspectionDate())
+            );
+        }
+
+        return dto;
     }
+
+
 
     @Override
     public List<WorkflowTransitionDto> allPendingQtyEditTransitions(String roleName) {
