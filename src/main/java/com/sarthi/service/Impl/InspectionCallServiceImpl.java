@@ -8,6 +8,7 @@ import com.sarthi.entity.rawmaterial.RmHeatQuantity;
 import com.sarthi.entity.rawmaterial.RmInspectionDetails;
 import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.service.InspectionCallService;
+import com.sarthi.service.InventoryEntryService;
 import com.sarthi.util.IcNumberGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,13 +30,16 @@ public class InspectionCallServiceImpl implements InspectionCallService {
 
     private final InspectionCallRepository inspectionCallRepository;
     private final IcNumberGenerator icNumberGenerator;
+    private final InventoryEntryService inventoryEntryService;
 
     @Autowired
     public InspectionCallServiceImpl(
             InspectionCallRepository inspectionCallRepository,
-            IcNumberGenerator icNumberGenerator) {
+            IcNumberGenerator icNumberGenerator,
+            InventoryEntryService inventoryEntryService) {
         this.inspectionCallRepository = inspectionCallRepository;
         this.icNumberGenerator = icNumberGenerator;
+        this.inventoryEntryService = inventoryEntryService;
     }
 
     @Override
@@ -157,6 +161,27 @@ public class InspectionCallServiceImpl implements InspectionCallService {
                 heat.setUpdatedAt(LocalDateTime.now());
 
                 heatEntities.add(heat);
+
+                // ================== UPDATE INVENTORY ==================
+                // Update inventory offered quantity for this heat/TC combination
+                try {
+                    if (heatReq.getHeatNumber() != null && heatReq.getTcNumber() != null && heatReq.getOfferedQty() != null) {
+                        logger.info("Updating inventory for Heat: {}, TC: {}, Offered: {}",
+                                heatReq.getHeatNumber(), heatReq.getTcNumber(), heatReq.getOfferedQty());
+
+                        inventoryEntryService.updateOfferedQuantity(
+                                heatReq.getHeatNumber(),
+                                heatReq.getTcNumber(),
+                                toBigDecimal(heatReq.getOfferedQty())
+                        );
+
+                        logger.info("✅ Inventory updated successfully for Heat: {}", heatReq.getHeatNumber());
+                    }
+                } catch (Exception e) {
+                    // Log error but don't fail the inspection call creation
+                    logger.warn("⚠️ Failed to update inventory for Heat: {}, TC: {}. Error: {}",
+                            heatReq.getHeatNumber(), heatReq.getTcNumber(), e.getMessage());
+                }
             }
         }
 

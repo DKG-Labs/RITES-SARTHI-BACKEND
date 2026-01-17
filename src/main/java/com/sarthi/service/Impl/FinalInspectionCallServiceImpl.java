@@ -7,9 +7,11 @@ import com.sarthi.entity.finalmaterial.FinalInspectionDetails;
 import com.sarthi.entity.finalmaterial.FinalInspectionLotDetails;
 import com.sarthi.entity.finalmaterial.FinalProcessIcMapping;
 import com.sarthi.entity.rawmaterial.InspectionCall;
+import com.sarthi.repository.InspectionCompleteDetailsRepository;
 import com.sarthi.repository.finalmaterial.FinalInspectionDetailsRepository;
 import com.sarthi.repository.finalmaterial.FinalInspectionLotDetailsRepository;
 import com.sarthi.repository.finalmaterial.FinalProcessIcMappingRepository;
+import com.sarthi.repository.processmaterial.ProcessInspectionDetailsRepository;
 import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.service.FinalInspectionCallService;
 import com.sarthi.util.IcNumberGenerator;
@@ -43,6 +45,12 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
 
     @Autowired
     private FinalProcessIcMappingRepository finalProcessIcMappingRepository;
+
+    @Autowired
+    private InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository;
+
+    @Autowired
+    private ProcessInspectionDetailsRepository processInspectionDetailsRepository;
 
     @Autowired
     private IcNumberGenerator icNumberGenerator;
@@ -193,6 +201,30 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
         logger.info("Total Lots: {}", lotDetailsList != null ? lotDetailsList.size() : 0);
 
         return inspectionCall;
+    }
+
+    @Override
+    public List<String> getProcessIcCertificateNumbers(String vendorId) {
+        logger.info("Fetching Process IC certificate numbers for vendor: {}", vendorId);
+        List<String> certificateNumbers = inspectionCompleteDetailsRepository.findProcessIcCertificateNumbersByVendor(vendorId);
+        logger.info("Found {} certificate numbers", certificateNumbers.size());
+        return certificateNumbers;
+    }
+
+    @Override
+    public List<String> getRmIcNumbersByCertificateNo(String certificateNo) {
+        logger.info("Fetching RM IC numbers for certificate: {}", certificateNo);
+        List<String> rmIcNumbers = processInspectionDetailsRepository.findRmIcNumbersByCertificateNo(certificateNo);
+        logger.info("Found {} RM IC numbers", rmIcNumbers.size());
+        return rmIcNumbers;
+    }
+
+    @Override
+    public List<String> getLotNumbersByRmIcNumber(String rmIcNumber) {
+        logger.info("Fetching lot numbers for RM IC: {}", rmIcNumber);
+        List<String> lotNumbers = processInspectionDetailsRepository.findLotNumbersByRmIcNumber(rmIcNumber);
+        logger.info("Found {} lot numbers", lotNumbers.size());
+        return lotNumbers;
     }
 }
 
