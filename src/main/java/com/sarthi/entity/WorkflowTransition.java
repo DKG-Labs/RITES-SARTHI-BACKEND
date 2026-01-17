@@ -65,5 +65,12 @@ public class WorkflowTransition {
     private Integer workflowSequence;
 
     private String rio;
+
+    @Column(name = "SWIFT_CODE")
+    private String swiftCode;
+
+    @Column(name = "IS_PRIMARY_SWIFT")
+    private Boolean primarySwift;
+
 }
 

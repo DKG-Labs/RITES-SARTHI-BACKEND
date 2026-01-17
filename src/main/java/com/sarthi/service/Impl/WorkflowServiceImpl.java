@@ -7,11 +7,13 @@ import com.sarthi.dto.WorkflowDtos.TransitionActionReqDto;
 import com.sarthi.dto.WorkflowDtos.TransitionDto;
 import com.sarthi.dto.WorkflowDtos.WorkflowTransitionDto;
 import com.sarthi.entity.*;
+import com.sarthi.entity.processmaterial.ProcessInspectionDetails;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.exception.BusinessException;
 import com.sarthi.exception.ErrorDetails;
 import com.sarthi.exception.InvalidInputException;
 import com.sarthi.repository.*;
+import com.sarthi.repository.processmaterial.ProcessInspectionDetailsRepository;
 import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.service.WorkflowService;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -79,6 +81,17 @@ public class WorkflowServiceImpl implements WorkflowService {
 
     @Autowired
     private FinalIeMappingRepository finalIeMappingRepository;
+
+    @Autowired
+    private ProcessIeQtyRepository processIeQtyRepository;
+
+    @Autowired
+    private ProcessInspectionDetailsRepository processInspectionDetailsRepository;
+
+
+    private static final Logger log =
+            LoggerFactory.getLogger(WorkflowServiceImpl.class);
+
 
 
     public void validateUser(Integer userId) {
@@ -475,6 +488,8 @@ public class WorkflowServiceImpl implements WorkflowService {
         }
     }*/
 
+    private static final List<String> PROCESS_SWIFTS =
+            List.of("A", "B", "C", "G");
 
 
     @Override
@@ -670,6 +685,69 @@ public class WorkflowServiceImpl implements WorkflowService {
             if(req.getAction().equalsIgnoreCase("CONFIRM_CANCEL_AFTER_PAYMENT")){
                 return confirmCancelAfterPayment(current,req);
             }
+            if ("ENTRY_INSPECTION_RESULTS".equalsIgnoreCase(req.getAction())) {
+
+                InspectionCall ic =
+                        inspectionCallRepository
+                                .findByIcNumber(req.getRequestId())
+                                .orElseThrow(() -> new BusinessException(
+                                        new ErrorDetails(
+                                                AppConstant.ERROR_CODE_RESOURCE,
+                                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                                AppConstant.ERROR_TYPE_VALIDATION,
+                                                "Invalid IC code"
+                                        )
+                                ));
+
+                String swift = current.getSwiftCode(); // A / B / C / G
+
+                // Total allowed qty (from process_inspection_details)
+                int totalOfferedQty =
+                        processInspectionDetailsRepository
+                                .findOfferedQtyByIcId(ic.getId());
+
+                if (totalOfferedQty <= 0) {
+                    throw new BusinessException(
+                            new ErrorDetails(
+                                    AppConstant.INVALID_WORKFLOW_TRANSITION,
+                                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                    "Offered quantity not available. Cannot enter inspection results."
+                            )
+                    );
+                }
+
+                // Already inspected qty (history sum)
+                int alreadyInspectedQty =
+                        processIeQtyRepository
+                                .sumInspectedQtyByRequestId(req.getRequestId());
+
+                int newQty = req.getInspetedQty();
+
+                //  CORE VALIDATION
+                if (alreadyInspectedQty + newQty > totalOfferedQty) {
+                    throw new BusinessException(
+                            new ErrorDetails(
+                                    AppConstant.INVALID_WORKFLOW_TRANSITION,
+                                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                    "Entered quantity exceeds total offered quantity. " +
+                                            "Remaining qty: " + (totalOfferedQty - alreadyInspectedQty)
+                            )
+                    );
+                }
+
+                ProcessIeQty qty = new ProcessIeQty();
+                qty.setRequestId(req.getRequestId());
+                qty.setSwiftCode(swift);
+                qty.setIeUserId(req.getActionBy());
+                qty.setInspectedQty(newQty);
+                qty.setCompleted(false);
+
+                processIeQtyRepository.save(qty);
+            }
+
+
 
             if(req.getActionBy().equals("INITIATE_INSPECTION")){
                 // AUTO EXPIRE ANY PENDING QTY EDIT REQUEST
@@ -686,7 +764,12 @@ public class WorkflowServiceImpl implements WorkflowService {
             // If action is NOT VERIFY_PO_DETAILS then check whether last action was VERIFY_PO_DETAILS
             if (req.getAction().equalsIgnoreCase("ENTER_SHIFT_DETAILS_AND_START_INSPECTION")) {
 
-                if (last == null || !last.getAction().equalsIgnoreCase("VERIFY_PO_DETAILS")) {
+                if (last == null ||
+                        (
+                                !last.getAction().equalsIgnoreCase("VERIFY_PO_DETAILS") &&
+                                        !last.getAction().equalsIgnoreCase("PAUSE_INSPECTION_RESUME_NEXT_DAY")
+                        )
+                ) {
 
                     throw new BusinessException(
                             new ErrorDetails(
@@ -697,6 +780,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                             )
                     );
                 }
+
 
                 // Auto-Set PoStatus OK
                req.setPoStatus("OK");
@@ -719,6 +803,8 @@ public class WorkflowServiceImpl implements WorkflowService {
                     req
             );
 
+
+
             // IE ASSIGNMENT LOGIC
             InspectionCall im = inspectionCallRepository
                     .findByIcNumber(req.getRequestId())
@@ -731,6 +817,22 @@ public class WorkflowServiceImpl implements WorkflowService {
                             )
                     ));
 
+
+
+            if (im != null && "PROCESS".equalsIgnoreCase(im.getTypeOfCall())) {
+
+                // First swift
+                if (current.getSwiftCode() == null) {
+
+                    next.setSwiftCode("A");
+                    next.setPrimarySwift(true);
+
+                } else {
+
+                    next.setSwiftCode(current.getSwiftCode());
+                    next.setPrimarySwift(false);
+                }
+            }
             String inspectionType = im.getTypeOfCall();
 
             if ("PROCESS".equalsIgnoreCase(inspectionType)) {
@@ -893,6 +995,58 @@ public class WorkflowServiceImpl implements WorkflowService {
                                         "Inspection Call not found"
                                 )
                         ));
+
+                if (ic != null && "PROCESS".equalsIgnoreCase(ic.getTypeOfCall())) {
+
+                    Long icId = ic.getId();
+
+//                    Optional<ProcessInspectionDetails> list = processInspectionDetailsRepository.findByIcIdCals(icId);
+
+                    int totalOfferedQty =
+                            processInspectionDetailsRepository.findOfferedQtyByIcId(ic.getId());
+
+//                    int totalOfferedQty = list.stream()
+//                            .mapToInt(ProcessInspectionDetails::getOfferedQty)
+//                            .sum();
+
+                    int inspectedQty =
+                            processIeQtyRepository
+                                    .sumInspectedQtyByRequestId(next.getRequestId());
+
+                    if (inspectedQty < totalOfferedQty) {
+
+                        next.setStatus("PAUSE_INSPECTION_RESUME_NEXT_DAY");
+                        next.setRemarks("Partial inspection done. Remaining qty pending.");
+
+                        next.setAction("PAUSE_INSPECTION_RESUME_NEXT_DAY");
+                        workflowTransitionRepository.save(next);
+                       /* WorkflowTransition nextSwift =
+                                createNextTransition(
+                                        next,
+                                        nextTransition,
+                                        "ENTER_SHIFT_DETAILS",
+                                        "Continue inspection in next shift",
+                                        req
+                                );
+
+                        nextSwift.setSwiftCode(null);
+                        nextSwift.setPrimarySwift(false);
+                        nextSwift.setAssignedToUser(current.getProcessIeUserId());
+
+                        workflowTransitionRepository.save(nextSwift);*/
+                        return mapWorkflowTransition(next);
+                    }
+                    if (inspectedQty == totalOfferedQty) {
+
+                        next.setStatus("INSPECTION_COMPLETED");
+                        next.setAction("INSPECTION_COMPLETED");
+                        next.setRemarks("Process inspection completed.");
+
+                        workflowTransitionRepository.save(next);
+                        return mapWorkflowTransition(next);
+                    }
+                }
+
                 UserMaster user = userMasterRepository
                         .findByUserId(next.getModifiedBy())
                         .orElseThrow(() -> new BusinessException(
@@ -955,6 +1109,9 @@ public class WorkflowServiceImpl implements WorkflowService {
             return mapWorkflowTransition(next);
 
         }
+
+
+
 
 
 
@@ -2187,6 +2344,7 @@ private WorkflowTransitionDto mapWorkflowTransition(WorkflowTransition wt) {
                 return "APPROVED";
 
             case "PAUSE_INSPECTION_RESUME_NEXT_DAY":
+            case "PARTIAL_INSPECTION_COMPLETED":
                 return "PAUSED";
             case "BLOCK_DUE_TO_PAYMENT":
                 return "BLOCKED";

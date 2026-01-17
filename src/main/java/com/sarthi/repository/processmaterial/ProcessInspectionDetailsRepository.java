@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,6 +18,10 @@ public interface ProcessInspectionDetailsRepository extends JpaRepository<Proces
     @Query("SELECT pd FROM ProcessInspectionDetails pd WHERE pd.inspectionCall.id = :icId")
     Optional<ProcessInspectionDetails> findByIcId(@Param("icId") Long icId);
 
+
+    @Query("SELECT pd FROM ProcessInspectionDetails pd WHERE pd.inspectionCall.id = :icId")
+    Optional<ProcessInspectionDetails> findByIcIdCals(@Param("icId") Long icId);
+
     /**
      * Find Process Inspection Details by RM IC Number
      */
@@ -26,5 +31,20 @@ public interface ProcessInspectionDetailsRepository extends JpaRepository<Proces
      * Find Process Inspection Details by Lot Number
      */
     Optional<ProcessInspectionDetails> findByLotNumber(String lotNumber);
+
+
+    @Query("SELECT COALESCE(SUM(pd.offeredQty),0) " +
+            "FROM ProcessInspectionDetails pd " +
+            "WHERE pd.inspectionCall.id = :icId")
+    int sumOfferedQtyByIcId(@Param("icId") Long icId);
+
+    @Query("""
+SELECT COALESCE(pd.offeredQty, 0)
+FROM ProcessInspectionDetails pd
+WHERE pd.inspectionCall.id = :icId
+""")
+    Integer findOfferedQtyByIcId(@Param("icId") Long icId);
+
+
 }
 
