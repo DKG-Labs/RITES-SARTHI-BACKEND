@@ -150,10 +150,11 @@ public class ProcessInitiationDataServiceImpl implements ProcessInitiationDataSe
         dto.setUnitName(ic.getUnitName());
         dto.setUnitAddress(ic.getUnitAddress());
 
-        // RM IC Number, Lot Number, and Heat Number - from process_inspection_details table
+        // RM IC Number, Lot Number, Heat Number, and Offered Qty - from process_inspection_details table
         dto.setRmIcNumber(processDetails.getRmIcNumber() != null ? processDetails.getRmIcNumber() : "N/A");
         dto.setLotNumber(processDetails.getLotNumber() != null ? processDetails.getLotNumber() : "N/A");
         dto.setHeatNumber(processDetails.getHeatNumber() != null ? processDetails.getHeatNumber() : "N/A");
+        dto.setOfferedQty(processDetails.getOfferedQty() != null ? processDetails.getOfferedQty() : 0); // CALL QTY for Section B
 
         // Section C: RM IC Heat Information from inventory_entry table
         List<RmIcHeatInfo> heatInfoList = new ArrayList<>();

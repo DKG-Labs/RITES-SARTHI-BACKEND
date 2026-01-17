@@ -39,7 +39,8 @@ public class ProcessInitiationDataDto {
     private String rmIcNumber; // RM IC number from process_inspection_details
     private String lotNumber; // Lot number from process_inspection_details
     private String heatNumber; // Heat number from process_inspection_details
-    
+    private Integer offeredQty; // Offered quantity from process_inspection_details (CALL QTY for Section B)
+
     // ==================== SECTION C: RM IC Details (Heat Numbers from Inventory) ====================
     // List of heat number details from inventory_entry table
     private List<RmIcHeatInfo> rmIcHeatInfoList;
