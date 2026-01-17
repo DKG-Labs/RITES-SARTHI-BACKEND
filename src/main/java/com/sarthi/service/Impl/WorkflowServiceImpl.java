@@ -1341,34 +1341,8 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
         callReg.setAssignedToUser(processIeUserId);
         callReg.setProcessIeUserId(processIeUserId);
 
-    } else if("Final".equalsIgnoreCase(inspectionType)) {
-
-
-        //  Fetch IE mappings using POI code
-        List<IePincodePoiMapping> ieMappings =
-                iePincodePoiMappingRepository.findByPoiCode(insp.getPlaceOfInspection());
-
-        for (IePincodePoiMapping mapping : ieMappings) {
-
-            String employeeCode = mapping.getEmployeeCode();
-
-            // Fetch userId using employeeCode
-            UserMaster userOpt =
-                    userMasterRepository.findByEmployeeCode(employeeCode);
-
-                Integer userId = userOpt.getUserId();
-
-                //  Save into FINAL_IE_MAPPING
-                FinalIeMapping finalMapping = new FinalIeMapping();
-                finalMapping.setWorkflowTransitionId(
-                        callReg.getWorkflowTransitionId()
-                );
-                finalMapping.setIeUserId(userId);
-
-                finalIeMappingRepository.save(finalMapping);
-
-        }
     }
+
     else {
 
         InspectionCall ic = inspectionCallRepository.findByIcNumber(req.getRequestId())
@@ -1413,6 +1387,37 @@ private WorkflowTransitionDto verifyCall(WorkflowTransition current, TransitionA
 
    // callReg.setAssignedToUser(assignIE(req.getPincode()));
     workflowTransitionRepository.save(callReg);
+
+     if("Final".equalsIgnoreCase(inspectionType)) {
+
+
+        //  Fetch IE mappings using POI code
+        List<IePincodePoiMapping> ieMappings =
+                iePincodePoiMappingRepository.findByPoiCode(insp.getPlaceOfInspection());
+
+        for (IePincodePoiMapping mapping : ieMappings) {
+
+
+
+            String employeeCode = mapping.getEmployeeCode();
+
+            // Fetch userId using employeeCode
+            UserMaster userOpt =
+                    userMasterRepository.findByEmployeeCode(employeeCode);
+
+            Integer userId = userOpt.getUserId();
+
+            //  Save into FINAL_IE_MAPPING
+            FinalIeMapping finalMapping = new FinalIeMapping();
+            finalMapping.setWorkflowTransitionId(
+                    callReg.getWorkflowTransitionId()
+            );
+            finalMapping.setIeUserId(userId);
+
+            finalIeMappingRepository.save(finalMapping);
+
+        }
+    }
 
     return mapWorkflowTransition(callReg);
 }
