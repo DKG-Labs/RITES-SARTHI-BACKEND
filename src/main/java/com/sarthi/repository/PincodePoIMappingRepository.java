@@ -17,8 +17,17 @@ public interface PincodePoIMappingRepository extends JpaRepository<PincodePoIMap
 
     Optional<PincodePoIMapping> findByPoiCode(String placeOfInspection);
 
-    @Query("SELECT DISTINCT p.companyName FROM PincodePoIMapping p")
+//    @Query("SELECT DISTINCT p.companyName FROM PincodePoIMapping p")
+//    List<String> findDistinctCompanyNames();
+
+    @Query("""
+    SELECT DISTINCT p.companyName
+    FROM PincodePoIMapping p
+    WHERE p.poiCode IS NOT NULL
+      AND p.poiCode <> ''
+""")
     List<String> findDistinctCompanyNames();
+
 
     @Query("""
         SELECT DISTINCT new com.sarthi.dto.UnitDto(p.unitName)
