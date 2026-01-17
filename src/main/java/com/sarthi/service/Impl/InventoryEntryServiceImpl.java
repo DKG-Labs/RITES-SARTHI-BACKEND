@@ -215,7 +215,7 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public InventoryEntryResponseDto updateOfferedQuantity(String heatNumber, String tcNumber, BigDecimal offeredQty) {
         logger.info("Updating offered quantity for heat: {}, TC: {}, offered: {}", heatNumber, tcNumber, offeredQty);
 

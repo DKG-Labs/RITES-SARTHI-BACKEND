@@ -164,6 +164,7 @@ public class InspectionCallServiceImpl implements InspectionCallService {
 
                 // ================== UPDATE INVENTORY ==================
                 // Update inventory offered quantity for this heat/TC combination
+                // This runs in a separate transaction (REQUIRES_NEW) to avoid rollback issues
                 try {
                     if (heatReq.getHeatNumber() != null && heatReq.getTcNumber() != null && heatReq.getOfferedQty() != null) {
                         logger.info("Updating inventory for Heat: {}, TC: {}, Offered: {}",
@@ -179,8 +180,10 @@ public class InspectionCallServiceImpl implements InspectionCallService {
                     }
                 } catch (Exception e) {
                     // Log error but don't fail the inspection call creation
+                    // Inventory update runs in separate transaction, so this won't affect main transaction
                     logger.warn("⚠️ Failed to update inventory for Heat: {}, TC: {}. Error: {}",
                             heatReq.getHeatNumber(), heatReq.getTcNumber(), e.getMessage());
+                    logger.warn("⚠️ This is expected if inventory entry doesn't exist yet. Inspection call will still be created.");
                 }
             }
         }
