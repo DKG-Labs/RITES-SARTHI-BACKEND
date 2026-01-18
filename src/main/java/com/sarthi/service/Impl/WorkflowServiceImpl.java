@@ -1048,8 +1048,8 @@ public class WorkflowServiceImpl implements WorkflowService {
                     }
                     if (inspectedQty == totalOfferedQty) {
 
-                        next.setStatus("INSPECTION_COMPLETED");
-                        next.setAction("INSPECTION_COMPLETED");
+                        next.setStatus("INSPECTION_COMPLETE_CONFIRM");
+                        next.setAction("INSPECTION_COMPLETE_CONFIRM");
                         next.setRemarks("Process inspection completed.");
 
                         workflowTransitionRepository.save(next);
