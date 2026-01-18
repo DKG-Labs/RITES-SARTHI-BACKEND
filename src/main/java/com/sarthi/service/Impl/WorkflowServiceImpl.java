@@ -1069,6 +1069,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                         next.setRemarks("Partial inspection done. Remaining qty pending.");
 
                         next.setAction("PAUSE_INSPECTION_RESUME_NEXT_DAY");
+                        next.setJobStatus("PAUSED");
                         workflowTransitionRepository.save(next);
                        /* WorkflowTransition nextSwift =
                                 createNextTransition(
