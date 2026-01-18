@@ -726,31 +726,70 @@ public class WorkflowServiceImpl implements WorkflowService {
                 }
 
                 // Already inspected qty (history sum)
-                int alreadyInspectedQty =
+//                int alreadyInspectedQty =
+//                        processIeQtyRepository
+//                                .sumInspectedQtyByRequestId(req.getRequestId());
+
+                //  Lot number from request
+                String lotNo = req.getLotNo();
+
+// Already inspected qty for SAME request + SAME lot
+                int alreadyInspectedLotQty =
                         processIeQtyRepository
-                                .sumInspectedQtyByRequestId(req.getRequestId());
+                                .sumInspectedQtyByRequestIdAndLotNumber(
+                                        req.getRequestId(),
+                                        lotNo
+                                );
+
+
+                int lotOfferedQty =
+                        processIeQtyRepository
+                                .findOfferedQtyByRequestIdAndLotNumber(
+                                        req.getRequestId(),
+                                        lotNo
+                                );
+
+                if (lotOfferedQty == 0) {
+                    lotOfferedQty = req.getOfferedQty();
+                }
 
                 int newQty = req.getInspectedQty();
 
                 //  CORE VALIDATION
-                if (alreadyInspectedQty + newQty > totalOfferedQty) {
+//                if (alreadyInspectedQty + newQty > totalOfferedQty) {
+//                    throw new BusinessException(
+//                            new ErrorDetails(
+//                                    AppConstant.INVALID_WORKFLOW_TRANSITION,
+//                                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
+//                                    AppConstant.ERROR_TYPE_VALIDATION,
+//                                    "Entered quantity exceeds total offered quantity. " +
+//                                            "Remaining qty: " + (totalOfferedQty - alreadyInspectedQty)
+//                            )
+//                    );
+//                }
+                // LOT-WISE VALIDATION
+                if (alreadyInspectedLotQty + newQty > lotOfferedQty) {
                     throw new BusinessException(
                             new ErrorDetails(
                                     AppConstant.INVALID_WORKFLOW_TRANSITION,
                                     AppConstant.ERROR_TYPE_CODE_VALIDATION,
                                     AppConstant.ERROR_TYPE_VALIDATION,
-                                    "Entered quantity exceeds total offered quantity. " +
-                                            "Remaining qty: " + (totalOfferedQty - alreadyInspectedQty)
+                                    "Entered quantity exceeds offered quantity for Lot "
+                                            + lotNo +
+                                            ". Remaining qty: "
+                                            + (lotOfferedQty - alreadyInspectedLotQty)
                             )
                     );
                 }
+
 
                 ProcessIeQty qty = new ProcessIeQty();
                 qty.setRequestId(req.getRequestId());
                 qty.setSwiftCode(swift);
                 qty.setIeUserId(req.getActionBy());
                 qty.setInspectedQty(newQty);
-                qty.setOfferedQty(req.getOfferedQty());
+                qty.setOfferedQty(lotOfferedQty);
+                //qty.setOfferedQty(req.getOfferedQty());
                 qty.setLotNumber(req.getLotNo());
                 qty.setCompleted(false);
 

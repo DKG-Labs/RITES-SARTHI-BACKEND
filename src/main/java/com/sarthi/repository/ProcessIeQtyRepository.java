@@ -18,5 +18,29 @@ public interface ProcessIeQtyRepository
     @Query("SELECT COALESCE(SUM(p.inspectedQty),0) " +
             "FROM ProcessIeQty p WHERE p.requestId = :requestId")
     int sumInspectedQtyByRequestId(@Param("requestId") String requestId);
+
+
+        @Query("""
+        SELECT COALESCE(SUM(p.inspectedQty), 0)
+        FROM ProcessIeQty p
+        WHERE p.requestId = :requestId
+          AND p.lotNumber = :lotNumber
+    """)
+        int sumInspectedQtyByRequestIdAndLotNumber(
+                @Param("requestId") String requestId,
+                @Param("lotNumber") String lotNumber
+        );
+
+        @Query("""
+        SELECT COALESCE(MAX(p.offeredQty), 0)
+        FROM ProcessIeQty p
+        WHERE p.requestId = :requestId
+          AND p.lotNumber = :lotNumber
+    """)
+        int findOfferedQtyByRequestIdAndLotNumber(
+                @Param("requestId") String requestId,
+                @Param("lotNumber") String lotNumber
+        );
+
 }
 
