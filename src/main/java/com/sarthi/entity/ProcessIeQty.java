@@ -33,6 +33,10 @@ public class ProcessIeQty {
     @Column(name = "COMPLETED")
     private Boolean completed = false;
 
+
+    private String lotNumber;
+    private int offeredQty;
+
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "CREATED_DATE")
     private Date createdDate = new Date();

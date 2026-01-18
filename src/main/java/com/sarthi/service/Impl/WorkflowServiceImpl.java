@@ -750,6 +750,8 @@ public class WorkflowServiceImpl implements WorkflowService {
                 qty.setSwiftCode(swift);
                 qty.setIeUserId(req.getActionBy());
                 qty.setInspectedQty(newQty);
+                qty.setOfferedQty(req.getOfferedQty());
+                qty.setLotNumber(req.getLotNo());
                 qty.setCompleted(false);
 
                 processIeQtyRepository.save(qty);
@@ -2834,7 +2836,7 @@ public List<WorkflowTransitionDto> allPendingWorkflowTransition(String roleName)
 //
 //        return process.getProcessIeUserId();
 //    }
-
+/*
     private Integer getProcessIeUserFromPoi(String poiCode) {
 
         //  Find all IEs for the POI
@@ -2852,11 +2854,14 @@ public List<WorkflowTransitionDto> allPendingWorkflowTransition(String roleName)
             );
         }
 
+        System.out.println(poiMappings);
+
         //  Pick Process IE from mapped IEs (first match)
         for (IePoiMapping poiMap : poiMappings) {
 
             Optional<ProcessIeUsers> processIeOpt =
                     processIeUsersRepository.findByIeUserId(poiMap.getIeUserId());
+
 
             if (processIeOpt.isPresent()) {
                 return processIeOpt.get().getProcessUserId().intValue();
@@ -2873,6 +2878,40 @@ public List<WorkflowTransitionDto> allPendingWorkflowTransition(String roleName)
                 )
         );
     }
+*/
+private Integer getProcessIeUserFromPoi(String poiCode) {
+
+    // 1. Get latest IE mapped to POI
+    IePoiMapping latestPoiIe =
+            iePoiMappingRepository
+                    .findTopByPoiCodeOrderByCreatedDateDesc(poiCode)
+                    .orElseThrow(() -> new BusinessException(
+                            new ErrorDetails(
+                                    AppConstant.ERROR_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                    "No IE found for POI: " + poiCode
+                            )
+                    ));
+
+    // 2. Get latest Process IE for that IE
+    ProcessIeUsers latestProcessIe =
+            processIeUsersRepository
+                    .findTopByIeUserIdOrderByCreatedDateDesc(
+                            latestPoiIe.getIeUserId()
+                    )
+                    .orElseThrow(() -> new BusinessException(
+                            new ErrorDetails(
+                                    AppConstant.ERROR_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                    "No Process IE mapped for IE: " + latestPoiIe.getIeUserId()
+                            )
+                    ));
+
+    // 3. Return Process User ID
+    return latestProcessIe.getProcessUserId().intValue();
+}
 
 
 

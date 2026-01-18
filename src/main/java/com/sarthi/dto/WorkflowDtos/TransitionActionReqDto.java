@@ -38,6 +38,9 @@ public class TransitionActionReqDto {
 
     private int inspetedQty;
 
+    private String lotNo;
+
+    private int offeredQty;
 
 
 }

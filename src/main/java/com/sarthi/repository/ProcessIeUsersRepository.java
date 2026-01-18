@@ -28,4 +28,6 @@ AND ipm.poiCode = :poiCode
             @Param("poiCode") String poiCode
     );
 
+    Optional<ProcessIeUsers>
+    findTopByIeUserIdOrderByCreatedDateDesc(Long ieUserId);
 }
