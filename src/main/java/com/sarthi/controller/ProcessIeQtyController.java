@@ -1,0 +1,29 @@
+package com.sarthi.controller;
+
+import com.sarthi.dto.InspectionQtySummaryResponse;
+import com.sarthi.service.ProcessIeQtyService;
+import com.sarthi.util.ResponseBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/processIe")
+public class ProcessIeQtyController {
+
+    @Autowired
+    private ProcessIeQtyService processIeQtyService;
+
+    @GetMapping("/qty-summary/{requestId}")
+    public ResponseEntity<Object> getInspectionQtySummary(@PathVariable String requestId) {
+
+        return new ResponseEntity<>(
+                ResponseBuilder.getSuccessResponse(processIeQtyService.getQtySummary(requestId)),
+                HttpStatus.OK
+        );
+    }
+}

@@ -36,6 +36,7 @@ public class ProcessIeQty {
 
     private String lotNumber;
     private int offeredQty;
+    private int manufactureQty;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "CREATED_DATE")
