@@ -21,13 +21,22 @@ public interface PincodePoIMappingRepository extends JpaRepository<PincodePoIMap
 //    @Query("SELECT DISTINCT p.companyName FROM PincodePoIMapping p")
 //    List<String> findDistinctCompanyNames();
 
+//    @Query("""
+//    SELECT DISTINCT p.companyName
+//    FROM PincodePoIMapping p
+//    WHERE p.poiCode IS NOT NULL
+//      AND p.poiCode <> ''
+//""")
+//    List<String> findDistinctCompanyNames();
+
+
     @Query("""
     SELECT DISTINCT p.companyName
     FROM PincodePoIMapping p
-    WHERE p.poiCode IS NOT NULL
-      AND p.poiCode <> ''
+    WHERE p.poiCode IN ('POI1', 'POI31', 'POI32')
 """)
     List<String> findDistinctCompanyNames();
+
 
 
     @Query("""
