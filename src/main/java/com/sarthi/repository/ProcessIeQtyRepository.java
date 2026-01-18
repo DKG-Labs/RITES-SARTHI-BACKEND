@@ -55,5 +55,6 @@ public interface ProcessIeQtyRepository
             @Param("requestId") String requestId
     );
 
+    boolean existsByRequestId(String requestId);
 }
 
