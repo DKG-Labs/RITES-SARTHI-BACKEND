@@ -711,6 +711,10 @@ public class WorkflowServiceImpl implements WorkflowService {
                 if(ic.getTypeOfCall().equalsIgnoreCase("Process")) {
                     String swift = current.getSwiftCode(); // A / B / C / G
 
+                    if (swift == null || swift.isBlank()) {
+                       swift="G";
+                    }
+
                     // Total allowed qty (from process_inspection_details)
                     int totalOfferedQty =
                             processInspectionDetailsRepository
