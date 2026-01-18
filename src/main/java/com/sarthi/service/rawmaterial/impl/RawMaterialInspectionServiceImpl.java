@@ -3,10 +3,12 @@ package com.sarthi.service.rawmaterial.impl;
 import com.sarthi.constant.AppConstant;
 import com.sarthi.dto.rawmaterial.*;
 import com.sarthi.entity.InspectionCompleteDetails;
+import com.sarthi.entity.RmHeatFinalResult;
 import com.sarthi.entity.rawmaterial.*;
 import com.sarthi.exception.BusinessException;
 import com.sarthi.exception.ErrorDetails;
 import com.sarthi.repository.InspectionCompleteDetailsRepository;
+import com.sarthi.repository.RmHeatFinalResultRepository;
 import com.sarthi.repository.rawmaterial.*;
 import com.sarthi.service.rawmaterial.RawMaterialInspectionService;
 import org.slf4j.Logger;
@@ -33,17 +35,20 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
     private final RmInspectionDetailsRepository rmDetailsRepository;
     private final RmHeatQuantityRepository heatQuantityRepository;
     private final InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository;
+    private final RmHeatFinalResultRepository rmHeatFinalResultRepository;
 
     @Autowired
     public RawMaterialInspectionServiceImpl(
             InspectionCallRepository inspectionCallRepository,
             RmInspectionDetailsRepository rmDetailsRepository,
             RmHeatQuantityRepository heatQuantityRepository,
-            InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository) {
+            InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository,
+            RmHeatFinalResultRepository rmHeatFinalResultRepository) {
         this.inspectionCallRepository = inspectionCallRepository;
         this.rmDetailsRepository = rmDetailsRepository;
         this.heatQuantityRepository = heatQuantityRepository;
         this.inspectionCompleteDetailsRepository = inspectionCompleteDetailsRepository;
+        this.rmHeatFinalResultRepository = rmHeatFinalResultRepository;
     }
 
     /* ==================== Inspection Call Operations ==================== */
@@ -115,14 +120,16 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
 
     @Override
     public List<String> getCompletedRmIcNumbers() {
-        logger.info("Fetching completed RM IC numbers (ER numbers) from inspection_complete_details");
+        logger.info("Fetching completed RM IC certificate numbers");
+
+        // Get all completed details
         List<InspectionCompleteDetails> completedDetails = inspectionCompleteDetailsRepository.findAll();
 
-        // Extract call_no (ER numbers) from the completed details
-        // Filter only ER numbers (Examination Reports for completed RM inspections - those starting with "ER-")
+        // Filter by ER prefix (Raw Material inspections) and return certificate numbers
         return completedDetails.stream()
-                .map(InspectionCompleteDetails::getCallNo)
-                .filter(callNo -> callNo != null && callNo.startsWith("ER-"))
+                .filter(detail -> detail.getCallNo() != null && detail.getCallNo().startsWith("ER-"))
+                .map(InspectionCompleteDetails::getCertificateNo)
+                .filter(certNo -> certNo != null && !certNo.isEmpty())
                 .distinct()
                 .collect(Collectors.toList());
     }
@@ -148,9 +155,9 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
 
         logger.info("Found {} heat quantities for RM detail id: {}", heatQuantities.size(), rmDetails.getId());
 
-        // 4. Map to DTOs and return
+        // 4. Map to DTOs and enrich with final result data
         return heatQuantities.stream()
-                .map(this::mapToHeatDto)
+                .map(heatQty -> mapToHeatDtoWithFinalResult(heatQty, erNumber))
                 .collect(Collectors.toList());
     }
 
@@ -265,6 +272,47 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
                 .createdAt(String.valueOf(entity.getCreatedAt()))
                 .updatedAt(String.valueOf(entity.getUpdatedAt()))
                 .build();
+    }
+
+    /**
+     * Maps RmHeatQuantity entity to DTO with final result data from rm_heat_final_result table
+     */
+    private RmHeatQuantityDto mapToHeatDtoWithFinalResult(RmHeatQuantity entity, String icNumber) {
+        // Start with basic mapping
+        RmHeatQuantityDto dto = RmHeatQuantityDto.builder()
+                .id(Math.toIntExact(entity.getId()))
+                .rmDetailId(Math.toIntExact(entity.getRmInspectionDetails() != null ? entity.getRmInspectionDetails().getId() : null))
+                .heatNumber(entity.getHeatNumber())
+                .manufacturer(entity.getManufacturer())
+                .tcNumber(entity.getTcNumber())
+                .tcDate(String.valueOf(entity.getTcDate()))
+                .qtyLeft(String.valueOf(entity.getQtyLeft()))
+                .qtyAccepted(String.valueOf(entity.getQtyAccepted()))
+                .qtyRejected(String.valueOf(entity.getQtyRejected()))
+                .rejectionReason(entity.getRejectionReason())
+                .createdAt(String.valueOf(entity.getCreatedAt()))
+                .updatedAt(String.valueOf(entity.getUpdatedAt()))
+                .build();
+
+        // Fetch final result data from rm_heat_final_result table
+        List<RmHeatFinalResult> finalResults = rmHeatFinalResultRepository
+                .findByInspectionCallNoAndHeatNo(icNumber, entity.getHeatNumber());
+
+        if (!finalResults.isEmpty()) {
+            RmHeatFinalResult finalResult = finalResults.get(0);
+            // Set weight_accepted_mt and weight_offered_mt from final result
+            dto.setWeightAcceptedMt(finalResult.getWeightAcceptedMt() != null ?
+                    finalResult.getWeightAcceptedMt().doubleValue() : null);
+            dto.setWeightOfferedMt(finalResult.getWeightOfferedMt() != null ?
+                    finalResult.getWeightOfferedMt().doubleValue() : null);
+
+            logger.debug("Enriched heat {} with final result: accepted={} MT, offered={} MT",
+                    entity.getHeatNumber(), dto.getWeightAcceptedMt(), dto.getWeightOfferedMt());
+        } else {
+            logger.debug("No final result found for heat {} in IC {}", entity.getHeatNumber(), icNumber);
+        }
+
+        return dto;
     }
 
     /**

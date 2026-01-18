@@ -66,8 +66,13 @@ public class InspectionCall {
     @ToString.Exclude
     private RmInspectionDetails rmInspectionDetails;
 
-    @OneToOne(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
+//    @OneToOne(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
+//    @ToString.Exclude
+//    private ProcessInspectionDetails processInspectionDetails;
+
+    @OneToMany(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
     @ToString.Exclude
-    private ProcessInspectionDetails processInspectionDetails;
+    private List<ProcessInspectionDetails> processInspectionDetails = new ArrayList<>();
+
 }
 

@@ -26,6 +26,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * REST Controller for Final Inspection Call operations
  */
@@ -250,6 +252,45 @@ public class FinalInspectionCallController {
             );
             return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Get Process IC certificate numbers for Final Inspection Call dropdown
+     * GET /api/final-material/process-ic-certificates?vendorId=xxx
+     */
+    @GetMapping("/process-ic-certificates")
+    @Operation(summary = "Get Process IC certificate numbers", description = "Get certificate numbers for Process ICs (EP prefix) filtered by vendor")
+    public ResponseEntity<Object> getProcessIcCertificates(@RequestParam String vendorId) {
+        logger.info("Fetching Process IC certificates for vendor: {}", vendorId);
+        List<String> certificates = finalInspectionCallService.getProcessIcCertificateNumbers(vendorId);
+        logger.info("Found {} certificates", certificates.size());
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(certificates), HttpStatus.OK);
+    }
+
+    /**
+     * Get RM IC numbers by Process IC certificate number
+     * GET /api/final-material/rm-ic-numbers?certificateNo=xxx
+     */
+    @GetMapping("/rm-ic-numbers")
+    @Operation(summary = "Get RM IC numbers by Process IC", description = "Get RM IC numbers for a given Process IC certificate number")
+    public ResponseEntity<Object> getRmIcNumbers(@RequestParam String certificateNo) {
+        logger.info("Fetching RM IC numbers for certificate: {}", certificateNo);
+        List<String> rmIcNumbers = finalInspectionCallService.getRmIcNumbersByCertificateNo(certificateNo);
+        logger.info("Found {} RM IC numbers", rmIcNumbers.size());
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(rmIcNumbers), HttpStatus.OK);
+    }
+
+    /**
+     * Get Lot numbers by RM IC number
+     * GET /api/final-material/lot-numbers?rmIcNumber=xxx
+     */
+    @GetMapping("/lot-numbers")
+    @Operation(summary = "Get Lot numbers by RM IC", description = "Get lot numbers for a given RM IC number")
+    public ResponseEntity<Object> getLotNumbers(@RequestParam String rmIcNumber) {
+        logger.info("Fetching lot numbers for RM IC: {}", rmIcNumber);
+        List<String> lotNumbers = finalInspectionCallService.getLotNumbersByRmIcNumber(rmIcNumber);
+        logger.info("Found {} lot numbers", lotNumbers.size());
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(lotNumbers), HttpStatus.OK);
     }
 
     /**

@@ -3,6 +3,7 @@ package com.sarthi.service;
 import com.sarthi.dto.InventoryEntryRequestDto;
 import com.sarthi.dto.InventoryEntryResponseDto;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -61,5 +62,14 @@ public interface InventoryEntryService {
      * @param id The inventory entry ID
      */
     void deleteInventoryEntry(Long id);
+
+    /**
+     * Update inventory offered quantity when an inspection call is created
+     * @param heatNumber The heat number
+     * @param tcNumber The TC number
+     * @param offeredQty The quantity offered in the inspection call
+     * @return The updated inventory entry
+     */
+    InventoryEntryResponseDto updateOfferedQuantity(String heatNumber, String tcNumber, BigDecimal offeredQty);
 }
 

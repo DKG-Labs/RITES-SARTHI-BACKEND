@@ -72,6 +72,13 @@ public class InventoryEntry {
     @Column(name = "tc_quantity", nullable = false, precision = 12, scale = 3)
     private BigDecimal tcQuantity;
 
+    /* Inspection Call Tracking */
+    @Column(name = "offered_quantity", nullable = false, precision = 12, scale = 3)
+    private BigDecimal offeredQuantity = BigDecimal.ZERO;
+
+    @Column(name = "qty_left_for_inspection", nullable = false, precision = 12, scale = 3)
+    private BigDecimal qtyLeftForInspection = BigDecimal.ZERO;
+
     /* PO & Invoice */
     @Column(name = "sub_po_number", nullable = false, length = 100)
     private String subPoNumber;
@@ -120,6 +127,16 @@ public class InventoryEntry {
     protected void onCreate() {
         this.createdDate = LocalDateTime.now();
         this.updatedDate = LocalDateTime.now();
+
+        // Initialize qty_left_for_inspection with tc_quantity if not already set
+        if (this.qtyLeftForInspection == null || this.qtyLeftForInspection.compareTo(BigDecimal.ZERO) == 0) {
+            this.qtyLeftForInspection = this.tcQuantity != null ? this.tcQuantity : BigDecimal.ZERO;
+        }
+
+        // Initialize offered_quantity to 0 if not already set
+        if (this.offeredQuantity == null) {
+            this.offeredQuantity = BigDecimal.ZERO;
+        }
     }
 
     @PreUpdate

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -213,6 +214,47 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
         logger.info("Inventory entry deleted successfully with ID: {}", id);
     }
 
+    @Override
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public InventoryEntryResponseDto updateOfferedQuantity(String heatNumber, String tcNumber, BigDecimal offeredQty) {
+        logger.info("Updating offered quantity for heat: {}, TC: {}, offered: {}", heatNumber, tcNumber, offeredQty);
+
+        // Find inventory entry by heat number and TC number
+        InventoryEntry entry = inventoryEntryRepository.findByHeatNumberAndTcNumber(heatNumber, tcNumber)
+                .orElseThrow(() -> new BusinessException(
+                        new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                AppConstant.ERROR_TYPE_RESOURCE,
+                                "Inventory entry not found for heat: " + heatNumber + ", TC: " + tcNumber)
+                ));
+
+        // Update offered quantity (add to existing)
+        BigDecimal currentOffered = entry.getOfferedQuantity() != null ? entry.getOfferedQuantity() : BigDecimal.ZERO;
+        BigDecimal newOfferedQty = currentOffered.add(offeredQty);
+        entry.setOfferedQuantity(newOfferedQty);
+
+        // Recalculate qty_left_for_inspection
+        BigDecimal tcQty = entry.getTcQuantity() != null ? entry.getTcQuantity() : BigDecimal.ZERO;
+        BigDecimal qtyLeft = tcQty.subtract(newOfferedQty);
+        entry.setQtyLeftForInspection(qtyLeft);
+
+        // Update status based on remaining quantity
+        if (qtyLeft.compareTo(BigDecimal.ZERO) <= 0) {
+            entry.setStatus(InventoryEntry.InventoryStatus.EXHAUSTED);
+            logger.info("Inventory entry marked as EXHAUSTED (no quantity left)");
+        } else if (entry.getStatus() == InventoryEntry.InventoryStatus.FRESH_PO) {
+            entry.setStatus(InventoryEntry.InventoryStatus.UNDER_INSPECTION);
+            logger.info("Inventory entry status changed to UNDER_INSPECTION");
+        }
+
+        // Save updated entry
+        InventoryEntry updatedEntry = inventoryEntryRepository.save(entry);
+        logger.info("Inventory quantities updated: offered={}, left={}, status={}",
+                newOfferedQty, qtyLeft, updatedEntry.getStatus());
+
+        return mapEntityToResponse(updatedEntry);
+    }
+
     /**
      * Validate inventory request DTO
      */
@@ -301,6 +343,8 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
         dto.setTcNumber(entity.getTcNumber());
         dto.setTcDate(entity.getTcDate());
         dto.setTcQuantity(entity.getTcQuantity());
+        dto.setOfferedQuantity(entity.getOfferedQuantity());
+        dto.setQtyLeftForInspection(entity.getQtyLeftForInspection());
         dto.setSubPoNumber(entity.getSubPoNumber());
         dto.setSubPoDate(entity.getSubPoDate());
         dto.setSubPoQty(entity.getSubPoQty());

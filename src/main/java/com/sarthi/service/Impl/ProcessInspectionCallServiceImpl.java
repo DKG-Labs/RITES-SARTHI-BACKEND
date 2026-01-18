@@ -102,50 +102,75 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
         inspectionCall = inspectionCallRepository.save(inspectionCall);
         logger.info("✅ Inspection Call saved with ID: {}", inspectionCall.getId());
 
-        // ================== 2. CREATE PROCESS INSPECTION DETAILS ==================
+        // ================== 2. CREATE PROCESS INSPECTION DETAILS (MULTIPLE ROWS FOR MULTIPLE LOTS) ==================
         if (processDetailsList != null && !processDetailsList.isEmpty()) {
-            // For now, we'll use the first entry as the main process details
-            // (Based on the schema, process_inspection_details has a UNIQUE constraint on ic_id)
+            logger.info("📦 Creating {} lot records for Process IC: {}", processDetailsList.size(), inspectionCall.getIcNumber());
+
+            // Get RM IC reference (same for all lots)
             ProcessInspectionDetailsRequestDto firstDetail = processDetailsList.get(0);
+            String rmIcNumberFromRequest = firstDetail.getRmIcNumber();
 
-            ProcessInspectionDetails processDetails = new ProcessInspectionDetails();
-            processDetails.setInspectionCall(inspectionCall);
-
-            // Get RM IC details from the request
-            processDetails.setRmIcNumber(firstDetail.getRmIcNumber());
-
-            // Fetch RM IC to get rmIcId (optional - may not exist yet)
-            InspectionCall rmIc = null;
-            if (firstDetail.getRmIcNumber() != null && !firstDetail.getRmIcNumber().isEmpty()) {
-                rmIc = inspectionCallRepository.findByIcNumber(firstDetail.getRmIcNumber()).orElse(null);
-                if (rmIc != null) {
-                    processDetails.setRmIcId(rmIc.getId());
-                    logger.info("✅ Found RM IC: {} with ID: {}", firstDetail.getRmIcNumber(), rmIc.getId());
-                } else {
-                    logger.warn("⚠️ RM IC not found: {}. Proceeding without RM IC reference.", firstDetail.getRmIcNumber());
+            // Extract call number from certificate number if needed
+            String callNumber = rmIcNumberFromRequest;
+            if (rmIcNumberFromRequest != null && rmIcNumberFromRequest.startsWith("N/")) {
+                java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("N/([^/]+)/");
+                java.util.regex.Matcher matcher = pattern.matcher(rmIcNumberFromRequest);
+                if (matcher.find()) {
+                    callNumber = matcher.group(1);
+                    logger.info("📋 Extracted call number '{}' from certificate number '{}'", callNumber, rmIcNumberFromRequest);
                 }
             }
 
-            // Set lot and heat information
-            processDetails.setLotNumber(firstDetail.getLotNumber());
-            processDetails.setHeatNumber(firstDetail.getHeatNumber());
-            processDetails.setManufacturer(firstDetail.getManufacturer());
-            processDetails.setManufacturerHeat(firstDetail.getManufacturerHeat());
+            // Fetch RM IC to get rmIcId
+            InspectionCall rmIc = null;
+            if (callNumber != null && !callNumber.isEmpty()) {
+                rmIc = inspectionCallRepository.findByIcNumber(callNumber).orElse(null);
+                if (rmIc != null) {
+                    logger.info("✅ Found RM IC with call number '{}' and ID: {}", callNumber, rmIc.getId());
+                } else {
+                    logger.warn("⚠️ RM IC not found for call number: {}. Proceeding without RM IC reference.", callNumber);
+                }
+            }
 
-            // Set quantity information
-            processDetails.setOfferedQty(firstDetail.getOfferedQty());
-            processDetails.setTotalAcceptedQtyRm(firstDetail.getTotalAcceptedQtyRm());
+            // ================== CREATE ONE ROW PER LOT ==================
+            int lotCounter = 0;
+            for (ProcessInspectionDetailsRequestDto detail : processDetailsList) {
+                lotCounter++;
 
-            // Set place of inspection (from request or from RM IC if available)
-            processDetails.setCompanyId(firstDetail.getCompanyId() != null ? firstDetail.getCompanyId() : (rmIc != null ? rmIc.getCompanyId() : null));
-            processDetails.setCompanyName(firstDetail.getCompanyName() != null ? firstDetail.getCompanyName() : (rmIc != null ? rmIc.getCompanyName() : null));
-            processDetails.setUnitId(firstDetail.getUnitId() != null ? firstDetail.getUnitId() : (rmIc != null ? rmIc.getUnitId() : null));
-            processDetails.setUnitName(firstDetail.getUnitName() != null ? firstDetail.getUnitName() : (rmIc != null ? rmIc.getUnitName() : null));
-            processDetails.setUnitAddress(firstDetail.getUnitAddress() != null ? firstDetail.getUnitAddress() : (rmIc != null ? rmIc.getUnitAddress() : null));
+                ProcessInspectionDetails processDetails = new ProcessInspectionDetails();
 
-            // Save process inspection details
-            processDetails = processDetailsRepository.save(processDetails);
-            logger.info("✅ Process Inspection Details saved with ID: {}", processDetails.getId());
+                // Set the SAME ic_id for all lots
+                processDetails.setInspectionCall(inspectionCall);
+
+                // Set RM IC reference
+                processDetails.setRmIcNumber(rmIcNumberFromRequest);
+                processDetails.setRmIcId(rmIc != null ? rmIc.getId() : null);
+
+                // Set INDIVIDUAL lot information
+                processDetails.setLotNumber(detail.getLotNumber());
+                processDetails.setHeatNumber(detail.getHeatNumber());
+                processDetails.setManufacturer(detail.getManufacturer());
+                processDetails.setManufacturerHeat(detail.getManufacturerHeat());
+
+                // Set INDIVIDUAL quantity information
+                processDetails.setOfferedQty(detail.getOfferedQty());
+                processDetails.setTotalAcceptedQtyRm(detail.getTotalAcceptedQtyRm());
+
+                // Set place of inspection (from request or from RM IC if available)
+                processDetails.setCompanyId(detail.getCompanyId() != null ? detail.getCompanyId() : (rmIc != null ? rmIc.getCompanyId() : null));
+                processDetails.setCompanyName(detail.getCompanyName() != null ? detail.getCompanyName() : (rmIc != null ? rmIc.getCompanyName() : null));
+                processDetails.setUnitId(detail.getUnitId() != null ? detail.getUnitId() : (rmIc != null ? rmIc.getUnitId() : null));
+                processDetails.setUnitName(detail.getUnitName() != null ? detail.getUnitName() : (rmIc != null ? rmIc.getUnitName() : null));
+                processDetails.setUnitAddress(detail.getUnitAddress() != null ? detail.getUnitAddress() : (rmIc != null ? rmIc.getUnitAddress() : null));
+
+                // Save each lot as a separate row
+                processDetails = processDetailsRepository.save(processDetails);
+                logger.info("✅ Lot {}/{} saved - ID: {} | Lot: {} | Qty: {}",
+                        lotCounter, processDetailsList.size(), processDetails.getId(),
+                        detail.getLotNumber(), detail.getOfferedQty());
+            }
+
+            logger.info("🎉 Successfully saved {} lots for Process IC: {}", lotCounter, inspectionCall.getIcNumber());
 
             // ================== 3. CREATE PROCESS RM IC MAPPING ==================
             // Create mapping entries for each lot-heat combination (only if RM IC exists)

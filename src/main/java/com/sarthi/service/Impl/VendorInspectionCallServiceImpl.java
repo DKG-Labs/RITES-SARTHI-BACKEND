@@ -105,9 +105,11 @@ public class VendorInspectionCallServiceImpl implements VendorInspectionCallServ
                         .map(RmInspectionDetails::getItemDescription)
                         .orElse("N/A");
             } else if ("Process".equalsIgnoreCase(ic.getTypeOfCall())) {
-                return processInspectionDetailsRepository.findByIcId(ic.getId())
-                        .map(details -> "Process Inspection - Lot: " + details.getLotNumber())
-                        .orElse("N/A");
+                List<ProcessInspectionDetails> processList = processInspectionDetailsRepository.findByIcId(ic.getId());
+                if (!processList.isEmpty()) {
+                    return "Process Inspection - Lot: " + processList.get(0).getLotNumber();
+                }
+                return "N/A";
             } else if ("Final".equalsIgnoreCase(ic.getTypeOfCall())) {
                 return finalInspectionDetailsRepository.findByIcId(ic.getId())
                         .map(details -> "Final Inspection - " + details.getTotalLots() + " lots")
@@ -129,9 +131,11 @@ public class VendorInspectionCallServiceImpl implements VendorInspectionCallServ
                         .map(RmInspectionDetails::getOfferedQtyErc)
                         .orElse(0);
             } else if ("Process".equalsIgnoreCase(ic.getTypeOfCall())) {
-                return processInspectionDetailsRepository.findByIcId(ic.getId())
-                        .map(ProcessInspectionDetails::getOfferedQty)
-                        .orElse(0);
+                List<ProcessInspectionDetails> processList = processInspectionDetailsRepository.findByIcId(ic.getId());
+                if (!processList.isEmpty()) {
+                    return processList.get(0).getOfferedQty();
+                }
+                return 0;
             } else if ("Final".equalsIgnoreCase(ic.getTypeOfCall())) {
                 return finalInspectionDetailsRepository.findByIcId(ic.getId())
                         .map(FinalInspectionDetails::getTotalOfferedQty)

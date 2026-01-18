@@ -20,8 +20,9 @@ public class ProcessInspectionDetails {
     private Long id;
 
     // ---- RELATION TO INSPECTION CALL ----
-    @OneToOne
-    @JoinColumn(name = "ic_id", nullable = false, unique = true)
+    // Changed from @OneToOne to @ManyToOne to allow multiple lots per IC
+    @ManyToOne
+    @JoinColumn(name = "ic_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
     private InspectionCall inspectionCall;
