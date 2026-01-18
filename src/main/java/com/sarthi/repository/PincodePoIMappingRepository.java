@@ -33,7 +33,7 @@ public interface PincodePoIMappingRepository extends JpaRepository<PincodePoIMap
     @Query("""
     SELECT DISTINCT p.companyName
     FROM PincodePoIMapping p
-    WHERE p.poiCode IN ('POI1', 'POI31', 'POI32')
+    WHERE p.poiCode IN ('POI1', 'POI31')
 """)
     List<String> findDistinctCompanyNames();
 
