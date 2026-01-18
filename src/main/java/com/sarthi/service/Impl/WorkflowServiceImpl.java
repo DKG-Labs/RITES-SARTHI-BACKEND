@@ -730,7 +730,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                         processIeQtyRepository
                                 .sumInspectedQtyByRequestId(req.getRequestId());
 
-                int newQty = req.getInspetedQty();
+                int newQty = req.getInspectedQty();
 
                 //  CORE VALIDATION
                 if (alreadyInspectedQty + newQty > totalOfferedQty) {

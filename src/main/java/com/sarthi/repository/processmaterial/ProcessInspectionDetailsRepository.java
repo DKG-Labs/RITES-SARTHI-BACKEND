@@ -39,12 +39,19 @@ public interface ProcessInspectionDetailsRepository extends JpaRepository<Proces
             "WHERE pd.inspectionCall.id = :icId")
     int sumOfferedQtyByIcId(@Param("icId") Long icId);
 
-    @Query("""
-SELECT COALESCE(pd.offeredQty, 0)
-FROM ProcessInspectionDetails pd
-WHERE pd.inspectionCall.id = :icId
+//    @Query("""
+//SELECT COALESCE(pd.offeredQty, 0)
+//FROM ProcessInspectionDetails pd
+//WHERE pd.inspectionCall.id = :icId
+//""")
+//    Integer findOfferedQtyByIcId(@Param("icId") Long icId);
+@Query("""
+    SELECT COALESCE(SUM(pd.offeredQty), 0)
+    FROM ProcessInspectionDetails pd
+    WHERE pd.inspectionCall.id = :icId
 """)
-    Integer findOfferedQtyByIcId(@Param("icId") Long icId);
+Integer findOfferedQtyByIcId(@Param("icId") Long icId);
+
 
 
     /**

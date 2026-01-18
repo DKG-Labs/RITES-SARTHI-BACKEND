@@ -36,7 +36,7 @@ public class TransitionActionReqDto {
 
     private String sbuHeadDecision;
 
-    private int inspetedQty;
+    private int inspectedQty;
 
     private String lotNo;
 
