@@ -51,6 +51,22 @@ public InspectionQtySummaryResponse getQtySummary(String requestId) {
 
 
     if (hasProcessQty) {
+        InspectionCall ic =
+                inspectionCallRepository
+                        .findByIcNumber(requestId)
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Invalid Inspection Call: " + requestId
+                                )
+                        ));
+
+
+        Integer totalOfferedQty =
+                processInspectionDetailsRepository
+                        .sumOfferedQtyByIcId(ic.getId());
 
         InspectionQtySummaryView view =
                 processIeQtyRepository.getQtySummaryByRequestId(requestId);
@@ -61,7 +77,7 @@ public InspectionQtySummaryResponse getQtySummary(String requestId) {
 
         return new InspectionQtySummaryResponse(
                 view.getAcceptedQty(),
-                view.getTotalOfferedQty(),
+                totalOfferedQty,
                 view.getTotalManufactureQty()
         );
     }
