@@ -71,7 +71,7 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
         inspectionCall.setTypeOfCall(icRequest.getTypeOfCall());
         inspectionCall.setErcType(icRequest.getErcType());
         inspectionCall.setStatus(icRequest.getStatus());
-        inspectionCall.setPlaceOfInspection("POI1");
+        inspectionCall.setPlaceOfInspection(icRequest.getPlaceOfInspection());
 
         logger.info("🔍 DEBUG: After setting - inspectionCall.getErcType() = {}", inspectionCall.getErcType());
         inspectionCall.setVendorId(icRequest.getVendorId());
