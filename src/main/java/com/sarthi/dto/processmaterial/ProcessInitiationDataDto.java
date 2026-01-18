@@ -36,13 +36,29 @@ public class ProcessInitiationDataDto {
     private String companyName;
     private String unitName;
     private String unitAddress;
-    private String rmIcNumber; // RM IC number from process_inspection_details
-    private String lotNumber; // Lot number from process_inspection_details
-    private String heatNumber; // Heat number from process_inspection_details
-    
+    private String rmIcNumber; // RM IC number from process_inspection_details (primary lot)
+    private String lotNumber; // Lot number from process_inspection_details (primary lot)
+    private String heatNumber; // Heat number from process_inspection_details (primary lot)
+    private Integer offeredQty; // Offered quantity from process_inspection_details (CALL QTY for Section B - primary lot)
+
+    // ==================== MULTIPLE LOTS SUPPORT ====================
+    // List of all lots linked to this inspection call
+    private List<LotDetailsInfo> lotDetailsList;
+
     // ==================== SECTION C: RM IC Details (Heat Numbers from Inventory) ====================
     // List of heat number details from inventory_entry table
     private List<RmIcHeatInfo> rmIcHeatInfoList;
+
+    @Data
+    public static class LotDetailsInfo {
+        private String rmIcNumber;          // RM IC number from process_inspection_details
+        private String lotNumber;           // Lot number from process_inspection_details
+        private String heatNumber;          // Heat number from process_inspection_details
+        private String manufacturer;        // Manufacturer from process_inspection_details
+        private String manufacturerHeat;    // Manufacturer heat from process_inspection_details
+        private Integer offeredQty;         // Offered quantity from process_inspection_details
+        private Integer totalAcceptedQtyRm; // Total accepted quantity from process_inspection_details
+    }
 
     @Data
     public static class RmIcHeatInfo {

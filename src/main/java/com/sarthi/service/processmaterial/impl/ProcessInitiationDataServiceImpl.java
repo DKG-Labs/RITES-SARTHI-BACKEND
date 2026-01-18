@@ -68,16 +68,20 @@ public class ProcessInitiationDataServiceImpl implements ProcessInitiationDataSe
                         )
                 ));
 
-        // 2. Fetch Process Inspection Details
-        ProcessInspectionDetails processDetails = processDetailsRepository.findByIcId(ic.getId())
-                .orElseThrow(() -> new BusinessException(
-                        new ErrorDetails(
-                                AppConstant.NO_RECORD_FOUND,
-                                AppConstant.ERROR_TYPE_CODE_VALIDATION,
-                                AppConstant.ERROR_TYPE_VALIDATION,
-                                "Process inspection details not found for call: " + callNo
-                        )
-                ));
+        // 2. Fetch Process Inspection Details (get first lot if multiple lots exist)
+        List<ProcessInspectionDetails> processDetailsList = processDetailsRepository.findByIcId(ic.getId());
+        if (processDetailsList.isEmpty()) {
+            throw new BusinessException(
+                    new ErrorDetails(
+                            AppConstant.NO_RECORD_FOUND,
+                            AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                            AppConstant.ERROR_TYPE_VALIDATION,
+                            "Process inspection details not found for call: " + callNo
+                    )
+            );
+        }
+        // Use the first lot's details (primary lot)
+        ProcessInspectionDetails processDetails = processDetailsList.get(0);
 
         // 3. Fetch PO Header data
         PoHeader poHeader = poHeaderRepository.findByPoNo(ic.getPoNo())
@@ -150,10 +154,27 @@ public class ProcessInitiationDataServiceImpl implements ProcessInitiationDataSe
         dto.setUnitName(ic.getUnitName());
         dto.setUnitAddress(ic.getUnitAddress());
 
-        // RM IC Number, Lot Number, and Heat Number - from process_inspection_details table
+        // RM IC Number, Lot Number, Heat Number, and Offered Qty - from process_inspection_details table
         dto.setRmIcNumber(processDetails.getRmIcNumber() != null ? processDetails.getRmIcNumber() : "N/A");
         dto.setLotNumber(processDetails.getLotNumber() != null ? processDetails.getLotNumber() : "N/A");
         dto.setHeatNumber(processDetails.getHeatNumber() != null ? processDetails.getHeatNumber() : "N/A");
+        dto.setOfferedQty(processDetails.getOfferedQty() != null ? processDetails.getOfferedQty() : 0); // CALL QTY for Section B
+
+        // Build list of all lots for this inspection call
+        List<ProcessInitiationDataDto.LotDetailsInfo> lotDetailsList = new ArrayList<>();
+        for (ProcessInspectionDetails lot : processDetailsList) {
+            ProcessInitiationDataDto.LotDetailsInfo lotInfo = new ProcessInitiationDataDto.LotDetailsInfo();
+            lotInfo.setRmIcNumber(lot.getRmIcNumber() != null ? lot.getRmIcNumber() : "N/A");
+            lotInfo.setLotNumber(lot.getLotNumber() != null ? lot.getLotNumber() : "N/A");
+            lotInfo.setHeatNumber(lot.getHeatNumber() != null ? lot.getHeatNumber() : "N/A");
+            lotInfo.setManufacturer(lot.getManufacturer() != null ? lot.getManufacturer() : "N/A");
+            lotInfo.setManufacturerHeat(lot.getManufacturerHeat() != null ? lot.getManufacturerHeat() : "N/A");
+            lotInfo.setOfferedQty(lot.getOfferedQty() != null ? lot.getOfferedQty() : 0);
+            lotInfo.setTotalAcceptedQtyRm(lot.getTotalAcceptedQtyRm() != null ? lot.getTotalAcceptedQtyRm() : 0);
+            lotDetailsList.add(lotInfo);
+        }
+        dto.setLotDetailsList(lotDetailsList);
+        log.info("✅ Built lot details list with {} lots", lotDetailsList.size());
 
         // Section C: RM IC Heat Information from inventory_entry table
         List<RmIcHeatInfo> heatInfoList = new ArrayList<>();

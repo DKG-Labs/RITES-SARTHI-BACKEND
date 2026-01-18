@@ -1,10 +1,22 @@
 package com.sarthi.controller.finalmaterial;
 
 import com.sarthi.dto.IcDtos.CreateFinalInspectionCallRequestDto;
+import com.sarthi.dto.po.PoDataForSectionsDto;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.util.ResponseBuilder;
+import com.sarthi.exception.ErrorDetails;
+import com.sarthi.constant.AppConstant;
 import com.sarthi.service.FinalInspectionCallService;
 import com.sarthi.service.WorkflowService;
+import com.sarthi.service.PoDataService;
+import com.sarthi.entity.rawmaterial.InspectionCall;
+import com.sarthi.entity.finalmaterial.FinalInspectionDetails;
+import com.sarthi.entity.finalmaterial.FinalInspectionLotDetails;
+import com.sarthi.entity.finalmaterial.FinalProcessIcMapping;
+import com.sarthi.repository.rawmaterial.InspectionCallRepository;
+import com.sarthi.repository.finalmaterial.FinalInspectionDetailsRepository;
+import com.sarthi.repository.finalmaterial.FinalInspectionLotDetailsRepository;
+import com.sarthi.repository.finalmaterial.FinalProcessIcMappingRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
@@ -32,6 +44,21 @@ public class FinalInspectionCallController {
 
     @Autowired
     private WorkflowService workflowService;
+
+    @Autowired
+    private PoDataService poDataService;
+
+    @Autowired
+    private InspectionCallRepository inspectionCallRepository;
+
+    @Autowired
+    private FinalInspectionDetailsRepository finalInspectionDetailsRepository;
+
+    @Autowired
+    private FinalInspectionLotDetailsRepository finalInspectionLotDetailsRepository;
+
+    @Autowired
+    private FinalProcessIcMappingRepository finalProcessIcMappingRepository;
 
     /**
      * Create a new Final Inspection Call with lot details
@@ -90,6 +117,141 @@ public class FinalInspectionCallController {
 
         logger.info("✅ Final Inspection Call created successfully: {}", ic.getIcNumber());
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(responseData), HttpStatus.CREATED);
+    }
+
+    /**
+     * Get final inspection initiation data by call number
+     * GET /api/final-material/inspection/{callNo}
+     *
+     * Enhanced to fetch PO data from po_header and po_ma_header tables
+     * similar to Raw Material implementation
+     */
+    @GetMapping("/inspection/{callNo}")
+    @Operation(summary = "Get Final inspection initiation data", description = "Returns inspection call, final details, lot details, process mappings, and PO data for a call number")
+    public ResponseEntity<Object> getFinalInspectionByCallNo(@PathVariable String callNo) {
+        logger.info("GET /api/final-material/inspection/{} - Fetching final initiation data", callNo);
+
+        InspectionCall ic = inspectionCallRepository.findByIcNumber(callNo)
+                .orElse(null);
+
+        if (ic == null) {
+            logger.warn("Final initiation: Inspection call not found for callNo: {}", callNo);
+            ErrorDetails errorDetails = new ErrorDetails(
+                    AppConstant.ERROR_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_RESOURCE,
+                    "Inspection call not found for callNo: " + callNo
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.NOT_FOUND);
+        }
+
+        FinalInspectionDetails finalDetails = finalInspectionDetailsRepository.findByIcId(ic.getId().longValue())
+                .orElse(null);
+
+        java.util.List<FinalInspectionLotDetails> lotDetails = new java.util.ArrayList<>();
+        java.util.List<FinalProcessIcMapping> mappings = new java.util.ArrayList<>();
+
+        if (finalDetails != null) {
+            lotDetails = finalInspectionLotDetailsRepository.findByFinalDetailId(finalDetails.getId());
+        }
+
+        mappings = finalProcessIcMappingRepository.findByFinalIcId(ic.getId().longValue());
+
+        // Fetch PO data from po_header and po_ma_header tables (similar to Raw Material)
+        PoDataForSectionsDto poData = null;
+        if (ic.getPoNo() != null && !ic.getPoNo().trim().isEmpty()) {
+            try {
+                logger.info("Fetching PO data for PO: {} and Call: {}", ic.getPoNo(), callNo);
+                poData = poDataService.getPoDataWithRmDetailsForSectionC(ic.getPoNo(), callNo);
+                if (poData != null) {
+                    logger.info("✅ PO data fetched successfully for Final inspection");
+                } else {
+                    logger.warn("⚠️ No PO data found for PO: {}", ic.getPoNo());
+                }
+            } catch (Exception e) {
+                logger.error("❌ Error fetching PO data for Final inspection: {}", e.getMessage());
+                // Continue without PO data - frontend will use fallback
+            }
+        }
+
+        java.util.Map<String, Object> resp = new java.util.HashMap<>();
+        resp.put("inspectionCall", ic);
+        resp.put("finalInspectionDetails", finalDetails);
+        resp.put("finalLotDetails", lotDetails);
+        resp.put("finalProcessMappings", mappings);
+        resp.put("poData", poData); // Add PO data to response
+
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(resp), HttpStatus.OK);
+    }
+
+    /**
+     * Get Final Product Dashboard data by call number
+     * Optimized endpoint that returns all dashboard data in one call
+     * GET /api/final-material/dashboard/{callNo}
+     */
+    @GetMapping("/dashboard/{callNo}")
+    @Operation(summary = "Get Final Product Dashboard data", description = "Returns all data needed for the Final Product Dashboard in a single optimized call")
+    public ResponseEntity<Object> getFinalDashboardData(@PathVariable String callNo) {
+        logger.info("GET /api/final-material/dashboard/{} - Fetching dashboard data", callNo);
+
+        try {
+            InspectionCall ic = inspectionCallRepository.findByIcNumber(callNo)
+                    .orElse(null);
+
+            if (ic == null) {
+                logger.warn("Dashboard: Inspection call not found for callNo: {}", callNo);
+                ErrorDetails errorDetails = new ErrorDetails(
+                        AppConstant.ERROR_CODE_RESOURCE,
+                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                        AppConstant.ERROR_TYPE_RESOURCE,
+                        "Inspection call not found for callNo: " + callNo
+                );
+                return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.NOT_FOUND);
+            }
+
+            FinalInspectionDetails finalDetails = finalInspectionDetailsRepository.findByIcId(ic.getId().longValue())
+                    .orElse(null);
+
+            java.util.List<FinalInspectionLotDetails> lotDetails = new java.util.ArrayList<>();
+            if (finalDetails != null) {
+                lotDetails = finalInspectionLotDetailsRepository.findByFinalDetailId(finalDetails.getId());
+            }
+
+            // Fetch PO data
+            PoDataForSectionsDto poData = null;
+            if (ic.getPoNo() != null && !ic.getPoNo().trim().isEmpty()) {
+                try {
+                    logger.info("Fetching PO data for PO: {} and Call: {}", ic.getPoNo(), callNo);
+                    poData = poDataService.getPoDataWithRmDetailsForSectionC(ic.getPoNo(), callNo);
+                    if (poData != null) {
+                        logger.info("✅ PO data fetched successfully for Final dashboard");
+                    } else {
+                        logger.warn("⚠️ No PO data found for PO: {}", ic.getPoNo());
+                    }
+                } catch (Exception e) {
+                    logger.error("❌ Error fetching PO data for Final dashboard: {}", e.getMessage());
+                }
+            }
+
+            // Build optimized response with only required fields
+            java.util.Map<String, Object> dashboardData = new java.util.HashMap<>();
+            dashboardData.put("inspectionCall", ic);
+            dashboardData.put("finalInspectionDetails", finalDetails);
+            dashboardData.put("finalLotDetails", lotDetails);
+            dashboardData.put("poData", poData);
+
+            logger.info("✅ Dashboard data fetched successfully for call: {}", callNo);
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(dashboardData), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("❌ Error fetching dashboard data: {}", e.getMessage());
+            ErrorDetails errorDetails = new ErrorDetails(
+                    AppConstant.ERROR_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_RESOURCE,
+                    "Error fetching dashboard data: " + e.getMessage()
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
