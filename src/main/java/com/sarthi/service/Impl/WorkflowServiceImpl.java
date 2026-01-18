@@ -2394,6 +2394,7 @@ private WorkflowTransitionDto mapWorkflowTransition(WorkflowTransition wt) {
                 return "APPROVED";
 
             case "PAUSE_INSPECTION_RESUME_NEXT_DAY":
+                return "PAUSED";
             case "PARTIAL_INSPECTION_COMPLETED":
                 return "PAUSED";
             case "BLOCK_DUE_TO_PAYMENT":
