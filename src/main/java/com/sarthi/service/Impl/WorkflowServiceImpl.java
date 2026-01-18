@@ -693,6 +693,7 @@ public class WorkflowServiceImpl implements WorkflowService {
             if(req.getAction().equalsIgnoreCase("CONFIRM_CANCEL_AFTER_PAYMENT")){
                 return confirmCancelAfterPayment(current,req);
             }
+
             if ("ENTRY_INSPECTION_RESULTS".equalsIgnoreCase(req.getAction())) {
 
                 InspectionCall ic =
@@ -707,55 +708,56 @@ public class WorkflowServiceImpl implements WorkflowService {
                                         )
                                 ));
 
-                String swift = current.getSwiftCode(); // A / B / C / G
+                if(ic.getTypeOfCall().equalsIgnoreCase("Process")) {
+                    String swift = current.getSwiftCode(); // A / B / C / G
 
-                // Total allowed qty (from process_inspection_details)
-                int totalOfferedQty =
-                        processInspectionDetailsRepository
-                                .findOfferedQtyByIcId(ic.getId());
+                    // Total allowed qty (from process_inspection_details)
+                    int totalOfferedQty =
+                            processInspectionDetailsRepository
+                                    .findOfferedQtyByIcId(ic.getId());
 
-                if (totalOfferedQty <= 0) {
-                    throw new BusinessException(
-                            new ErrorDetails(
-                                    AppConstant.INVALID_WORKFLOW_TRANSITION,
-                                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
-                                    AppConstant.ERROR_TYPE_VALIDATION,
-                                    "Offered quantity not available. Cannot enter inspection results."
-                            )
-                    );
-                }
+                    if (totalOfferedQty <= 0) {
+                        throw new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.INVALID_WORKFLOW_TRANSITION,
+                                        AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Offered quantity not available. Cannot enter inspection results."
+                                )
+                        );
+                    }
 
-                // Already inspected qty (history sum)
+                    // Already inspected qty (history sum)
 //                int alreadyInspectedQty =
 //                        processIeQtyRepository
 //                                .sumInspectedQtyByRequestId(req.getRequestId());
 
-                //  Lot number from request
-                String lotNo = req.getLotNo();
+                    //  Lot number from request
+                    String lotNo = req.getLotNo();
 
 // Already inspected qty for SAME request + SAME lot
-                int alreadyInspectedLotQty =
-                        processIeQtyRepository
-                                .sumInspectedQtyByRequestIdAndLotNumber(
-                                        req.getRequestId(),
-                                        lotNo
-                                );
+                    int alreadyInspectedLotQty =
+                            processIeQtyRepository
+                                    .sumInspectedQtyByRequestIdAndLotNumber(
+                                            req.getRequestId(),
+                                            lotNo
+                                    );
 
 
-                int lotOfferedQty =
-                        processIeQtyRepository
-                                .findOfferedQtyByRequestIdAndLotNumber(
-                                        req.getRequestId(),
-                                        lotNo
-                                );
+                    int lotOfferedQty =
+                            processIeQtyRepository
+                                    .findOfferedQtyByRequestIdAndLotNumber(
+                                            req.getRequestId(),
+                                            lotNo
+                                    );
 
-                if (lotOfferedQty == 0) {
-                    lotOfferedQty = req.getOfferedQty();
-                }
+                    if (lotOfferedQty == 0) {
+                        lotOfferedQty = req.getOfferedQty();
+                    }
 
-                int newQty = req.getInspectedQty();
+                    int newQty = req.getInspectedQty();
 
-                //  CORE VALIDATION
+                    //  CORE VALIDATION
 //                if (alreadyInspectedQty + newQty > totalOfferedQty) {
 //                    throw new BusinessException(
 //                            new ErrorDetails(
@@ -767,34 +769,35 @@ public class WorkflowServiceImpl implements WorkflowService {
 //                            )
 //                    );
 //                }
-                // LOT-WISE VALIDATION
-                if (alreadyInspectedLotQty + newQty > lotOfferedQty) {
-                    throw new BusinessException(
-                            new ErrorDetails(
-                                    AppConstant.INVALID_WORKFLOW_TRANSITION,
-                                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
-                                    AppConstant.ERROR_TYPE_VALIDATION,
-                                    "Entered quantity exceeds offered quantity for Lot "
-                                            + lotNo +
-                                            ". Remaining qty: "
-                                            + (lotOfferedQty - alreadyInspectedLotQty)
-                            )
-                    );
+                    // LOT-WISE VALIDATION
+                    if (alreadyInspectedLotQty + newQty > lotOfferedQty) {
+                        throw new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.INVALID_WORKFLOW_TRANSITION,
+                                        AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Entered quantity exceeds offered quantity for Lot "
+                                                + lotNo +
+                                                ". Remaining qty: "
+                                                + (lotOfferedQty - alreadyInspectedLotQty)
+                                )
+                        );
+                    }
+
+
+                    ProcessIeQty qty = new ProcessIeQty();
+                    qty.setRequestId(req.getRequestId());
+                    qty.setSwiftCode(swift);
+                    qty.setIeUserId(req.getActionBy());
+                    qty.setInspectedQty(newQty);
+                    qty.setOfferedQty(lotOfferedQty);
+                    qty.setManufactureQty(req.getManufactureQty());
+                    //qty.setOfferedQty(req.getOfferedQty());
+                    qty.setLotNumber(req.getLotNo());
+                    qty.setCompleted(false);
+
+                    processIeQtyRepository.save(qty);
                 }
-
-
-                ProcessIeQty qty = new ProcessIeQty();
-                qty.setRequestId(req.getRequestId());
-                qty.setSwiftCode(swift);
-                qty.setIeUserId(req.getActionBy());
-                qty.setInspectedQty(newQty);
-                qty.setOfferedQty(lotOfferedQty);
-                qty.setManufactureQty(req.getManufactureQty());
-                //qty.setOfferedQty(req.getOfferedQty());
-                qty.setLotNumber(req.getLotNo());
-                qty.setCompleted(false);
-
-                processIeQtyRepository.save(qty);
             }
 
 
