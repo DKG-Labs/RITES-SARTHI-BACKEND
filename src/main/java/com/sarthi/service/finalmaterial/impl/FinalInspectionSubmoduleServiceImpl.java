@@ -3,12 +3,17 @@ package com.sarthi.service.finalmaterial.impl;
 import com.sarthi.entity.finalmaterial.*;
 import com.sarthi.repository.finalmaterial.*;
 import com.sarthi.service.finalmaterial.FinalInspectionSubmoduleService;
+import com.sarthi.dto.finalmaterial.FinalLadleValuesDto;
+import com.sarthi.dto.finalmaterial.FinalInclusionRatingBatchDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -188,6 +193,72 @@ public class FinalInspectionSubmoduleServiceImpl implements FinalInspectionSubmo
     }
 
     @Override
+    public List<FinalInclusionRating> saveInclusionRatingBatch(FinalInclusionRatingBatchDTO batchData, String userId) {
+        List<FinalInclusionRating> savedRecords = new ArrayList<>();
+        int sampleCount = batchData.getMicrostructure1st() != null ? batchData.getMicrostructure1st().size() : 0;
+
+        for (int i = 0; i < sampleCount; i++) {
+            FinalInclusionRating record = new FinalInclusionRating();
+            record.setInspectionCallNo(batchData.getInspectionCallNo());
+            record.setLotNo(batchData.getLotNo());
+            record.setHeatNo(batchData.getHeatNo());
+            record.setSampleNo(i + 1);
+
+            // Set microstructure values
+            if (batchData.getMicrostructure1st() != null && i < batchData.getMicrostructure1st().size()) {
+                record.setMicrostructure1st(batchData.getMicrostructure1st().get(i));
+            }
+            if (batchData.getMicrostructure2nd() != null && i < batchData.getMicrostructure2nd().size()) {
+                record.setMicrostructure2nd(batchData.getMicrostructure2nd().get(i));
+            }
+
+            // Set decarb values
+            if (batchData.getDecarb1st() != null && i < batchData.getDecarb1st().size()) {
+                String val = batchData.getDecarb1st().get(i);
+                if (val != null && !val.isEmpty()) {
+                    record.setDecarb1st(new BigDecimal(val));
+                }
+            }
+            if (batchData.getDecarb2nd() != null && i < batchData.getDecarb2nd().size()) {
+                String val = batchData.getDecarb2nd().get(i);
+                if (val != null && !val.isEmpty()) {
+                    record.setDecarb2nd(new BigDecimal(val));
+                }
+            }
+
+            // Set inclusion values
+            if (batchData.getInclusion1st() != null && i < batchData.getInclusion1st().size()) {
+                Map<String, String> inclusion = batchData.getInclusion1st().get(i);
+                if (inclusion != null) {
+                    record.setInclusionARating(inclusion.get("A"));
+                    record.setInclusionBRating(inclusion.get("B"));
+                    record.setInclusionCRating(inclusion.get("C"));
+                    record.setInclusionDRating(inclusion.get("D"));
+                    record.setInclusionType(inclusion.get("type"));
+                }
+            }
+
+            // Set defects value
+            if (batchData.getDefects1st() != null && i < batchData.getDefects1st().size()) {
+                record.setFreedomFromDefects(batchData.getDefects1st().get(i));
+            }
+
+            // Set remarks (shared across all samples)
+            record.setRemarks(batchData.getInclusionRemarks());
+
+            // Set audit fields
+            record.setCreatedBy(userId);
+            record.setUpdatedBy(userId);
+            record.setCreatedAt(LocalDateTime.now());
+            record.setUpdatedAt(LocalDateTime.now());
+
+            savedRecords.add(inclusionRatingRepository.save(record));
+        }
+
+        return savedRecords;
+    }
+
+    @Override
     public List<FinalInclusionRating> getInclusionRatingByCallNo(String inspectionCallNo) {
         return inclusionRatingRepository.findByInspectionCallNo(inspectionCallNo);
     }
@@ -323,6 +394,28 @@ public class FinalInspectionSubmoduleServiceImpl implements FinalInspectionSubmo
     @Override
     public void deleteToeLoadTest(Long id) {
         toeLoadTestRepository.deleteById(id);
+    }
+
+    // ===== LADLE VALUES =====
+    @Override
+    public List<FinalLadleValuesDto> getLadleValuesByCallNo(String inspectionCallNo) {
+        List<FinalChemicalAnalysis> entities = chemicalAnalysisRepository.findByInspectionCallNo(inspectionCallNo);
+        List<FinalLadleValuesDto> dtos = new ArrayList<>();
+
+        for (FinalChemicalAnalysis entity : entities) {
+            FinalLadleValuesDto dto = FinalLadleValuesDto.builder()
+                    .lotNo(entity.getLotNo())
+                    .heatNo(entity.getHeatNo())
+                    .percentC(entity.getCarbonPercent())
+                    .percentSi(entity.getSiliconPercent())
+                    .percentMn(entity.getManganesePercent())
+                    .percentP(entity.getPhosphorusPercent())
+                    .percentS(entity.getSulphurPercent())
+                    .build();
+            dtos.add(dto);
+        }
+
+        return dtos;
     }
 }
 

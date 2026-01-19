@@ -1,6 +1,8 @@
 package com.sarthi.service.finalmaterial;
 
 import com.sarthi.entity.finalmaterial.*;
+import com.sarthi.dto.finalmaterial.FinalLadleValuesDto;
+import com.sarthi.dto.finalmaterial.FinalInclusionRatingBatchDTO;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +46,7 @@ public interface FinalInspectionSubmoduleService {
 
     // ===== INCLUSION & DECARB =====
     FinalInclusionRating saveInclusionRating(FinalInclusionRating data, String userId);
+    List<FinalInclusionRating> saveInclusionRatingBatch(FinalInclusionRatingBatchDTO batchData, String userId);
     List<FinalInclusionRating> getInclusionRatingByCallNo(String inspectionCallNo);
     List<FinalInclusionRating> getInclusionRatingByLot(String inspectionCallNo, String lotNo);
     Optional<FinalInclusionRating> getInclusionRatingById(Long id);
@@ -73,5 +76,14 @@ public interface FinalInspectionSubmoduleService {
     Optional<FinalToeLoadTest> getToeLoadTestById(Long id);
     FinalToeLoadTest updateToeLoadTest(FinalToeLoadTest data, String userId);
     void deleteToeLoadTest(Long id);
+
+    // ===== LADLE VALUES =====
+    /**
+     * Get ladle values (chemical analysis from vendor) for all lots.
+     * Used in Chemical Analysis page to display ladle values.
+     * @param inspectionCallNo The inspection call number
+     * @return List of ladle values per lot
+     */
+    List<FinalLadleValuesDto> getLadleValuesByCallNo(String inspectionCallNo);
 }
 

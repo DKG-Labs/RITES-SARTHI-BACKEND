@@ -2,6 +2,8 @@ package com.sarthi.controller.finalmaterial;
 
 import com.sarthi.entity.finalmaterial.*;
 import com.sarthi.service.finalmaterial.FinalInspectionSubmoduleService;
+import com.sarthi.dto.finalmaterial.FinalLadleValuesDto;
+import com.sarthi.dto.finalmaterial.FinalInclusionRatingBatchDTO;
 import com.sarthi.util.ResponseBuilder;
 import com.sarthi.exception.ErrorDetails;
 import com.sarthi.constant.AppConstant;
@@ -31,6 +33,32 @@ public class FinalInspectionSubmoduleController {
     private static final Logger logger = LoggerFactory.getLogger(FinalInspectionSubmoduleController.class);
     private final FinalInspectionSubmoduleService submoduleService;
 
+    /**
+     * Helper method to get userId from payload or principal
+     * Priority: payload createdBy > principal > "system"
+     */
+    private String getUserId(Object data, Principal principal) {
+        try {
+            // Try to get createdBy from the entity using reflection
+            java.lang.reflect.Field createdByField = data.getClass().getDeclaredField("createdBy");
+            createdByField.setAccessible(true);
+            String createdBy = (String) createdByField.get(data);
+            if (createdBy != null && !createdBy.isEmpty()) {
+                return createdBy;
+            }
+        } catch (Exception e) {
+            // Field doesn't exist or can't be accessed, continue to next option
+        }
+
+        // Fallback to principal
+        if (principal != null) {
+            return principal.getName();
+        }
+
+        // Final fallback
+        return "system";
+    }
+
     // ===== CALIBRATION & DOCUMENTS =====
     @PostMapping("/calibration-documents")
     @Operation(summary = "Save Calibration & Documents data")
@@ -38,7 +66,7 @@ public class FinalInspectionSubmoduleController {
             @RequestBody FinalCalibrationDocuments data,
             Principal principal) {
         try {
-            String userId = principal.getName();
+            String userId = getUserId(data, principal);
             FinalCalibrationDocuments saved = submoduleService.saveCalibrationDocuments(data, userId);
             return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -139,7 +167,10 @@ public class FinalInspectionSubmoduleController {
             @RequestBody FinalVisualDimensional data,
             Principal principal) {
         try {
-            String userId = principal.getName();
+            // Use createdBy from payload if provided, otherwise use principal or fallback to "system"
+            String userId = (data.getCreatedBy() != null && !data.getCreatedBy().isEmpty()) ?
+                            data.getCreatedBy() :
+                            (principal != null ? principal.getName() : "system");
             FinalVisualDimensional saved = submoduleService.saveVisualDimensional(data, userId);
             return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -240,7 +271,7 @@ public class FinalInspectionSubmoduleController {
             @RequestBody FinalChemicalAnalysis data,
             Principal principal) {
         try {
-            String userId = principal.getName();
+            String userId = getUserId(data, principal);
             FinalChemicalAnalysis saved = submoduleService.saveChemicalAnalysis(data, userId);
             return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -341,7 +372,7 @@ public class FinalInspectionSubmoduleController {
             @RequestBody FinalHardnessTest data,
             Principal principal) {
         try {
-            String userId = principal.getName();
+            String userId = getUserId(data, principal);
             FinalHardnessTest saved = submoduleService.saveHardnessTest(data, userId);
             return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -442,7 +473,7 @@ public class FinalInspectionSubmoduleController {
             @RequestBody FinalInclusionRating data,
             Principal principal) {
         try {
-            String userId = principal.getName();
+            String userId = getUserId(data, principal);
             FinalInclusionRating saved = submoduleService.saveInclusionRating(data, userId);
             return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -452,6 +483,27 @@ public class FinalInspectionSubmoduleController {
                     AppConstant.ERROR_TYPE_CODE_RESOURCE,
                     AppConstant.ERROR_TYPE_RESOURCE,
                     "Failed to save inclusion rating data: " + e.getMessage()
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/inclusion-rating/batch")
+    @Operation(summary = "Save Inclusion Rating data for multiple samples in a lot")
+    public ResponseEntity<?> saveInclusionRatingBatch(
+            @RequestBody FinalInclusionRatingBatchDTO batchData,
+            Principal principal) {
+        try {
+            String userId = getUserId(batchData, principal);
+            List<FinalInclusionRating> saved = submoduleService.saveInclusionRatingBatch(batchData, userId);
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
+        } catch (Exception e) {
+            logger.error("Error saving inclusion rating batch data", e);
+            ErrorDetails errorDetails = new ErrorDetails(
+                    AppConstant.ERROR_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_RESOURCE,
+                    "Failed to save inclusion rating batch data: " + e.getMessage()
             );
             return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -543,7 +595,7 @@ public class FinalInspectionSubmoduleController {
             @RequestBody FinalApplicationDeflection data,
             Principal principal) {
         try {
-            String userId = principal.getName();
+            String userId = getUserId(data, principal);
             FinalApplicationDeflection saved = submoduleService.saveApplicationDeflection(data, userId);
             return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -644,7 +696,7 @@ public class FinalInspectionSubmoduleController {
             @RequestBody FinalWeightTest data,
             Principal principal) {
         try {
-            String userId = principal.getName();
+            String userId = getUserId(data, principal);
             FinalWeightTest saved = submoduleService.saveWeightTest(data, userId);
             return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -745,7 +797,7 @@ public class FinalInspectionSubmoduleController {
             @RequestBody FinalToeLoadTest data,
             Principal principal) {
         try {
-            String userId = principal.getName();
+            String userId = getUserId(data, principal);
             FinalToeLoadTest saved = submoduleService.saveToeLoadTest(data, userId);
             return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -834,6 +886,25 @@ public class FinalInspectionSubmoduleController {
                     AppConstant.ERROR_TYPE_CODE_RESOURCE,
                     AppConstant.ERROR_TYPE_RESOURCE,
                     "Failed to delete toe load test data: " + e.getMessage()
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // ===== LADLE VALUES =====
+    @GetMapping("/ladle-values/{callNo}")
+    @Operation(summary = "Get Ladle Values by Call Number")
+    public ResponseEntity<?> getLadleValuesByCall(@PathVariable String callNo) {
+        try {
+            List<FinalLadleValuesDto> data = submoduleService.getLadleValuesByCallNo(callNo);
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(data), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error retrieving ladle values", e);
+            ErrorDetails errorDetails = new ErrorDetails(
+                    AppConstant.ERROR_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                    AppConstant.ERROR_TYPE_RESOURCE,
+                    "Failed to retrieve ladle values: " + e.getMessage()
             );
             return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
         }
