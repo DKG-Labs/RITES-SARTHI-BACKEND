@@ -42,7 +42,7 @@ public class TransitionActionReqDto {
 
     private int offeredQty;
 
-    private int manufactureQty;
+    private int manufacturedQty;
 
 }
 
