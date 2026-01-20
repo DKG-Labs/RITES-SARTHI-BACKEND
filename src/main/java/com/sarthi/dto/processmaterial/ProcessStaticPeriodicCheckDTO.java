@@ -14,6 +14,7 @@ public class ProcessStaticPeriodicCheckDTO {
     private Boolean forgingPressCheck;
     private Boolean reheatingFurnaceCheck;
     private Boolean quenchingTimeCheck;
+    private Boolean forgingDieCheck;
     private Boolean allChecksPassed;
     private String remarks;
     private LocalDateTime createdAt;

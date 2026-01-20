@@ -545,10 +545,10 @@ public class CertificateServiceImpl implements CertificateService {
     private ProcessMaterialCertificateDto buildProcessCertificateDto(InspectionCall inspectionCall) {
         logger.info("Building Process Material certificate DTO for IC: {}", inspectionCall.getIcNumber());
 
-        // 2. Fetch Process Inspection Details
-        ProcessInspectionDetails processDetails = processInspectionDetailsRepository.findByIcId(
-                Long.valueOf(inspectionCall.getId()))
-                .orElse(null);
+        // 2. Fetch Process Inspection Details (get first lot if multiple lots exist)
+        List<ProcessInspectionDetails> processDetailsList = processInspectionDetailsRepository.findByIcId(
+                Long.valueOf(inspectionCall.getId()));
+        ProcessInspectionDetails processDetails = processDetailsList.isEmpty() ? null : processDetailsList.get(0);
 
         // 3. Fetch PO Information
         PoHeader poHeader = poHeaderRepository.findByPoNo(inspectionCall.getPoNo()).orElse(null);

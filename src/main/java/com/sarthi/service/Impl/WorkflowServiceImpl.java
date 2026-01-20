@@ -693,6 +693,7 @@ public class WorkflowServiceImpl implements WorkflowService {
             if(req.getAction().equalsIgnoreCase("CONFIRM_CANCEL_AFTER_PAYMENT")){
                 return confirmCancelAfterPayment(current,req);
             }
+
             if ("ENTRY_INSPECTION_RESULTS".equalsIgnoreCase(req.getAction())) {
 
                 InspectionCall ic =
@@ -707,52 +708,100 @@ public class WorkflowServiceImpl implements WorkflowService {
                                         )
                                 ));
 
-                String swift = current.getSwiftCode(); // A / B / C / G
+                if(ic.getTypeOfCall().equalsIgnoreCase("Process")) {
+                    String swift = current.getSwiftCode(); // A / B / C / G
 
-                // Total allowed qty (from process_inspection_details)
-                int totalOfferedQty =
-                        processInspectionDetailsRepository
-                                .findOfferedQtyByIcId(ic.getId());
+                    if (swift == null || swift.isBlank()) {
+                       swift="G";
+                    }
 
-                if (totalOfferedQty <= 0) {
-                    throw new BusinessException(
-                            new ErrorDetails(
-                                    AppConstant.INVALID_WORKFLOW_TRANSITION,
-                                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
-                                    AppConstant.ERROR_TYPE_VALIDATION,
-                                    "Offered quantity not available. Cannot enter inspection results."
-                            )
-                    );
+                    // Total allowed qty (from process_inspection_details)
+                    int totalOfferedQty =
+                            processInspectionDetailsRepository
+                                    .findOfferedQtyByIcId(ic.getId());
+
+                    if (totalOfferedQty <= 0) {
+                        throw new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.INVALID_WORKFLOW_TRANSITION,
+                                        AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Offered quantity not available. Cannot enter inspection results."
+                                )
+                        );
+                    }
+
+                    // Already inspected qty (history sum)
+//                int alreadyInspectedQty =
+//                        processIeQtyRepository
+//                                .sumInspectedQtyByRequestId(req.getRequestId());
+
+                    //  Lot number from request
+                    String lotNo = req.getLotNo();
+
+// Already inspected qty for SAME request + SAME lot
+                    int alreadyInspectedLotQty =
+                            processIeQtyRepository
+                                    .sumInspectedQtyByRequestIdAndLotNumber(
+                                            req.getRequestId(),
+                                            lotNo
+                                    );
+
+
+                    int lotOfferedQty =
+                            processIeQtyRepository
+                                    .findOfferedQtyByRequestIdAndLotNumber(
+                                            req.getRequestId(),
+                                            lotNo
+                                    );
+
+                    if (lotOfferedQty == 0) {
+                        lotOfferedQty = req.getOfferedQty();
+                    }
+
+                    int newQty = req.getInspectedQty();
+
+                    //  CORE VALIDATION
+//                if (alreadyInspectedQty + newQty > totalOfferedQty) {
+//                    throw new BusinessException(
+//                            new ErrorDetails(
+//                                    AppConstant.INVALID_WORKFLOW_TRANSITION,
+//                                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
+//                                    AppConstant.ERROR_TYPE_VALIDATION,
+//                                    "Entered quantity exceeds total offered quantity. " +
+//                                            "Remaining qty: " + (totalOfferedQty - alreadyInspectedQty)
+//                            )
+//                    );
+//                }
+                    // LOT-WISE VALIDATION
+                    if (alreadyInspectedLotQty + newQty > lotOfferedQty) {
+                        throw new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.INVALID_WORKFLOW_TRANSITION,
+                                        AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Entered quantity exceeds offered quantity for Lot "
+                                                + lotNo +
+                                                ". Remaining qty: "
+                                                + (lotOfferedQty - alreadyInspectedLotQty)
+                                )
+                        );
+                    }
+
+
+                    ProcessIeQty qty = new ProcessIeQty();
+                    qty.setRequestId(req.getRequestId());
+                    qty.setSwiftCode(swift);
+                    qty.setIeUserId(req.getActionBy());
+                    qty.setInspectedQty(newQty);
+                    qty.setOfferedQty(lotOfferedQty);
+                    qty.setManufactureQty(req.getManufacturedQty());
+                    //qty.setOfferedQty(req.getOfferedQty());
+                    qty.setLotNumber(req.getLotNo());
+                    qty.setCompleted(false);
+
+                    processIeQtyRepository.save(qty);
                 }
-
-                // Already inspected qty (history sum)
-                int alreadyInspectedQty =
-                        processIeQtyRepository
-                                .sumInspectedQtyByRequestId(req.getRequestId());
-
-                int newQty = req.getInspetedQty();
-
-                //  CORE VALIDATION
-                if (alreadyInspectedQty + newQty > totalOfferedQty) {
-                    throw new BusinessException(
-                            new ErrorDetails(
-                                    AppConstant.INVALID_WORKFLOW_TRANSITION,
-                                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
-                                    AppConstant.ERROR_TYPE_VALIDATION,
-                                    "Entered quantity exceeds total offered quantity. " +
-                                            "Remaining qty: " + (totalOfferedQty - alreadyInspectedQty)
-                            )
-                    );
-                }
-
-                ProcessIeQty qty = new ProcessIeQty();
-                qty.setRequestId(req.getRequestId());
-                qty.setSwiftCode(swift);
-                qty.setIeUserId(req.getActionBy());
-                qty.setInspectedQty(newQty);
-                qty.setCompleted(false);
-
-                processIeQtyRepository.save(qty);
             }
 
 
@@ -1027,6 +1076,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                         next.setRemarks("Partial inspection done. Remaining qty pending.");
 
                         next.setAction("PAUSE_INSPECTION_RESUME_NEXT_DAY");
+                        next.setJobStatus("PAUSED");
                         workflowTransitionRepository.save(next);
                        /* WorkflowTransition nextSwift =
                                 createNextTransition(
@@ -1046,8 +1096,8 @@ public class WorkflowServiceImpl implements WorkflowService {
                     }
                     if (inspectedQty == totalOfferedQty) {
 
-                        next.setStatus("INSPECTION_COMPLETED");
-                        next.setAction("INSPECTION_COMPLETED");
+                        next.setStatus("INSPECTION_COMPLETE_CONFIRM");
+                        next.setAction("INSPECTION_COMPLETE_CONFIRM");
                         next.setRemarks("Process inspection completed.");
 
                         workflowTransitionRepository.save(next);
@@ -2392,6 +2442,7 @@ private WorkflowTransitionDto mapWorkflowTransition(WorkflowTransition wt) {
                 return "APPROVED";
 
             case "PAUSE_INSPECTION_RESUME_NEXT_DAY":
+                return "PAUSED";
             case "PARTIAL_INSPECTION_COMPLETED":
                 return "PAUSED";
             case "BLOCK_DUE_TO_PAYMENT":
@@ -2834,7 +2885,7 @@ public List<WorkflowTransitionDto> allPendingWorkflowTransition(String roleName)
 //
 //        return process.getProcessIeUserId();
 //    }
-
+/*
     private Integer getProcessIeUserFromPoi(String poiCode) {
 
         //  Find all IEs for the POI
@@ -2852,11 +2903,14 @@ public List<WorkflowTransitionDto> allPendingWorkflowTransition(String roleName)
             );
         }
 
+        System.out.println(poiMappings);
+
         //  Pick Process IE from mapped IEs (first match)
         for (IePoiMapping poiMap : poiMappings) {
 
             Optional<ProcessIeUsers> processIeOpt =
                     processIeUsersRepository.findByIeUserId(poiMap.getIeUserId());
+
 
             if (processIeOpt.isPresent()) {
                 return processIeOpt.get().getProcessUserId().intValue();
@@ -2873,6 +2927,40 @@ public List<WorkflowTransitionDto> allPendingWorkflowTransition(String roleName)
                 )
         );
     }
+*/
+private Integer getProcessIeUserFromPoi(String poiCode) {
+
+    // 1. Get latest IE mapped to POI
+    IePoiMapping latestPoiIe =
+            iePoiMappingRepository
+                    .findTopByPoiCodeOrderByCreatedDateDesc(poiCode)
+                    .orElseThrow(() -> new BusinessException(
+                            new ErrorDetails(
+                                    AppConstant.ERROR_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                    "No IE found for POI: " + poiCode
+                            )
+                    ));
+
+    // 2. Get latest Process IE for that IE
+    ProcessIeUsers latestProcessIe =
+            processIeUsersRepository
+                    .findTopByIeUserIdOrderByCreatedDateDesc(
+                            latestPoiIe.getIeUserId()
+                    )
+                    .orElseThrow(() -> new BusinessException(
+                            new ErrorDetails(
+                                    AppConstant.ERROR_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                    "No Process IE mapped for IE: " + latestPoiIe.getIeUserId()
+                            )
+                    ));
+
+    // 3. Return Process User ID
+    return latestProcessIe.getProcessUserId().intValue();
+}
 
 
 

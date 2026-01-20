@@ -42,6 +42,9 @@ public class ProcessStaticPeriodicCheck {
     @Column(name = "quenching_time_check")
     private Boolean quenchingTimeCheck = false;
 
+    @Column(name = "forging_die_check")
+    private Boolean forgingDieCheck = false;
+
     @Column(name = "all_checks_passed")
     private Boolean allChecksPassed = false;
 

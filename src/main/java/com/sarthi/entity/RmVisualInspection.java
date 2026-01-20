@@ -39,6 +39,12 @@ public class RmVisualInspection {
     @Column(name = "defect_length_mm", precision = 10, scale = 2)
     private BigDecimal defectLengthMm;
 
+    @Column(name = "passed_at")
+    private LocalDateTime passedAt;
+
+    @Column(name = "created_by", length = 100)
+    private String createdBy;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 }
