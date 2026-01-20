@@ -228,6 +228,19 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                                 "Inventory entry not found for heat: " + heatNumber + ", TC: " + tcNumber)
                 ));
 
+        // Validate that offered quantity doesn't exceed TC Qty Remaining
+        BigDecimal tcQtyRemaining = entry.getQtyLeftForInspection() != null ? entry.getQtyLeftForInspection() : BigDecimal.ZERO;
+        if (offeredQty.compareTo(tcQtyRemaining) > 0) {
+            logger.warn("Offered quantity {} exceeds TC Qty Remaining {} for heat: {}, TC: {}",
+                    offeredQty, tcQtyRemaining, heatNumber, tcNumber);
+            throw new BusinessException(
+                    new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                            AppConstant.ERROR_TYPE_RESOURCE,
+                            "Offered Qty (" + offeredQty + ") cannot be more than TC Qty Remaining with Vendor (" + tcQtyRemaining + ")")
+            );
+        }
+
         // Update offered quantity (add to existing)
         BigDecimal currentOffered = entry.getOfferedQuantity() != null ? entry.getOfferedQuantity() : BigDecimal.ZERO;
         BigDecimal newOfferedQty = currentOffered.add(offeredQty);
