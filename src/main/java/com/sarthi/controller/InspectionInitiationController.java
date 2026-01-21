@@ -39,16 +39,21 @@ public class InspectionInitiationController {
         InspectionInitiationDto created = service.createInitiation(dto);
 
 
-        TransitionActionReqDto req = new TransitionActionReqDto();
 
-        req.setWorkflowTransitionId(dto.getWorkflowTransitionId());
-        req.setRequestId(dto.getCallNo());
-        req.setAction("ENTRY_INSPECTION_RESULTS");
-        req.setActionBy(dto.getActionBy());
-        req.setRemarks(dto.getRemarks());
+        if(created.getProductType().equalsIgnoreCase("Process")) {
 
-        System.out.print(req +""+ dto.getWorkflowTransitionId());
-        workflowService.performTransitionAction(req);
+
+            TransitionActionReqDto req = new TransitionActionReqDto();
+
+            req.setWorkflowTransitionId(dto.getWorkflowTransitionId());
+            req.setRequestId(dto.getCallNo());
+            req.setAction("ENTRY_INSPECTION_RESULTS");
+            req.setActionBy(dto.getActionBy());
+            req.setRemarks(dto.getRemarks());
+
+            System.out.print(req + "" + dto.getWorkflowTransitionId());
+            workflowService.performTransitionAction(req);
+        }
 
 
 
