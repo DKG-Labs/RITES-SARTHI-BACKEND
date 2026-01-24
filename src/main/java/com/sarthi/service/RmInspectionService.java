@@ -17,9 +17,19 @@ public interface RmInspectionService {
     /**
      * Save all Raw Material inspection data when inspector finishes inspection.
      * @param dto The complete inspection data payload
+     * @param userId The user ID performing the operation
      * @return Success message
      */
-    String finishInspection(RmFinishInspectionDto dto);
+    String finishInspection(RmFinishInspectionDto dto, String userId);
+
+    /**
+     * Pause Raw Material inspection - saves all submodule data WITHOUT changing status.
+     * Called when inspector clicks "Pause Inspection" button.
+     * @param dto The complete inspection data payload
+     * @param userId The user ID performing the operation
+     * @return Success message
+     */
+    String pauseInspection(RmFinishInspectionDto dto, String userId);
 
     /**
      * Get all inspection data by call number.

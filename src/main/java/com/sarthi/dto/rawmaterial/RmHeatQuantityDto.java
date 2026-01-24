@@ -41,6 +41,7 @@ public class RmHeatQuantityDto {
     private String qtyAccepted;
     private String qtyRejected;
     private String rejectionReason;
+    private String colorCode; // Color code manually entered by inspector
 
     /* ==================== Final Results (from rm_heat_final_result) ==================== */
 

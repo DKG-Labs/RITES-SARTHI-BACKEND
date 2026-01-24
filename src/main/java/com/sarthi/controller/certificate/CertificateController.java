@@ -2,6 +2,7 @@ package com.sarthi.controller.certificate;
 
 import com.sarthi.dto.certificate.RawMaterialCertificateDto;
 import com.sarthi.dto.certificate.ProcessMaterialCertificateDto;
+import com.sarthi.dto.certificate.FinalCertificateDto;
 import com.sarthi.service.certificate.CertificateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -171,6 +172,81 @@ public class CertificateController {
             logger.error("Unexpected error generating process material certificate", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error generating process material certificate: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generate Final Material Inspection Certificate by IC Number (Query Parameter)
+     *
+     * @param icNumber - Inspection Call Number (e.g., FM-IC-1767772023499)
+     * @return FinalCertificateDto with all certificate data
+     *
+     * Example: GET /api/certificate/final-material?icNumber=FM-IC-1767772023499
+     */
+    @GetMapping("/final-material")
+    public ResponseEntity<?> generateFinalCertificateByQuery(@RequestParam String icNumber) {
+        try {
+            logger.info("Generating Final Material Certificate for IC Number (query param): {}", icNumber);
+            FinalCertificateDto certificate = certificateService.generateFinalCertificate(icNumber);
+            return ResponseEntity.ok(certificate);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error generating final material certificate: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error generating final material certificate", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating final material certificate: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generate Final Material Inspection Certificate by IC Number (Path Variable)
+     *
+     * @param icNumber - Inspection Call Number (e.g., FM-IC-1767772023499)
+     * @return FinalCertificateDto with all certificate data
+     *
+     * Example: GET /api/certificate/final-material/FM-IC-1767772023499
+     */
+    @GetMapping("/final-material/{icNumber}")
+    public ResponseEntity<?> generateFinalCertificate(@PathVariable String icNumber) {
+        try {
+            logger.info("Generating Final Material Certificate for IC Number (path variable): {}", icNumber);
+            FinalCertificateDto certificate = certificateService.generateFinalCertificate(icNumber);
+            return ResponseEntity.ok(certificate);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error generating final material certificate: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error generating final material certificate", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating final material certificate: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generate Final Material Inspection Certificate by Call ID
+     *
+     * @param callId - Inspection Call ID
+     * @return FinalCertificateDto with all certificate data
+     *
+     * Example: GET /api/certificate/final-material/by-id/1
+     */
+    @GetMapping("/final-material/by-id/{callId}")
+    public ResponseEntity<?> generateFinalCertificateById(@PathVariable Long callId) {
+        try {
+            logger.info("Generating Final Material Certificate for Call ID: {}", callId);
+            FinalCertificateDto certificate = certificateService.generateFinalCertificateById(callId);
+            return ResponseEntity.ok(certificate);
+        } catch (IllegalArgumentException e) {
+            logger.error("Error generating final material certificate: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error generating final material certificate", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error generating final material certificate: " + e.getMessage());
         }
     }
 

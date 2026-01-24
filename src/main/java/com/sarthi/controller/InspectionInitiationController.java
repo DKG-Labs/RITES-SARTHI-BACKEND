@@ -39,11 +39,14 @@ public class InspectionInitiationController {
         InspectionInitiationDto created = service.createInitiation(dto);
 
 
+        if(dto.getProductType().equalsIgnoreCase("Process")){
+        TransitionActionReqDto req = new TransitionActionReqDto();
 
-        if(created.getProductType().equalsIgnoreCase("Process")) {
+
+      //  if(created.getProductType().equalsIgnoreCase("Process")) {
 
 
-            TransitionActionReqDto req = new TransitionActionReqDto();
+       //     TransitionActionReqDto req = new TransitionActionReqDto();
 
             req.setWorkflowTransitionId(dto.getWorkflowTransitionId());
             req.setRequestId(dto.getCallNo());
@@ -53,9 +56,9 @@ public class InspectionInitiationController {
 
             System.out.print(req + "" + dto.getWorkflowTransitionId());
             workflowService.performTransitionAction(req);
+
+
         }
-
-
 
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(created), HttpStatus.CREATED);
     }

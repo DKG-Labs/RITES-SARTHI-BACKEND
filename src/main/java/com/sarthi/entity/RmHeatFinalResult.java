@@ -54,6 +54,9 @@ public class RmHeatFinalResult {
     @Column(name = "weight_rejected_mt", precision = 12, scale = 4)
     private BigDecimal weightRejectedMt;
 
+    @Column(name = "accepted_qty_mt", precision = 12, scale = 4)
+    private BigDecimal acceptedQtyMt;
+
     // -------------------------
     // Submodule Statuses
     // -------------------------
@@ -113,5 +116,11 @@ public class RmHeatFinalResult {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "created_by", length = 100)
+    private String createdBy;
+
+    @Column(name = "updated_by", length = 100)
+    private String updatedBy;
 }
 

@@ -19,7 +19,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of RmInspectionService.
@@ -29,6 +32,9 @@ import java.util.List;
 public class RmInspectionServiceImpl implements RmInspectionService {
 
     private static final Logger logger = LoggerFactory.getLogger(RmInspectionServiceImpl.class);
+
+    // Use ThreadLocal to store current user ID for thread-safe access
+    private static final ThreadLocal<String> currentUserIdThreadLocal = new ThreadLocal<>();
 
     @Autowired
     private RmInspectionSummaryRepository summaryRepository;
@@ -59,60 +65,125 @@ public class RmInspectionServiceImpl implements RmInspectionService {
 
     @Override
     @Transactional
-    public String finishInspection(RmFinishInspectionDto dto) {
+    public String finishInspection(RmFinishInspectionDto dto, String userId) {
         String callNo = dto.getInspectionCallNo();
-        logger.info("Finishing RM inspection for call: {}", callNo);
+        logger.info("Finishing RM inspection for call: {} by user: {}", callNo, userId);
 
-        // Validate all data before saving
-        List<String> validationErrors = validateInspectionData(dto);
-        if (!validationErrors.isEmpty()) {
-            String errorMsg = String.join("; ", validationErrors);
-            logger.error("Validation failed for call {}: {}", callNo, errorMsg);
-            throw new IllegalArgumentException(errorMsg);
+        // Store userId in thread-local for use in save methods
+        logger.debug("Setting currentUserId in ThreadLocal: {}", userId);
+        currentUserIdThreadLocal.set(userId);
+
+        try {
+            // Validate all data before saving
+            List<String> validationErrors = validateInspectionData(dto);
+            if (!validationErrors.isEmpty()) {
+                String errorMsg = String.join("; ", validationErrors);
+                logger.error("Validation failed for call {}: {}", callNo, errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+            }
+
+            // 1. Save Summary
+            saveSummary(dto);
+
+            // 2. Save Heat Final Results
+            if (dto.getHeatFinalResults() != null) {
+                saveHeatFinalResults(callNo, dto.getHeatFinalResults());
+            }
+
+            // 3. Save Visual Inspection Data
+            if (dto.getVisualInspectionData() != null) {
+                saveVisualInspection(callNo, dto.getVisualInspectionData());
+            }
+
+            // 4. Save Dimensional Check Data
+            if (dto.getDimensionalCheckData() != null) {
+                saveDimensionalCheck(callNo, dto.getDimensionalCheckData());
+            }
+
+            // 5. Save Material Testing Data
+            if (dto.getMaterialTestingData() != null) {
+                saveMaterialTesting(callNo, dto.getMaterialTestingData());
+            }
+
+            // 6. Save Packing & Storage Data
+            if (dto.getPackingStorageData() != null) {
+                savePackingStorage(callNo, dto.getPackingStorageData());
+            }
+
+            // 7. Save Calibration Documents Data
+            if (dto.getCalibrationDocumentsData() != null) {
+                saveCalibrationDocuments(callNo, dto.getCalibrationDocumentsData());
+            }
+
+            // 8. Update Inspection Call Status to COMPLETED
+            InspectionCall inspectionCall = inspectionCallRepository.findByIcNumber(callNo)
+                    .orElseThrow(() -> new IllegalArgumentException("Inspection call not found: " + callNo));
+            inspectionCall.setStatus("COMPLETED");
+            inspectionCallRepository.save(inspectionCall);
+            logger.info("Updated inspection call status to COMPLETED for call: {}", callNo);
+
+            logger.info("RM inspection saved successfully for call: {}", callNo);
+            return "Raw Material Inspection saved successfully";
+        } finally {
+            // Clean up ThreadLocal to prevent memory leaks
+            logger.debug("Clearing currentUserId from ThreadLocal");
+            currentUserIdThreadLocal.remove();
         }
+    }
 
-        // 1. Save Summary
-        saveSummary(dto);
+    @Override
+    @Transactional
+    public String pauseInspection(RmFinishInspectionDto dto, String userId) {
+        String callNo = dto.getInspectionCallNo();
+        logger.info("Pausing RM inspection for call: {} by user: {}", callNo, userId);
 
-        // 2. Save Heat Final Results
-        if (dto.getHeatFinalResults() != null) {
-            saveHeatFinalResults(callNo, dto.getHeatFinalResults());
+        // Store userId in thread-local for use in save methods
+        logger.debug("Setting currentUserId in ThreadLocal: {}", userId);
+        currentUserIdThreadLocal.set(userId);
+
+        try {
+            // Save all inspection data WITHOUT changing status
+            // 1. Save Summary
+            saveSummary(dto);
+
+            // 2. Save Heat Final Results
+            if (dto.getHeatFinalResults() != null) {
+                saveHeatFinalResults(callNo, dto.getHeatFinalResults());
+            }
+
+            // 3. Save Visual Inspection Data
+            if (dto.getVisualInspectionData() != null) {
+                saveVisualInspection(callNo, dto.getVisualInspectionData());
+            }
+
+            // 4. Save Dimensional Check Data
+            if (dto.getDimensionalCheckData() != null) {
+                saveDimensionalCheck(callNo, dto.getDimensionalCheckData());
+            }
+
+            // 5. Save Material Testing Data
+            if (dto.getMaterialTestingData() != null) {
+                saveMaterialTesting(callNo, dto.getMaterialTestingData());
+            }
+
+            // 6. Save Packing & Storage Data
+            if (dto.getPackingStorageData() != null) {
+                savePackingStorage(callNo, dto.getPackingStorageData());
+            }
+
+            // 7. Save Calibration Documents Data
+            if (dto.getCalibrationDocumentsData() != null) {
+                saveCalibrationDocuments(callNo, dto.getCalibrationDocumentsData());
+            }
+
+            // NOTE: Do NOT update inspection call status - it remains as is
+            logger.info("RM inspection data saved (paused) for call: {}", callNo);
+            return "Raw Material Inspection data saved successfully";
+        } finally {
+            // Clean up ThreadLocal to prevent memory leaks
+            logger.debug("Clearing currentUserId from ThreadLocal");
+            currentUserIdThreadLocal.remove();
         }
-
-        // 3. Save Visual Inspection Data
-        if (dto.getVisualInspectionData() != null) {
-            saveVisualInspection(callNo, dto.getVisualInspectionData());
-        }
-
-        // 4. Save Dimensional Check Data
-        if (dto.getDimensionalCheckData() != null) {
-            saveDimensionalCheck(callNo, dto.getDimensionalCheckData());
-        }
-
-        // 5. Save Material Testing Data
-        if (dto.getMaterialTestingData() != null) {
-            saveMaterialTesting(callNo, dto.getMaterialTestingData());
-        }
-
-        // 6. Save Packing & Storage Data
-        if (dto.getPackingStorageData() != null) {
-            savePackingStorage(callNo, dto.getPackingStorageData());
-        }
-
-        // 7. Save Calibration Documents Data
-        if (dto.getCalibrationDocumentsData() != null) {
-            saveCalibrationDocuments(callNo, dto.getCalibrationDocumentsData());
-        }
-
-        // 8. Update Inspection Call Status to COMPLETED
-        InspectionCall inspectionCall = inspectionCallRepository.findByIcNumber(callNo)
-                .orElseThrow(() -> new IllegalArgumentException("Inspection call not found: " + callNo));
-        inspectionCall.setStatus("COMPLETED");
-        inspectionCallRepository.save(inspectionCall);
-        logger.info("Updated inspection call status to COMPLETED for call: {}", callNo);
-
-        logger.info("RM inspection saved successfully for call: {}", callNo);
-        return "Raw Material Inspection saved successfully";
     }
 
     private void saveSummary(RmFinishInspectionDto dto) {
@@ -149,14 +220,28 @@ public class RmInspectionServiceImpl implements RmInspectionService {
     }
 
     private void saveHeatFinalResults(String callNo, List<RmHeatFinalResultDto> results) {
-        heatResultRepository.deleteByInspectionCallNo(callNo);
         for (RmHeatFinalResultDto dto : results) {
-            RmHeatFinalResult entity = new RmHeatFinalResult();
-            entity.setInspectionCallNo(callNo);
-            entity.setHeatNo(dto.getHeatNo());
+            // Try to find existing record
+            List<RmHeatFinalResult> existing = heatResultRepository.findByInspectionCallNoAndHeatNo(callNo, dto.getHeatNo());
+
+            RmHeatFinalResult entity;
+            if (existing != null && !existing.isEmpty()) {
+                // Update existing record
+                entity = existing.get(0);
+                logger.info("Updating existing heat final result for call: {} heat: {}", callNo, dto.getHeatNo());
+            } else {
+                // Create new record
+                entity = new RmHeatFinalResult();
+                entity.setInspectionCallNo(callNo);
+                entity.setHeatNo(dto.getHeatNo());
+                logger.info("Creating new heat final result for call: {} heat: {}", callNo, dto.getHeatNo());
+            }
+
+            // Set all fields
             entity.setWeightOfferedMt(dto.getWeightOfferedMt());
             entity.setWeightAcceptedMt(dto.getWeightAcceptedMt());
             entity.setWeightRejectedMt(dto.getWeightRejectedMt());
+            entity.setAcceptedQtyMt(dto.getAcceptedQtyMt());
             entity.setCalibrationStatus(dto.getCalibrationStatus());
             entity.setVisualStatus(dto.getVisualStatus());
             entity.setDimensionalStatus(dto.getDimensionalStatus());
@@ -169,43 +254,224 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             entity.setNoOfBundles(dto.getNoOfBundles());
             entity.setNoOfErcFinished(dto.getNoOfErcFinished());
             entity.setRemarks(dto.getRemarks());
+            entity.setCreatedBy(dto.getCreatedBy());
+            entity.setUpdatedBy(dto.getUpdatedBy());
+            entity.setUpdatedAt(LocalDateTime.now());
+
             heatResultRepository.save(entity);
         }
     }
 
     private void saveVisualInspection(String callNo, List<RmVisualInspectionDto> data) {
-        visualRepository.deleteByInspectionCallNo(callNo);
         for (RmVisualInspectionDto dto : data) {
-            RmVisualInspection entity = new RmVisualInspection();
-            entity.setInspectionCallNo(callNo);
-            entity.setHeatNo(dto.getHeatNo());
-            entity.setHeatIndex(dto.getHeatIndex());
-            entity.setDefectName(dto.getDefectName());
-            entity.setIsSelected(dto.getIsSelected());
-            entity.setDefectLengthMm(dto.getDefectLengthMm());
+            // Find existing record by call number and heat number (one record per heat)
+            RmVisualInspection entity = visualRepository.findByInspectionCallNoAndHeatNo(callNo, dto.getHeatNo())
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+            if (entity == null) {
+                // Create new record
+                entity = new RmVisualInspection();
+                entity.setInspectionCallNo(callNo);
+                entity.setHeatNo(dto.getHeatNo());
+                entity.setHeatIndex(dto.getHeatIndex());
+                logger.info("Creating new visual inspection record for call: {} heat: {}", callNo, dto.getHeatNo());
+            } else {
+                logger.info("Updating existing visual inspection record for call: {} heat: {}", callNo, dto.getHeatNo());
+            }
+
+            final RmVisualInspection finalEntity = entity;
+
+            // Set defect selections from map
+            if (dto.getDefects() != null) {
+                dto.getDefects().forEach((defectName, isSelected) -> {
+                    setDefectSelection(finalEntity, defectName, isSelected);
+                });
+            }
+
+            // Set defect lengths from map
+            if (dto.getDefectLengths() != null) {
+                dto.getDefectLengths().forEach((defectName, length) -> {
+                    setDefectLength(finalEntity, defectName, length);
+                });
+            }
+
+            // Set audit fields
+            entity.setCreatedBy(getCurrentUser());
+            entity.setUpdatedBy(getCurrentUser());
+            entity.setUpdatedAt(LocalDateTime.now());
+
             visualRepository.save(entity);
         }
     }
 
+    private void setDefectSelection(RmVisualInspection entity, String defectName, Boolean isSelected) {
+        boolean selected = isSelected != null && isSelected;
+        switch (defectName.toLowerCase()) {
+            case "no defect":
+                entity.setNoDefect(selected);
+                break;
+            case "distortion":
+                entity.setDistortion(selected);
+                break;
+            case "twist":
+                entity.setTwist(selected);
+                break;
+            case "kink":
+                entity.setKink(selected);
+                break;
+            case "not straight":
+                entity.setNotStraight(selected);
+                break;
+            case "fold":
+                entity.setFold(selected);
+                break;
+            case "lap":
+                entity.setLap(selected);
+                break;
+            case "crack":
+                entity.setCrack(selected);
+                break;
+            case "pit":
+                entity.setPit(selected);
+                break;
+            case "groove":
+                entity.setGroove(selected);
+                break;
+            case "excessive scaling":
+                entity.setExcessiveScaling(selected);
+                break;
+            case "internal defect (piping, segregation)":
+            case "internal defect":
+                entity.setInternalDefect(selected);
+                break;
+        }
+    }
+
+    private void setDefectLength(RmVisualInspection entity, String defectName, BigDecimal length) {
+        switch (defectName.toLowerCase()) {
+            case "distortion":
+                entity.setDistortionLength(length);
+                break;
+            case "twist":
+                entity.setTwistLength(length);
+                break;
+            case "kink":
+                entity.setKinkLength(length);
+                break;
+            case "not straight":
+                entity.setNotStraightLength(length);
+                break;
+            case "fold":
+                entity.setFoldLength(length);
+                break;
+            case "lap":
+                entity.setLapLength(length);
+                break;
+            case "crack":
+                entity.setCrackLength(length);
+                break;
+            case "pit":
+                entity.setPitLength(length);
+                break;
+            case "groove":
+                entity.setGrooveLength(length);
+                break;
+            case "excessive scaling":
+                entity.setExcessiveScalingLength(length);
+                break;
+            case "internal defect (piping, segregation)":
+            case "internal defect":
+                entity.setInternalDefectLength(length);
+                break;
+        }
+    }
+
     private void saveDimensionalCheck(String callNo, List<RmDimensionalCheckDto> data) {
-        dimensionalRepository.deleteByInspectionCallNo(callNo);
         for (RmDimensionalCheckDto dto : data) {
-            RmDimensionalCheck entity = new RmDimensionalCheck();
-            entity.setInspectionCallNo(callNo);
-            entity.setHeatNo(dto.getHeatNo());
-            entity.setHeatIndex(dto.getHeatIndex());
-            entity.setSampleNumber(dto.getSampleNumber());
-            entity.setDiameter(dto.getDiameter());
+            // Find existing record by call number and heat number (one record per heat)
+            RmDimensionalCheck entity = dimensionalRepository.findByInspectionCallNoAndHeatNo(callNo, dto.getHeatNo())
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+            if (entity == null) {
+                // Create new record
+                entity = new RmDimensionalCheck();
+                entity.setInspectionCallNo(callNo);
+                entity.setHeatNo(dto.getHeatNo());
+                entity.setHeatIndex(dto.getHeatIndex());
+                logger.info("Creating new dimensional check record for call: {} heat: {}", callNo, dto.getHeatNo());
+            } else {
+                logger.info("Updating existing dimensional check record for call: {} heat: {}", callNo, dto.getHeatNo());
+            }
+
+            // Set all 20 sample diameters from list
+            if (dto.getSampleDiameters() != null) {
+                List<BigDecimal> samples = dto.getSampleDiameters();
+                if (samples.size() > 0) entity.setSample1Diameter(samples.get(0));
+                if (samples.size() > 1) entity.setSample2Diameter(samples.get(1));
+                if (samples.size() > 2) entity.setSample3Diameter(samples.get(2));
+                if (samples.size() > 3) entity.setSample4Diameter(samples.get(3));
+                if (samples.size() > 4) entity.setSample5Diameter(samples.get(4));
+                if (samples.size() > 5) entity.setSample6Diameter(samples.get(5));
+                if (samples.size() > 6) entity.setSample7Diameter(samples.get(6));
+                if (samples.size() > 7) entity.setSample8Diameter(samples.get(7));
+                if (samples.size() > 8) entity.setSample9Diameter(samples.get(8));
+                if (samples.size() > 9) entity.setSample10Diameter(samples.get(9));
+                if (samples.size() > 10) entity.setSample11Diameter(samples.get(10));
+                if (samples.size() > 11) entity.setSample12Diameter(samples.get(11));
+                if (samples.size() > 12) entity.setSample13Diameter(samples.get(12));
+                if (samples.size() > 13) entity.setSample14Diameter(samples.get(13));
+                if (samples.size() > 14) entity.setSample15Diameter(samples.get(14));
+                if (samples.size() > 15) entity.setSample16Diameter(samples.get(15));
+                if (samples.size() > 16) entity.setSample17Diameter(samples.get(16));
+                if (samples.size() > 17) entity.setSample18Diameter(samples.get(17));
+                if (samples.size() > 18) entity.setSample19Diameter(samples.get(18));
+                if (samples.size() > 19) entity.setSample20Diameter(samples.get(19));
+            }
+
+            // Set audit fields
+            entity.setCreatedBy(getCurrentUser());
+            entity.setUpdatedBy(getCurrentUser());
+            entity.setUpdatedAt(LocalDateTime.now());
+
             dimensionalRepository.save(entity);
         }
     }
 
     private void saveMaterialTesting(String callNo, List<RmMaterialTestingDto> data) {
-        materialTestingRepository.deleteByInspectionCallNo(callNo);
         for (RmMaterialTestingDto dto : data) {
-            RmMaterialTesting entity = new RmMaterialTesting();
-            entity.setInspectionCallNo(callNo);
-            entity.setHeatNo(dto.getHeatNo());
+            // Try to find existing record by call number, heat number, and sample number
+            List<RmMaterialTesting> existing = materialTestingRepository.findByInspectionCallNoAndHeatNo(callNo, dto.getHeatNo());
+
+            RmMaterialTesting entity;
+            if (existing != null && !existing.isEmpty()) {
+                // Update existing record - find the one matching sample number
+                var matchingRecord = existing.stream()
+                    .filter(e -> e.getSampleNumber() != null && e.getSampleNumber().equals(dto.getSampleNumber()))
+                    .findFirst();
+
+                if (matchingRecord.isPresent()) {
+                    entity = matchingRecord.get();
+                    logger.info("Updating existing material testing for call: {} heat: {} sample: {}", callNo, dto.getHeatNo(), dto.getSampleNumber());
+                } else {
+                    // No matching sample found, create new record
+                    entity = new RmMaterialTesting();
+                    entity.setInspectionCallNo(callNo);
+                    entity.setHeatNo(dto.getHeatNo());
+                    logger.info("Creating new material testing for call: {} heat: {} sample: {}", callNo, dto.getHeatNo(), dto.getSampleNumber());
+                }
+            } else {
+                // Create new record
+                entity = new RmMaterialTesting();
+                entity.setInspectionCallNo(callNo);
+                entity.setHeatNo(dto.getHeatNo());
+                logger.info("Creating new material testing for call: {} heat: {} sample: {}", callNo, dto.getHeatNo(), dto.getSampleNumber());
+            }
+
+            // Set all fields
             entity.setHeatIndex(dto.getHeatIndex());
             entity.setSampleNumber(dto.getSampleNumber());
             entity.setCarbonPercent(dto.getCarbonPercent());
@@ -217,21 +483,49 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             // Map frontend field names to entity field names
             entity.setHardness(dto.getHardnessHrc());
             entity.setDecarb(dto.getDecarbDepthMm());
+
+            // Map inclusion values
             entity.setInclusionA(dto.getInclusionA());
             entity.setInclusionB(dto.getInclusionB());
             entity.setInclusionC(dto.getInclusionC());
             entity.setInclusionD(dto.getInclusionD());
+
+            // Map inclusion types (Thick/Thin)
+            entity.setInclusionTypeA(dto.getInclusionTypeA());
+            entity.setInclusionTypeB(dto.getInclusionTypeB());
+            entity.setInclusionTypeC(dto.getInclusionTypeC());
+            entity.setInclusionTypeD(dto.getInclusionTypeD());
+
             entity.setRemarks(dto.getRemarks());
+
+            // Set audit fields
+            entity.setCreatedBy(getCurrentUser());
+            entity.setUpdatedBy(getCurrentUser());
+            entity.setUpdatedAt(LocalDateTime.now());
+
             materialTestingRepository.save(entity);
         }
     }
 
     private void savePackingStorage(String callNo, List<RmPackingStorageDto> dtoList) {
-        packingRepository.deleteByInspectionCallNo(callNo);
         for (RmPackingStorageDto dto : dtoList) {
-            RmPackingStorage entity = new RmPackingStorage();
-            entity.setInspectionCallNo(callNo);
-            entity.setHeatNo(dto.getHeatNo());
+            // Try to find existing record by call number and heat number
+            List<RmPackingStorage> existing = packingRepository.findByInspectionCallNoAndHeatNo(callNo, dto.getHeatNo());
+
+            RmPackingStorage entity;
+            if (existing != null && !existing.isEmpty()) {
+                // Update existing record
+                entity = existing.get(0);
+                logger.info("Updating existing packing storage for call: {} heat: {}", callNo, dto.getHeatNo());
+            } else {
+                // Create new record
+                entity = new RmPackingStorage();
+                entity.setInspectionCallNo(callNo);
+                entity.setHeatNo(dto.getHeatNo());
+                logger.info("Creating new packing storage for call: {} heat: {}", callNo, dto.getHeatNo());
+            }
+
+            // Set all fields
             entity.setHeatIndex(dto.getHeatIndex());
             entity.setBundlingSecure(dto.getBundlingSecure());
             entity.setTagsAttached(dto.getTagsAttached());
@@ -241,16 +535,35 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             entity.setMoistureProtection(dto.getMoistureProtection());
             entity.setStackingProper(dto.getStackingProper());
             entity.setRemarks(dto.getRemarks());
+
+            // Set audit fields
+            entity.setCreatedBy(getCurrentUser());
+            entity.setUpdatedBy(getCurrentUser());
+            entity.setUpdatedAt(LocalDateTime.now());
+
             packingRepository.save(entity);
         }
     }
 
     private void saveCalibrationDocuments(String callNo, List<RmCalibrationDocumentsDto> data) {
-        calibrationRepository.deleteByInspectionCallNo(callNo);
         for (RmCalibrationDocumentsDto dto : data) {
-            RmCalibrationDocuments entity = new RmCalibrationDocuments();
-            entity.setInspectionCallNo(callNo);
-            entity.setHeatNo(dto.getHeatNo());
+            // Try to find existing record by call number and heat number
+            List<RmCalibrationDocuments> existing = calibrationRepository.findByInspectionCallNoAndHeatNo(callNo, dto.getHeatNo());
+
+            RmCalibrationDocuments entity;
+            if (existing != null && !existing.isEmpty()) {
+                // Update existing record
+                entity = existing.get(0);
+                logger.info("Updating existing calibration documents for call: {} heat: {}", callNo, dto.getHeatNo());
+            } else {
+                // Create new record
+                entity = new RmCalibrationDocuments();
+                entity.setInspectionCallNo(callNo);
+                entity.setHeatNo(dto.getHeatNo());
+                logger.info("Creating new calibration documents for call: {} heat: {}", callNo, dto.getHeatNo());
+            }
+
+            // Set all fields
             entity.setHeatIndex(dto.getHeatIndex());
             entity.setRdsoApprovalId(dto.getRdsoApprovalId());
             entity.setRdsoValidFrom(parseDate(dto.getRdsoValidFrom()));
@@ -264,6 +577,7 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             entity.setVendorVerified(dto.getVendorVerified());
             entity.setVerifiedBy(dto.getVerifiedBy());
             entity.setVerifiedAt(parseDateTime(dto.getVerifiedAt()));
+
             calibrationRepository.save(entity);
         }
     }
@@ -335,6 +649,7 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             heatDto.setWeightOfferedMt(entity.getWeightOfferedMt());
             heatDto.setWeightAcceptedMt(entity.getWeightAcceptedMt());
             heatDto.setWeightRejectedMt(entity.getWeightRejectedMt());
+            heatDto.setAcceptedQtyMt(entity.getAcceptedQtyMt());
             heatDto.setCalibrationStatus(entity.getCalibrationStatus());
             heatDto.setVisualStatus(entity.getVisualStatus());
             heatDto.setDimensionalStatus(entity.getDimensionalStatus());
@@ -353,17 +668,9 @@ public class RmInspectionServiceImpl implements RmInspectionService {
 
         // 3. Fetch Visual Inspection Data
         List<RmVisualInspection> visualEntities = visualRepository.findByInspectionCallNo(callNo);
-        List<RmVisualInspectionDto> visualDtos = new ArrayList<>();
-        for (RmVisualInspection entity : visualEntities) {
-            RmVisualInspectionDto visualDto = new RmVisualInspectionDto();
-            visualDto.setInspectionCallNo(entity.getInspectionCallNo());
-            visualDto.setHeatNo(entity.getHeatNo());
-            visualDto.setHeatIndex(entity.getHeatIndex());
-            visualDto.setDefectName(entity.getDefectName());
-            visualDto.setIsSelected(entity.getIsSelected());
-            visualDto.setDefectLengthMm(entity.getDefectLengthMm());
-            visualDtos.add(visualDto);
-        }
+        List<RmVisualInspectionDto> visualDtos = visualEntities.stream()
+                .map(this::mapVisualInspectionEntityToDto)
+                .collect(Collectors.toList());
         dto.setVisualInspectionData(visualDtos);
 
         // 4. Fetch Dimensional Check Data
@@ -374,8 +681,31 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             dimDto.setInspectionCallNo(entity.getInspectionCallNo());
             dimDto.setHeatNo(entity.getHeatNo());
             dimDto.setHeatIndex(entity.getHeatIndex());
-            dimDto.setSampleNumber(entity.getSampleNumber());
-            dimDto.setDiameter(entity.getDiameter());
+
+            // Convert entity sample diameters to list
+            List<BigDecimal> sampleDiameters = new ArrayList<>();
+            sampleDiameters.add(entity.getSample1Diameter());
+            sampleDiameters.add(entity.getSample2Diameter());
+            sampleDiameters.add(entity.getSample3Diameter());
+            sampleDiameters.add(entity.getSample4Diameter());
+            sampleDiameters.add(entity.getSample5Diameter());
+            sampleDiameters.add(entity.getSample6Diameter());
+            sampleDiameters.add(entity.getSample7Diameter());
+            sampleDiameters.add(entity.getSample8Diameter());
+            sampleDiameters.add(entity.getSample9Diameter());
+            sampleDiameters.add(entity.getSample10Diameter());
+            sampleDiameters.add(entity.getSample11Diameter());
+            sampleDiameters.add(entity.getSample12Diameter());
+            sampleDiameters.add(entity.getSample13Diameter());
+            sampleDiameters.add(entity.getSample14Diameter());
+            sampleDiameters.add(entity.getSample15Diameter());
+            sampleDiameters.add(entity.getSample16Diameter());
+            sampleDiameters.add(entity.getSample17Diameter());
+            sampleDiameters.add(entity.getSample18Diameter());
+            sampleDiameters.add(entity.getSample19Diameter());
+            sampleDiameters.add(entity.getSample20Diameter());
+            dimDto.setSampleDiameters(sampleDiameters);
+
             dimensionalDtos.add(dimDto);
         }
         dto.setDimensionalCheckData(dimensionalDtos);
@@ -398,10 +728,16 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             // Map entity field names to DTO field names
             matDto.setHardnessHrc(entity.getHardness());
             matDto.setDecarbDepthMm(entity.getDecarb());
+            // Map inclusion values
             matDto.setInclusionA(entity.getInclusionA());
             matDto.setInclusionB(entity.getInclusionB());
             matDto.setInclusionC(entity.getInclusionC());
             matDto.setInclusionD(entity.getInclusionD());
+            // Map inclusion types (Thick/Thin)
+            matDto.setInclusionTypeA(entity.getInclusionTypeA());
+            matDto.setInclusionTypeB(entity.getInclusionTypeB());
+            matDto.setInclusionTypeC(entity.getInclusionTypeC());
+            matDto.setInclusionTypeD(entity.getInclusionTypeD());
             matDto.setRemarks(entity.getRemarks());
             materialDtos.add(matDto);
         }
@@ -453,6 +789,50 @@ public class RmInspectionServiceImpl implements RmInspectionService {
 
         logger.info("Successfully fetched RM inspection data for call: {}", callNo);
         return dto;
+    }
+
+    /**
+     * Convert RmVisualInspection entity to RmVisualInspectionDto
+     * Maps boolean columns to defects map and length columns to defectLengths map
+     */
+    private RmVisualInspectionDto mapVisualInspectionEntityToDto(RmVisualInspection entity) {
+        RmVisualInspectionDto visualDto = new RmVisualInspectionDto();
+        visualDto.setInspectionCallNo(entity.getInspectionCallNo());
+        visualDto.setHeatNo(entity.getHeatNo());
+        visualDto.setHeatIndex(entity.getHeatIndex());
+
+        // Convert entity defect booleans to map
+        Map<String, Boolean> defects = new HashMap<>();
+        defects.put("No Defect", entity.getNoDefect());
+        defects.put("Distortion", entity.getDistortion());
+        defects.put("Twist", entity.getTwist());
+        defects.put("Kink", entity.getKink());
+        defects.put("Not Straight", entity.getNotStraight());
+        defects.put("Fold", entity.getFold());
+        defects.put("Lap", entity.getLap());
+        defects.put("Crack", entity.getCrack());
+        defects.put("Pit", entity.getPit());
+        defects.put("Groove", entity.getGroove());
+        defects.put("Excessive Scaling", entity.getExcessiveScaling());
+        defects.put("Internal Defect (Piping, Segregation)", entity.getInternalDefect());
+        visualDto.setDefects(defects);
+
+        // Convert entity defect lengths to map
+        Map<String, BigDecimal> defectLengths = new HashMap<>();
+        if (entity.getDistortionLength() != null) defectLengths.put("Distortion", entity.getDistortionLength());
+        if (entity.getTwistLength() != null) defectLengths.put("Twist", entity.getTwistLength());
+        if (entity.getKinkLength() != null) defectLengths.put("Kink", entity.getKinkLength());
+        if (entity.getNotStraightLength() != null) defectLengths.put("Not Straight", entity.getNotStraightLength());
+        if (entity.getFoldLength() != null) defectLengths.put("Fold", entity.getFoldLength());
+        if (entity.getLapLength() != null) defectLengths.put("Lap", entity.getLapLength());
+        if (entity.getCrackLength() != null) defectLengths.put("Crack", entity.getCrackLength());
+        if (entity.getPitLength() != null) defectLengths.put("Pit", entity.getPitLength());
+        if (entity.getGrooveLength() != null) defectLengths.put("Groove", entity.getGrooveLength());
+        if (entity.getExcessiveScalingLength() != null) defectLengths.put("Excessive Scaling", entity.getExcessiveScalingLength());
+        if (entity.getInternalDefectLength() != null) defectLengths.put("Internal Defect (Piping, Segregation)", entity.getInternalDefectLength());
+        visualDto.setDefectLengths(defectLengths);
+
+        return visualDto;
     }
 
     /**
@@ -509,6 +889,7 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             dto.setWeightOfferedMt(entity.getWeightOfferedMt());
             dto.setWeightAcceptedMt(entity.getWeightAcceptedMt());
             dto.setWeightRejectedMt(entity.getWeightRejectedMt());
+            dto.setAcceptedQtyMt(entity.getAcceptedQtyMt());
             dto.setCalibrationStatus(entity.getCalibrationStatus());
             dto.setVisualStatus(entity.getVisualStatus());
             dto.setDimensionalStatus(entity.getDimensionalStatus());
@@ -623,5 +1004,19 @@ public class RmInspectionServiceImpl implements RmInspectionService {
         }
 
         return errors;
+    }
+
+    /**
+     * Get the current user ID from ThreadLocal
+     * @return User ID from ThreadLocal or "system" as fallback
+     */
+    private String getCurrentUser() {
+        String userId = currentUserIdThreadLocal.get();
+        logger.debug("Getting currentUserId from ThreadLocal: {}", userId);
+        if (userId != null && !userId.isEmpty() && !"anonymousUser".equals(userId)) {
+            return userId;
+        }
+        logger.warn("No user ID found in ThreadLocal, using 'system' as fallback");
+        return "system";
     }
 }

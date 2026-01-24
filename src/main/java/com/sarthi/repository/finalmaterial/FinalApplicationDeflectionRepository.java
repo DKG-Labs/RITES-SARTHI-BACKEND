@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository for Final Inspection - Deflection Test
@@ -28,9 +29,10 @@ public interface FinalApplicationDeflectionRepository extends JpaRepository<Fina
     List<FinalApplicationDeflection> findByInspectionCallNoAndHeatNo(String inspectionCallNo, String heatNo);
 
     /**
-     * Find deflection test data by inspection call number, lot number and heat number
+     * Find deflection test data by inspection call number, lot number and heat number.
+     * This combination is unique per inspection session.
      */
-    List<FinalApplicationDeflection> findByInspectionCallNoAndLotNoAndHeatNo(
+    Optional<FinalApplicationDeflection> findByInspectionCallNoAndLotNoAndHeatNo(
             String inspectionCallNo, String lotNo, String heatNo);
 }
 
