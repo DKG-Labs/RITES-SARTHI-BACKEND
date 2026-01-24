@@ -4,7 +4,8 @@ import com.sarthi.entity.finalmaterial.*;
 import com.sarthi.repository.finalmaterial.*;
 import com.sarthi.service.finalmaterial.FinalInspectionSubmoduleService;
 import com.sarthi.dto.finalmaterial.FinalLadleValuesDto;
-import com.sarthi.dto.finalmaterial.FinalInclusionRatingBatchDTO;
+import com.sarthi.dto.finalmaterial.FinalChemicalAnalysisRequest;
+import com.sarthi.dto.finalmaterial.FinalChemicalAnalysisResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +27,7 @@ import java.util.Optional;
 public class FinalInspectionSubmoduleServiceImpl implements FinalInspectionSubmoduleService {
 
     private final FinalCalibrationDocumentsRepository calibrationDocumentsRepository;
-    private final FinalVisualDimensionalRepository visualDimensionalRepository;
     private final FinalChemicalAnalysisRepository chemicalAnalysisRepository;
-    private final FinalHardnessTestRepository hardnessTestRepository;
-    private final FinalInclusionRatingRepository inclusionRatingRepository;
     private final FinalApplicationDeflectionRepository applicationDeflectionRepository;
     private final FinalWeightTestRepository weightTestRepository;
     private final FinalToeLoadTestRepository toeLoadTestRepository;
@@ -71,51 +69,75 @@ public class FinalInspectionSubmoduleServiceImpl implements FinalInspectionSubmo
         calibrationDocumentsRepository.deleteById(id);
     }
 
-    // ===== VISUAL & DIMENSIONAL =====
-    @Override
-    public FinalVisualDimensional saveVisualDimensional(FinalVisualDimensional data, String userId) {
-        data.setCreatedBy(userId);
-        data.setUpdatedBy(userId);
-        data.setCreatedAt(LocalDateTime.now());
-        data.setUpdatedAt(LocalDateTime.now());
-        return visualDimensionalRepository.save(data);
-    }
+    // ===== VISUAL INSPECTION =====
+    // Note: Visual inspection is now handled by FinalVisualInspectionService
+    // Use FinalVisualInspectionService for visual inspection operations
 
-    @Override
-    public List<FinalVisualDimensional> getVisualDimensionalByCallNo(String inspectionCallNo) {
-        return visualDimensionalRepository.findByInspectionCallNo(inspectionCallNo);
-    }
-
-    @Override
-    public List<FinalVisualDimensional> getVisualDimensionalByLot(String inspectionCallNo, String lotNo) {
-        return visualDimensionalRepository.findByInspectionCallNoAndLotNo(inspectionCallNo, lotNo);
-    }
-
-    @Override
-    public Optional<FinalVisualDimensional> getVisualDimensionalById(Long id) {
-        return visualDimensionalRepository.findById(id);
-    }
-
-    @Override
-    public FinalVisualDimensional updateVisualDimensional(FinalVisualDimensional data, String userId) {
-        data.setUpdatedBy(userId);
-        data.setUpdatedAt(LocalDateTime.now());
-        return visualDimensionalRepository.save(data);
-    }
-
-    @Override
-    public void deleteVisualDimensional(Long id) {
-        visualDimensionalRepository.deleteById(id);
-    }
+    // ===== DIMENSIONAL INSPECTION =====
+    // Note: Dimensional inspection is now handled by FinalDimensionalInspectionService
+    // Use FinalDimensionalInspectionService for dimensional inspection operations
 
     // ===== CHEMICAL ANALYSIS =====
     @Override
-    public FinalChemicalAnalysis saveChemicalAnalysis(FinalChemicalAnalysis data, String userId) {
-        data.setCreatedBy(userId);
-        data.setUpdatedBy(userId);
-        data.setCreatedAt(LocalDateTime.now());
-        data.setUpdatedAt(LocalDateTime.now());
-        return chemicalAnalysisRepository.save(data);
+    public FinalChemicalAnalysisResponse saveChemicalAnalysis(FinalChemicalAnalysisRequest request, String userId) {
+        // UPSERT Pattern: Check if data already exists for this call + lot combination
+        List<FinalChemicalAnalysis> existing = chemicalAnalysisRepository
+                .findByInspectionCallNoAndLotNo(request.getInspectionCallNo(), request.getLotNo());
+
+        FinalChemicalAnalysis entity;
+        if (existing != null && !existing.isEmpty()) {
+            // UPDATE existing record - preserve id, createdBy, createdAt
+            entity = existing.get(0);
+            entity.setUpdatedBy(userId);
+            entity.setUpdatedAt(LocalDateTime.now());
+        } else {
+            // INSERT new record
+            entity = new FinalChemicalAnalysis();
+            entity.setInspectionCallNo(request.getInspectionCallNo());
+            entity.setLotNo(request.getLotNo());
+            entity.setCreatedBy(userId);
+            entity.setCreatedAt(LocalDateTime.now());
+            entity.setUpdatedBy(userId);
+            entity.setUpdatedAt(LocalDateTime.now());
+        }
+
+        // Set/update all data fields (common for both insert and update)
+        entity.setHeatNo(request.getHeatNo());
+        entity.setSampleNo(request.getSampleNo());
+        entity.setCarbonPercent(request.getCarbonPercent());
+        entity.setSiliconPercent(request.getSiliconPercent());
+        entity.setManganesePercent(request.getManganesePercent());
+        entity.setSulphurPercent(request.getSulphurPercent());
+        entity.setPhosphorusPercent(request.getPhosphorusPercent());
+        entity.setRemarks(request.getRemarks());
+
+        FinalChemicalAnalysis saved = chemicalAnalysisRepository.save(entity);
+
+        // Map entity to response DTO
+        return mapToResponse(saved);
+    }
+
+    /**
+     * Map FinalChemicalAnalysis entity to response DTO
+     */
+    private FinalChemicalAnalysisResponse mapToResponse(FinalChemicalAnalysis entity) {
+        FinalChemicalAnalysisResponse response = new FinalChemicalAnalysisResponse();
+        response.setId(entity.getId());
+        response.setInspectionCallNo(entity.getInspectionCallNo());
+        response.setLotNo(entity.getLotNo());
+        response.setHeatNo(entity.getHeatNo());
+        response.setSampleNo(entity.getSampleNo());
+        response.setCarbonPercent(entity.getCarbonPercent());
+        response.setSiliconPercent(entity.getSiliconPercent());
+        response.setManganesePercent(entity.getManganesePercent());
+        response.setSulphurPercent(entity.getSulphurPercent());
+        response.setPhosphorusPercent(entity.getPhosphorusPercent());
+        response.setRemarks(entity.getRemarks());
+        response.setCreatedBy(entity.getCreatedBy());
+        response.setCreatedAt(entity.getCreatedAt());
+        response.setUpdatedBy(entity.getUpdatedBy());
+        response.setUpdatedAt(entity.getUpdatedAt());
+        return response;
     }
 
     @Override
@@ -145,145 +167,10 @@ public class FinalInspectionSubmoduleServiceImpl implements FinalInspectionSubmo
         chemicalAnalysisRepository.deleteById(id);
     }
 
-    // ===== HARDNESS TEST =====
-    @Override
-    public FinalHardnessTest saveHardnessTest(FinalHardnessTest data, String userId) {
-        data.setCreatedBy(userId);
-        data.setUpdatedBy(userId);
-        data.setCreatedAt(LocalDateTime.now());
-        data.setUpdatedAt(LocalDateTime.now());
-        return hardnessTestRepository.save(data);
-    }
-
-    @Override
-    public List<FinalHardnessTest> getHardnessTestByCallNo(String inspectionCallNo) {
-        return hardnessTestRepository.findByInspectionCallNo(inspectionCallNo);
-    }
-
-    @Override
-    public List<FinalHardnessTest> getHardnessTestByLot(String inspectionCallNo, String lotNo) {
-        return hardnessTestRepository.findByInspectionCallNoAndLotNo(inspectionCallNo, lotNo);
-    }
-
-    @Override
-    public Optional<FinalHardnessTest> getHardnessTestById(Long id) {
-        return hardnessTestRepository.findById(id);
-    }
-
-    @Override
-    public FinalHardnessTest updateHardnessTest(FinalHardnessTest data, String userId) {
-        data.setUpdatedBy(userId);
-        data.setUpdatedAt(LocalDateTime.now());
-        return hardnessTestRepository.save(data);
-    }
-
-    @Override
-    public void deleteHardnessTest(Long id) {
-        hardnessTestRepository.deleteById(id);
-    }
-
-    // ===== INCLUSION & DECARB =====
-    @Override
-    public FinalInclusionRating saveInclusionRating(FinalInclusionRating data, String userId) {
-        data.setCreatedBy(userId);
-        data.setUpdatedBy(userId);
-        data.setCreatedAt(LocalDateTime.now());
-        data.setUpdatedAt(LocalDateTime.now());
-        return inclusionRatingRepository.save(data);
-    }
-
-    @Override
-    public List<FinalInclusionRating> saveInclusionRatingBatch(FinalInclusionRatingBatchDTO batchData, String userId) {
-        List<FinalInclusionRating> savedRecords = new ArrayList<>();
-        int sampleCount = batchData.getMicrostructure1st() != null ? batchData.getMicrostructure1st().size() : 0;
-
-        for (int i = 0; i < sampleCount; i++) {
-            FinalInclusionRating record = new FinalInclusionRating();
-            record.setInspectionCallNo(batchData.getInspectionCallNo());
-            record.setLotNo(batchData.getLotNo());
-            record.setHeatNo(batchData.getHeatNo());
-            record.setSampleNo(i + 1);
-
-            // Set microstructure values
-            if (batchData.getMicrostructure1st() != null && i < batchData.getMicrostructure1st().size()) {
-                record.setMicrostructure1st(batchData.getMicrostructure1st().get(i));
-            }
-            if (batchData.getMicrostructure2nd() != null && i < batchData.getMicrostructure2nd().size()) {
-                record.setMicrostructure2nd(batchData.getMicrostructure2nd().get(i));
-            }
-
-            // Set decarb values
-            if (batchData.getDecarb1st() != null && i < batchData.getDecarb1st().size()) {
-                String val = batchData.getDecarb1st().get(i);
-                if (val != null && !val.isEmpty()) {
-                    record.setDecarb1st(new BigDecimal(val));
-                }
-            }
-            if (batchData.getDecarb2nd() != null && i < batchData.getDecarb2nd().size()) {
-                String val = batchData.getDecarb2nd().get(i);
-                if (val != null && !val.isEmpty()) {
-                    record.setDecarb2nd(new BigDecimal(val));
-                }
-            }
-
-            // Set inclusion values
-            if (batchData.getInclusion1st() != null && i < batchData.getInclusion1st().size()) {
-                Map<String, String> inclusion = batchData.getInclusion1st().get(i);
-                if (inclusion != null) {
-                    record.setInclusionARating(inclusion.get("A"));
-                    record.setInclusionBRating(inclusion.get("B"));
-                    record.setInclusionCRating(inclusion.get("C"));
-                    record.setInclusionDRating(inclusion.get("D"));
-                    record.setInclusionType(inclusion.get("type"));
-                }
-            }
-
-            // Set defects value
-            if (batchData.getDefects1st() != null && i < batchData.getDefects1st().size()) {
-                record.setFreedomFromDefects(batchData.getDefects1st().get(i));
-            }
-
-            // Set remarks (shared across all samples)
-            record.setRemarks(batchData.getInclusionRemarks());
-
-            // Set audit fields
-            record.setCreatedBy(userId);
-            record.setUpdatedBy(userId);
-            record.setCreatedAt(LocalDateTime.now());
-            record.setUpdatedAt(LocalDateTime.now());
-
-            savedRecords.add(inclusionRatingRepository.save(record));
-        }
-
-        return savedRecords;
-    }
-
-    @Override
-    public List<FinalInclusionRating> getInclusionRatingByCallNo(String inspectionCallNo) {
-        return inclusionRatingRepository.findByInspectionCallNo(inspectionCallNo);
-    }
-
-    @Override
-    public List<FinalInclusionRating> getInclusionRatingByLot(String inspectionCallNo, String lotNo) {
-        return inclusionRatingRepository.findByInspectionCallNoAndLotNo(inspectionCallNo, lotNo);
-    }
-
-    @Override
-    public Optional<FinalInclusionRating> getInclusionRatingById(Long id) {
-        return inclusionRatingRepository.findById(id);
-    }
-
-    @Override
-    public FinalInclusionRating updateInclusionRating(FinalInclusionRating data, String userId) {
-        data.setUpdatedBy(userId);
-        data.setUpdatedAt(LocalDateTime.now());
-        return inclusionRatingRepository.save(data);
-    }
-
-    @Override
-    public void deleteInclusionRating(Long id) {
-        inclusionRatingRepository.deleteById(id);
-    }
+    // ===== INCLUSION & DECARB - DEPRECATED =====
+    // Old flat structure methods removed - migrate to new parent-child structure
+    // Use FinalInclusionRatingNewService, FinalDepthOfDecarburizationService,
+    // FinalMicrostructureTestService, and FinalFreedomFromDefectsTestService instead
 
     // ===== DEFLECTION TEST =====
     @Override

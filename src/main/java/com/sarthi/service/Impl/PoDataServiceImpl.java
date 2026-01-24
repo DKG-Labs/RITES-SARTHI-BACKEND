@@ -19,6 +19,8 @@ import com.sarthi.repository.rawmaterial.RmHeatQuantityRepository;
 import com.sarthi.service.PoDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,6 +37,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class PoDataServiceImpl implements PoDataService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PoDataServiceImpl.class);
 
     @Autowired
     private PoHeaderRepository poHeaderRepository;
@@ -338,8 +342,7 @@ public class PoDataServiceImpl implements PoDataService {
             heatDto.setTcNumber(heat.getTcNumber());
             heatDto.setTcDate(formatDate(heat.getTcDate()));
             heatDto.setOfferedQty(heat.getOfferedQty());
-            // TODO: Uncomment when color_code column is added to database
-            // heatDto.setColorCode(heat.getColorCode()); // Color code manually entered by inspector
+            heatDto.setColorCode(heat.getColorCode()); // Color code manually entered by inspector
 
             // From inventory_entries (fetched by heat + TC combination)
             heatDto.setTotalValueOfPo(totalValueOfPo);
@@ -361,20 +364,21 @@ public class PoDataServiceImpl implements PoDataService {
 
     @Override
     public boolean updateColorCode(Integer heatId, String colorCode) {
-        // TODO: Implement when color_code column is added to database
-        // Optional<RmHeatQuantity> heatOpt = rmHeatQuantityRepository.findById(heatId);
-        //
-        // if (heatOpt.isPresent()) {
-        //     RmHeatQuantity heat = heatOpt.get();
-        //     heat.setColorCode(colorCode);
-        //     rmHeatQuantityRepository.save(heat);
-        //     return true;
-        // }
-        //
-        // return false;
+        try {
+            Optional<RmHeatQuantity> heatOpt = rmHeatQuantityRepository.findById(heatId);
 
-        // Temporary: Return false until color_code column is added
-        return false;
+            if (heatOpt.isPresent()) {
+                RmHeatQuantity heat = heatOpt.get();
+                heat.setColorCode(colorCode);
+                rmHeatQuantityRepository.save(heat);
+                return true;
+            }
+
+            return false;
+        } catch (Exception e) {
+            logger.error("Error updating color code for heat ID: " + heatId, e);
+            return false;
+        }
     }
 }
 

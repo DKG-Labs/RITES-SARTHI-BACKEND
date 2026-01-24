@@ -17,6 +17,7 @@ public class RmHeatFinalResultDto {
     private BigDecimal weightOfferedMt;
     private BigDecimal weightAcceptedMt;
     private BigDecimal weightRejectedMt;
+    private BigDecimal acceptedQtyMt;
 
     // Submodule Statuses
     private String calibrationStatus;
@@ -37,5 +38,9 @@ public class RmHeatFinalResultDto {
 
     // Remarks
     private String remarks;
+
+    // Audit fields
+    private String createdBy;
+    private String updatedBy;
 }
 

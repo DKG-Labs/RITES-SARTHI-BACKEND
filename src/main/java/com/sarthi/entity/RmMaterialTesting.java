@@ -59,7 +59,7 @@ public class RmMaterialTesting {
     @Column(name = "decarb", precision = 8, scale = 4)
     private BigDecimal decarb;
 
-    // Inclusion Ratings
+    // Inclusion Ratings - Values
     @Column(name = "inclusion_a", precision = 8, scale = 2)
     private BigDecimal inclusionA;
 
@@ -72,10 +72,44 @@ public class RmMaterialTesting {
     @Column(name = "inclusion_d", precision = 8, scale = 2)
     private BigDecimal inclusionD;
 
+    // Inclusion Ratings - Types (Thick/Thin)
+    @Column(name = "inclusion_type_a", length = 20)
+    private String inclusionTypeA;
+
+    @Column(name = "inclusion_type_b", length = 20)
+    private String inclusionTypeB;
+
+    @Column(name = "inclusion_type_c", length = 20)
+    private String inclusionTypeC;
+
+    @Column(name = "inclusion_type_d", length = 20)
+    private String inclusionTypeD;
+
     @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;
 
+    // Audit Fields
+    @Column(name = "created_by", length = 100)
+    private String createdBy;
+
     @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_by", length = 100)
+    private String updatedBy;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }
 

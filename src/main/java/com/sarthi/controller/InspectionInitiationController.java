@@ -38,7 +38,7 @@ public class InspectionInitiationController {
         logger.info("POST /api/inspection-initiation - Creating initiation for call: {}", dto.getCallNo());
         InspectionInitiationDto created = service.createInitiation(dto);
 
-
+        if(dto.getProductType().equalsIgnoreCase("Process")){   
         TransitionActionReqDto req = new TransitionActionReqDto();
 
         req.setWorkflowTransitionId(dto.getWorkflowTransitionId());
@@ -50,7 +50,7 @@ public class InspectionInitiationController {
         System.out.print(req +""+ dto.getWorkflowTransitionId());
         workflowService.performTransitionAction(req);
 
-
+        }
 
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(created), HttpStatus.CREATED);
     }

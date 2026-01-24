@@ -9,6 +9,7 @@ import com.sarthi.entity.RmVisualInspection;
 import com.sarthi.repository.RmVisualInspectionRepository;
 import com.sarthi.exception.ErrorDetails;
 import com.sarthi.service.RmInspectionService;
+import com.sarthi.service.JwtService;
 import com.sarthi.util.ResponseBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,10 +20,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
+import java.security.Principal;
 
 /**
  * REST Controller for Raw Material inspection operations.
@@ -46,10 +49,20 @@ public class RmInspectionController {
      * Called when inspector clicks "Finish Inspection" button.
      */
     @PostMapping("/finish")
-    public ResponseEntity<Object> finishInspection(@RequestBody RmFinishInspectionDto dto) {
-        logger.info("POST /api/rm-inspection/finish - Finishing inspection for call: {}", dto.getInspectionCallNo());
+    public ResponseEntity<Object> finishInspection(
+            @RequestBody RmFinishInspectionDto dto,
+            Principal principal) {
+
+        // Use createdBy from payload if provided, otherwise use principal or fallback to "system"
+        String userId = (dto.getCreatedBy() != null && !dto.getCreatedBy().isEmpty()) ?
+                        dto.getCreatedBy() :
+                        (principal != null ? principal.getName() : "system");
+
+        logger.info("POST /api/rm-inspection/finish - Finishing inspection for call: {} by user: {}",
+            dto.getInspectionCallNo(), userId);
+
         try {
-            String result = service.finishInspection(dto);
+            String result = service.finishInspection(dto, userId);
             return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(result), HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             // Validation errors - return BAD_REQUEST with clear message
@@ -63,6 +76,39 @@ public class RmInspectionController {
             return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             logger.error("Error finishing RM inspection: {}", e.getMessage(), e);
+            ErrorDetails errorDetails = new ErrorDetails(
+                AppConstant.INTER_SERVER_ERROR,
+                AppConstant.ERROR_TYPE_CODE_INTERNAL,
+                AppConstant.ERROR_TYPE_ERROR,
+                e.getMessage()
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Pause Raw Material inspection - saves all submodule data WITHOUT changing status.
+     * Called when inspector clicks "Pause Inspection" button.
+     * POST /api/rm-inspection/pause
+     */
+    @PostMapping("/pause")
+    public ResponseEntity<Object> pauseInspection(
+            @RequestBody RmFinishInspectionDto dto,
+            Principal principal) {
+
+        // Use createdBy from payload if provided, otherwise use principal or fallback to "system"
+        String userId = (dto.getCreatedBy() != null && !dto.getCreatedBy().isEmpty()) ?
+                        dto.getCreatedBy() :
+                        (principal != null ? principal.getName() : "system");
+
+        logger.info("POST /api/rm-inspection/pause - Pausing inspection for call: {} by user: {}",
+            dto.getInspectionCallNo(), userId);
+
+        try {
+            String result = service.pauseInspection(dto, userId);
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(result), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error pausing RM inspection: {}", e.getMessage(), e);
             ErrorDetails errorDetails = new ErrorDetails(
                 AppConstant.INTER_SERVER_ERROR,
                 AppConstant.ERROR_TYPE_CODE_INTERNAL,
@@ -197,14 +243,64 @@ public class RmInspectionController {
     /**
      * Get Visual Inspection data for all heats in a call.
      * GET /api/rm-inspection/visual/{callNo}
-     * Returns all visual inspection records (both passed and draft)
+     * Returns all visual inspection records (both passed and draft) converted to DTO format
      */
     @GetMapping("/visual/{callNo}")
     public ResponseEntity<Object> getVisualInspection(@PathVariable String callNo) {
         logger.info("GET /api/rm-inspection/visual/{}", callNo);
         try {
+            // Fetch visual inspection data from backend
             List<RmVisualInspection> visualData = visualRepository.findByInspectionCallNo(callNo);
-            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(visualData), HttpStatus.OK);
+
+            // Convert entities to DTOs with defects and defectLengths maps
+            List<Object> visualDtos = new ArrayList<>();
+            for (RmVisualInspection entity : visualData) {
+                Map<String, Object> dto = new HashMap<>();
+                dto.put("inspectionCallNo", entity.getInspectionCallNo());
+                dto.put("heatNo", entity.getHeatNo());
+                dto.put("heatIndex", entity.getHeatIndex());
+
+                // Convert entity defect booleans to map
+                Map<String, Boolean> defects = new HashMap<>();
+                defects.put("No Defect", entity.getNoDefect());
+                defects.put("Distortion", entity.getDistortion());
+                defects.put("Twist", entity.getTwist());
+                defects.put("Kink", entity.getKink());
+                defects.put("Not Straight", entity.getNotStraight());
+                defects.put("Fold", entity.getFold());
+                defects.put("Lap", entity.getLap());
+                defects.put("Crack", entity.getCrack());
+                defects.put("Pit", entity.getPit());
+                defects.put("Groove", entity.getGroove());
+                defects.put("Excessive Scaling", entity.getExcessiveScaling());
+                defects.put("Internal Defect (Piping, Segregation)", entity.getInternalDefect());
+                dto.put("defects", defects);
+
+                // Convert entity defect lengths to map
+                Map<String, BigDecimal> defectLengths = new HashMap<>();
+                if (entity.getDistortionLength() != null) defectLengths.put("Distortion", entity.getDistortionLength());
+                if (entity.getTwistLength() != null) defectLengths.put("Twist", entity.getTwistLength());
+                if (entity.getKinkLength() != null) defectLengths.put("Kink", entity.getKinkLength());
+                if (entity.getNotStraightLength() != null) defectLengths.put("Not Straight", entity.getNotStraightLength());
+                if (entity.getFoldLength() != null) defectLengths.put("Fold", entity.getFoldLength());
+                if (entity.getLapLength() != null) defectLengths.put("Lap", entity.getLapLength());
+                if (entity.getCrackLength() != null) defectLengths.put("Crack", entity.getCrackLength());
+                if (entity.getPitLength() != null) defectLengths.put("Pit", entity.getPitLength());
+                if (entity.getGrooveLength() != null) defectLengths.put("Groove", entity.getGrooveLength());
+                if (entity.getExcessiveScalingLength() != null) defectLengths.put("Excessive Scaling", entity.getExcessiveScalingLength());
+                if (entity.getInternalDefectLength() != null) defectLengths.put("Internal Defect (Piping, Segregation)", entity.getInternalDefectLength());
+                dto.put("defectLengths", defectLengths);
+
+                // Add passedAt if available
+                if (entity.getPassedAt() != null) {
+                    dto.put("passedAt", entity.getPassedAt());
+                }
+
+                visualDtos.add(dto);
+            }
+
+            logger.info("Fetched and converted {} visual inspection records for call: {}", visualDtos.size(), callNo);
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(visualDtos), HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error fetching visual inspection data: {}", e.getMessage(), e);
             ErrorDetails errorDetails = new ErrorDetails(
@@ -220,8 +316,7 @@ public class RmInspectionController {
     /**
      * Save Visual Inspection Pass status for a heat.
      * POST /api/rm-inspection/visual/pass
-     * Creates or updates records for each selected defect with passed_at and created_by fields.
-     * Supports multi-shift: allows re-passing same heat in different shifts.
+     * Creates or updates a single record per heat with all defect selections.
      */
     @PostMapping("/visual/pass")
     public ResponseEntity<Object> saveVisualInspectionPass(@RequestBody Map<String, Object> passData) {
@@ -248,31 +343,30 @@ public class RmInspectionController {
                 return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.BAD_REQUEST);
             }
 
-            // Create or update records for each selected defect
-            List<RmVisualInspection> savedRecords = new ArrayList<>();
+            // Find or create single record per heat
+            List<RmVisualInspection> existingRecords = visualRepository.findByInspectionCallNoAndHeatNo(callNo, heatNo);
+            RmVisualInspection record = existingRecords.stream()
+                .findFirst()
+                .orElse(null);
+
             LocalDateTime now = LocalDateTime.now();
 
-            for (String defectName : selectedDefects) {
-                // Check if record already exists for this defect
-                List<RmVisualInspection> existingRecords = visualRepository.findByInspectionCallNoAndHeatNo(callNo, heatNo);
-                RmVisualInspection record = existingRecords.stream()
-                    .filter(r -> defectName.equals(r.getDefectName()))
-                    .findFirst()
-                    .orElse(null);
+            if (record == null) {
+                // Create new record
+                record = new RmVisualInspection();
+                record.setInspectionCallNo(callNo);
+                record.setHeatNo(heatNo);
+                record.setHeatIndex(heatIndex);
+                record.setCreatedAt(now);
+                logger.info("Creating new visual inspection record for call: {} heat: {}", callNo, heatNo);
+            } else {
+                // Update existing record
+                logger.info("Updating existing visual inspection record for call: {} heat: {}", callNo, heatNo);
+            }
 
-                if (record == null) {
-                    // Create new record
-                    record = new RmVisualInspection();
-                    record.setInspectionCallNo(callNo);
-                    record.setHeatNo(heatNo);
-                    record.setHeatIndex(heatIndex);
-                    record.setDefectName(defectName);
-                    record.setIsSelected(true);
-                    record.setCreatedAt(now);
-                } else {
-                    // Update existing record (for multi-shift support)
-                    logger.info("Updating existing record for heat {} defect {}", heatNo, defectName);
-                }
+            // Set all selected defects
+            for (String defectName : selectedDefects) {
+                setDefectSelection(record, defectName, true);
 
                 // Set defect length if provided
                 if (defectLengths != null && defectLengths.containsKey(defectName)) {
@@ -280,24 +374,22 @@ public class RmInspectionController {
                     if (lengthValue != null && !lengthValue.toString().isEmpty()) {
                         try {
                             BigDecimal length = new BigDecimal(lengthValue.toString());
-                            record.setDefectLengthMm(length);
+                            setDefectLength(record, defectName, length);
                             logger.debug("Set defect length for {} to {}", defectName, length);
                         } catch (NumberFormatException e) {
                             logger.warn("Invalid defect length value for {}: {}", defectName, lengthValue);
                         }
                     }
                 }
-
-                // Always update passed_at and createdBy on pass
-                record.setPassedAt(now);
-                record.setCreatedBy(createdBy);
-
-                RmVisualInspection saved = visualRepository.save(record);
-                savedRecords.add(saved);
             }
 
-            logger.info("Successfully saved {} defect records for heat {}", savedRecords.size(), heatNo);
-            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(savedRecords), HttpStatus.CREATED);
+            // Always update passed_at and createdBy on pass
+            record.setPassedAt(now);
+            record.setCreatedBy(createdBy);
+
+            RmVisualInspection saved = visualRepository.save(record);
+            logger.info("Successfully saved visual inspection record for heat {}", heatNo);
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(saved), HttpStatus.CREATED);
         } catch (Exception e) {
             logger.error("Error saving visual inspection pass status: {}", e.getMessage(), e);
             ErrorDetails errorDetails = new ErrorDetails(
@@ -333,6 +425,194 @@ public class RmInspectionController {
                 e.getMessage()
             );
             return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get Dimensional Check data for all heats in a call.
+     * GET /api/rm-inspection/dimensional/{callNo}
+     * Returns all dimensional check records with 20 sample diameters per heat
+     */
+    @GetMapping("/dimensional/{callNo}")
+    public ResponseEntity<Object> getDimensionalCheck(@PathVariable String callNo) {
+        logger.info("GET /api/rm-inspection/dimensional/{}", callNo);
+        try {
+            // Fetch dimensional check data from service layer
+            // The service method getByCallNo already includes dimensional check data
+            RmFinishInspectionDto dto = service.getByCallNo(callNo);
+            if (dto == null || dto.getDimensionalCheckData() == null) {
+                return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(new ArrayList<>()), HttpStatus.OK);
+            }
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(dto.getDimensionalCheckData()), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error fetching dimensional check data: {}", e.getMessage(), e);
+            ErrorDetails errorDetails = new ErrorDetails(
+                AppConstant.INTER_SERVER_ERROR,
+                AppConstant.ERROR_TYPE_CODE_INTERNAL,
+                AppConstant.ERROR_TYPE_ERROR,
+                e.getMessage()
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get Material Testing data for all heats in a call.
+     * GET /api/rm-inspection/material-testing/{callNo}
+     * Returns all material testing records
+     */
+    @GetMapping("/material-testing/{callNo}")
+    public ResponseEntity<Object> getMaterialTesting(@PathVariable String callNo) {
+        logger.info("GET /api/rm-inspection/material-testing/{}", callNo);
+        try {
+            RmFinishInspectionDto dto = service.getByCallNo(callNo);
+            if (dto == null || dto.getMaterialTestingData() == null) {
+                return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(new ArrayList<>()), HttpStatus.OK);
+            }
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(dto.getMaterialTestingData()), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error fetching material testing data: {}", e.getMessage(), e);
+            ErrorDetails errorDetails = new ErrorDetails(
+                AppConstant.INTER_SERVER_ERROR,
+                AppConstant.ERROR_TYPE_CODE_INTERNAL,
+                AppConstant.ERROR_TYPE_ERROR,
+                e.getMessage()
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get Packing & Storage data for a call.
+     * GET /api/rm-inspection/packing-storage/{callNo}
+     * Returns packing and storage inspection records (list)
+     */
+    @GetMapping("/packing-storage/{callNo}")
+    public ResponseEntity<Object> getPackingStorage(@PathVariable String callNo) {
+        logger.info("GET /api/rm-inspection/packing-storage/{}", callNo);
+        try {
+            RmFinishInspectionDto dto = service.getByCallNo(callNo);
+            if (dto == null || dto.getPackingStorageData() == null) {
+                return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(new ArrayList<>()), HttpStatus.OK);
+            }
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(dto.getPackingStorageData()), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error fetching packing storage data: {}", e.getMessage(), e);
+            ErrorDetails errorDetails = new ErrorDetails(
+                AppConstant.INTER_SERVER_ERROR,
+                AppConstant.ERROR_TYPE_CODE_INTERNAL,
+                AppConstant.ERROR_TYPE_ERROR,
+                e.getMessage()
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get Calibration Documents data for a call.
+     * GET /api/rm-inspection/calibration/{callNo}
+     * Returns calibration documents records (list)
+     */
+    @GetMapping("/calibration/{callNo}")
+    public ResponseEntity<Object> getCalibrationDocuments(@PathVariable String callNo) {
+        logger.info("GET /api/rm-inspection/calibration/{}", callNo);
+        try {
+            RmFinishInspectionDto dto = service.getByCallNo(callNo);
+            if (dto == null || dto.getCalibrationDocumentsData() == null) {
+                return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(new ArrayList<>()), HttpStatus.OK);
+            }
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(dto.getCalibrationDocumentsData()), HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error fetching calibration documents data: {}", e.getMessage(), e);
+            ErrorDetails errorDetails = new ErrorDetails(
+                AppConstant.INTER_SERVER_ERROR,
+                AppConstant.ERROR_TYPE_CODE_INTERNAL,
+                AppConstant.ERROR_TYPE_ERROR,
+                e.getMessage()
+            );
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private void setDefectSelection(RmVisualInspection entity, String defectName, Boolean isSelected) {
+        boolean selected = isSelected != null && isSelected;
+        switch (defectName.toLowerCase()) {
+            case "no defect":
+                entity.setNoDefect(selected);
+                break;
+            case "distortion":
+                entity.setDistortion(selected);
+                break;
+            case "twist":
+                entity.setTwist(selected);
+                break;
+            case "kink":
+                entity.setKink(selected);
+                break;
+            case "not straight":
+                entity.setNotStraight(selected);
+                break;
+            case "fold":
+                entity.setFold(selected);
+                break;
+            case "lap":
+                entity.setLap(selected);
+                break;
+            case "crack":
+                entity.setCrack(selected);
+                break;
+            case "pit":
+                entity.setPit(selected);
+                break;
+            case "groove":
+                entity.setGroove(selected);
+                break;
+            case "excessive scaling":
+                entity.setExcessiveScaling(selected);
+                break;
+            case "internal defect (piping, segregation)":
+            case "internal defect":
+                entity.setInternalDefect(selected);
+                break;
+        }
+    }
+
+    private void setDefectLength(RmVisualInspection entity, String defectName, BigDecimal length) {
+        switch (defectName.toLowerCase()) {
+            case "distortion":
+                entity.setDistortionLength(length);
+                break;
+            case "twist":
+                entity.setTwistLength(length);
+                break;
+            case "kink":
+                entity.setKinkLength(length);
+                break;
+            case "not straight":
+                entity.setNotStraightLength(length);
+                break;
+            case "fold":
+                entity.setFoldLength(length);
+                break;
+            case "lap":
+                entity.setLapLength(length);
+                break;
+            case "crack":
+                entity.setCrackLength(length);
+                break;
+            case "pit":
+                entity.setPitLength(length);
+                break;
+            case "groove":
+                entity.setGrooveLength(length);
+                break;
+            case "excessive scaling":
+                entity.setExcessiveScalingLength(length);
+                break;
+            case "internal defect (piping, segregation)":
+            case "internal defect":
+                entity.setInternalDefectLength(length);
+                break;
         }
     }
 

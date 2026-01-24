@@ -20,5 +20,9 @@ public class RmFinishInspectionDto {
 
     private List<RmCalibrationDocumentsDto> calibrationDocumentsData;
     private RmInspectorDetailsDto inspectorDetails;
+
+    // Audit fields
+    private String createdBy;  // User ID who is creating/pausing the inspection
+    private String updatedBy;  // User ID who is updating the inspection
 }
 

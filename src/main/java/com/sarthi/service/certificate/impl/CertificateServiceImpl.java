@@ -2,6 +2,7 @@ package com.sarthi.service.certificate.impl;
 
 import com.sarthi.dto.certificate.RawMaterialCertificateDto;
 import com.sarthi.dto.certificate.ProcessMaterialCertificateDto;
+import com.sarthi.dto.certificate.FinalCertificateDto;
 import com.sarthi.entity.InspectionCompleteDetails;
 import com.sarthi.entity.MainPoInformation;
 import com.sarthi.entity.PoHeader;
@@ -12,6 +13,8 @@ import com.sarthi.entity.rawmaterial.RmInspectionDetails;
 import com.sarthi.entity.RmHeatFinalResult;
 import com.sarthi.entity.processmaterial.ProcessInspectionDetails;
 import com.sarthi.entity.processmaterial.ProcessLineFinalResult;
+import com.sarthi.entity.finalmaterial.FinalInspectionDetails;
+import com.sarthi.entity.finalmaterial.FinalInspectionLotDetails;
 import com.sarthi.repository.InspectionCompleteDetailsRepository;
 import com.sarthi.repository.MainPoInformationRepository;
 import com.sarthi.repository.PoHeaderRepository;
@@ -24,6 +27,8 @@ import com.sarthi.repository.processmaterial.ProcessInspectionDetailsRepository;
 import com.sarthi.repository.processmaterial.ProcessLineFinalResultRepository;
 import com.sarthi.repository.processmaterial.ProcessRmIcMappingRepository;
 import com.sarthi.entity.processmaterial.ProcessRmIcMapping;
+import com.sarthi.repository.finalmaterial.FinalInspectionDetailsRepository;
+import com.sarthi.repository.finalmaterial.FinalInspectionLotDetailsRepository;
 import com.sarthi.service.certificate.CertificateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,6 +88,12 @@ public class CertificateServiceImpl implements CertificateService {
 
     @Autowired
     private ProcessRmIcMappingRepository processRmIcMappingRepository;
+
+    @Autowired
+    private FinalInspectionDetailsRepository finalInspectionDetailsRepository;
+
+    @Autowired
+    private FinalInspectionLotDetailsRepository finalInspectionLotDetailsRepository;
 
     @Override
     public RawMaterialCertificateDto generateRawMaterialCertificate(String icNumber) {
@@ -716,6 +727,117 @@ public class CertificateServiceImpl implements CertificateService {
      */
     private String buildProcessSealingPattern() {
         return "IT IS TO CERTIFY THAT 01 (ONE) RITES IE IS ENGAGED PER SHIFT PER LINE FOR PROCESS INSPECTION OF ERCs AT FIRM PREMISES.";
+    }
+
+    /* ==================== FINAL MATERIAL CERTIFICATE METHODS ==================== */
+
+    @Override
+    public FinalCertificateDto generateFinalCertificate(String icNumber) {
+        logger.info("Generating Final Material Certificate for IC Number: {}", icNumber);
+
+        // 1. Fetch Inspection Call
+        InspectionCall inspectionCall = inspectionCallRepository.findByIcNumber(icNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Final inspection call not found: " + icNumber));
+
+        return buildFinalCertificateDto(inspectionCall);
+    }
+
+    @Override
+    public FinalCertificateDto generateFinalCertificateById(Long callId) {
+        logger.info("Generating Final Material Certificate for Call ID: {}", callId);
+
+        // 1. Fetch Inspection Call
+        InspectionCall inspectionCall = inspectionCallRepository.findById(Math.toIntExact(callId))
+                .orElseThrow(() -> new IllegalArgumentException("Inspection call not found with ID: " + callId));
+
+        return buildFinalCertificateDto(inspectionCall);
+    }
+
+    /**
+     * Build the complete final certificate DTO from inspection call data
+     */
+    private FinalCertificateDto buildFinalCertificateDto(InspectionCall inspectionCall) {
+        logger.info("Building final certificate DTO for IC: {}", inspectionCall.getIcNumber());
+
+        // 2. Fetch Final Inspection Details
+        FinalInspectionDetails finalDetails = finalInspectionDetailsRepository.findByIcId(inspectionCall.getId())
+                .orElse(null);
+
+        // 3. Fetch Final Inspection Lot Details
+        List<FinalInspectionLotDetails> lotDetails = new ArrayList<>();
+        if (finalDetails != null) {
+            lotDetails = finalInspectionLotDetailsRepository.findByFinalDetailId(finalDetails.getId());
+        }
+
+        // 4. Fetch PO Header and Items
+        PoHeader poHeader = poHeaderRepository.findByPoNo(inspectionCall.getPoNo()).orElse(null);
+        List<PoItem> poItems = new ArrayList<>();
+        if (poHeader != null) {
+            poItems = poItemRepository.findByPoHeader_Id(poHeader.getId());
+        }
+
+        // 5. Fetch Section A data (Main PO Information)
+        MainPoInformation mainPoInfo = mainPoInformationRepository
+                .findByInspectionCallNo(inspectionCall.getIcNumber())
+                .orElse(null);
+
+        // 6. Build Certificate DTO
+        return FinalCertificateDto.builder()
+                .certificateNo(generateCertificateNumber(inspectionCall))
+                .certificateDate(formatDate(LocalDate.now()))
+                .offeredInstNo(calculateOfferedInstallment(inspectionCall))
+                .passedInstNo(calculatePassedInstallment(inspectionCall))
+                .contractor(buildContractorInfo(poHeader))
+                .placeOfInspection(buildFinalPlaceOfInspection(finalDetails))
+                .contractRef(buildContractRef(poHeader))
+                .billPayingOfficer("") // Display blank for now
+                .consigneeRailway(buildConsigneeRailway(poItems))
+                .purchasingAuthority("") // Display blank for now
+                .itemNo("") // Display blank for now
+                .description(buildDescription(inspectionCall))
+                .totalLots(finalDetails != null ? finalDetails.getTotalLots() : 0)
+                .totalOfferedQty(finalDetails != null ? finalDetails.getTotalOfferedQty() : 0)
+                .totalAcceptedQty(finalDetails != null ? finalDetails.getTotalAcceptedQty() : 0)
+                .totalRejectedQty(finalDetails != null ? finalDetails.getTotalRejectedQty() : 0)
+                .remarks(buildFinalRemarks(finalDetails))
+                .lotDetails(buildFinalLotDetails(lotDetails))
+                .build();
+    }
+
+    /**
+     * Build place of inspection for final certificate
+     */
+    private String buildFinalPlaceOfInspection(FinalInspectionDetails finalDetails) {
+        if (finalDetails == null) return "";
+        String unitName = finalDetails.getUnitName() != null ? finalDetails.getUnitName() : "";
+        String unitAddress = finalDetails.getUnitAddress() != null ? finalDetails.getUnitAddress() : "";
+        return unitName + (unitAddress.isBlank() ? "" : ", " + unitAddress);
+    }
+
+    /**
+     * Build remarks for final certificate
+     */
+    private String buildFinalRemarks(FinalInspectionDetails finalDetails) {
+        if (finalDetails == null) return "";
+        // For now, return a generic remark based on acceptance status
+        return "LOT FOUND ACCEPTABLE AND CLEARED FOR DELIVERY";
+    }
+
+    /**
+     * Build lot details for final certificate
+     */
+    private List<FinalCertificateDto.LotDetailDto> buildFinalLotDetails(List<FinalInspectionLotDetails> lotDetails) {
+        return lotDetails.stream()
+                .map(lot -> FinalCertificateDto.LotDetailDto.builder()
+                        .lotNo(lot.getLotNumber())
+                        .heatNo(lot.getHeatNumber())
+                        .manufacturer(lot.getManufacturer())
+                        .offeredQty(lot.getOfferedQty())
+                        .acceptedQty(lot.getQtyAccepted())
+                        .rejectedQty(lot.getQtyRejected())
+                        .status(lot.getQtyRejected() > 0 ? "PARTIAL" : "ACCEPTED")
+                        .build())
+                .collect(Collectors.toList());
     }
 }
 

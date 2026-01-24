@@ -2,9 +2,11 @@ package com.sarthi.dto;
 
 import lombok.Data;
 import java.math.BigDecimal;
+import java.util.Map;
 
 /**
  * DTO for visual inspection defects per heat.
+ * Stores all defect selections and lengths in a single record per heat.
  */
 @Data
 public class RmVisualInspectionDto {
@@ -12,8 +14,11 @@ public class RmVisualInspectionDto {
     private String inspectionCallNo;
     private String heatNo;
     private Integer heatIndex;
-    private String defectName;
-    private Boolean isSelected;
-    private BigDecimal defectLengthMm;
+
+    // Defect selections as a map: defectName -> isSelected
+    private Map<String, Boolean> defects;
+
+    // Defect lengths as a map: defectName -> length
+    private Map<String, BigDecimal> defectLengths;
 }
 

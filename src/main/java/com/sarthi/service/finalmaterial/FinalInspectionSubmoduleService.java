@@ -2,7 +2,8 @@ package com.sarthi.service.finalmaterial;
 
 import com.sarthi.entity.finalmaterial.*;
 import com.sarthi.dto.finalmaterial.FinalLadleValuesDto;
-import com.sarthi.dto.finalmaterial.FinalInclusionRatingBatchDTO;
+import com.sarthi.dto.finalmaterial.FinalChemicalAnalysisRequest;
+import com.sarthi.dto.finalmaterial.FinalChemicalAnalysisResponse;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,38 +21,24 @@ public interface FinalInspectionSubmoduleService {
     FinalCalibrationDocuments updateCalibrationDocuments(FinalCalibrationDocuments data, String userId);
     void deleteCalibrationDocuments(Long id);
 
-    // ===== VISUAL & DIMENSIONAL =====
-    FinalVisualDimensional saveVisualDimensional(FinalVisualDimensional data, String userId);
-    List<FinalVisualDimensional> getVisualDimensionalByCallNo(String inspectionCallNo);
-    List<FinalVisualDimensional> getVisualDimensionalByLot(String inspectionCallNo, String lotNo);
-    Optional<FinalVisualDimensional> getVisualDimensionalById(Long id);
-    FinalVisualDimensional updateVisualDimensional(FinalVisualDimensional data, String userId);
-    void deleteVisualDimensional(Long id);
+    // ===== VISUAL INSPECTION =====
+    // Note: Visual inspection is now handled by FinalVisualInspectionService
+    // Use FinalVisualInspectionService for visual inspection operations
+
+    // ===== DIMENSIONAL INSPECTION =====
+    // Note: Dimensional inspection is now handled by FinalDimensionalInspectionService
+    // Use FinalDimensionalInspectionService for dimensional inspection operations
 
     // ===== CHEMICAL ANALYSIS =====
-    FinalChemicalAnalysis saveChemicalAnalysis(FinalChemicalAnalysis data, String userId);
+    FinalChemicalAnalysisResponse saveChemicalAnalysis(FinalChemicalAnalysisRequest request, String userId);
     List<FinalChemicalAnalysis> getChemicalAnalysisByCallNo(String inspectionCallNo);
     List<FinalChemicalAnalysis> getChemicalAnalysisByLot(String inspectionCallNo, String lotNo);
     Optional<FinalChemicalAnalysis> getChemicalAnalysisById(Long id);
     FinalChemicalAnalysis updateChemicalAnalysis(FinalChemicalAnalysis data, String userId);
     void deleteChemicalAnalysis(Long id);
 
-    // ===== HARDNESS TEST =====
-    FinalHardnessTest saveHardnessTest(FinalHardnessTest data, String userId);
-    List<FinalHardnessTest> getHardnessTestByCallNo(String inspectionCallNo);
-    List<FinalHardnessTest> getHardnessTestByLot(String inspectionCallNo, String lotNo);
-    Optional<FinalHardnessTest> getHardnessTestById(Long id);
-    FinalHardnessTest updateHardnessTest(FinalHardnessTest data, String userId);
-    void deleteHardnessTest(Long id);
-
-    // ===== INCLUSION & DECARB =====
-    FinalInclusionRating saveInclusionRating(FinalInclusionRating data, String userId);
-    List<FinalInclusionRating> saveInclusionRatingBatch(FinalInclusionRatingBatchDTO batchData, String userId);
-    List<FinalInclusionRating> getInclusionRatingByCallNo(String inspectionCallNo);
-    List<FinalInclusionRating> getInclusionRatingByLot(String inspectionCallNo, String lotNo);
-    Optional<FinalInclusionRating> getInclusionRatingById(Long id);
-    FinalInclusionRating updateInclusionRating(FinalInclusionRating data, String userId);
-    void deleteInclusionRating(Long id);
+    // ===== INCLUSION RATING - DEPRECATED (Use FinalInclusionRatingNewService instead) =====
+    // Old flat structure methods removed - migrate to new parent-child structure
 
     // ===== DEFLECTION TEST =====
     FinalApplicationDeflection saveApplicationDeflection(FinalApplicationDeflection data, String userId);

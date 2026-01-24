@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 @Table(name = "rm_packing_storage", indexes = {
         @Index(name = "idx_rm_pack_call_no", columnList = "inspection_call_no"),
         @Index(name = "idx_rm_pack_heat_no", columnList = "heat_no")
+}, uniqueConstraints = {
+        @UniqueConstraint(name = "uk_rm_pack_call_heat", columnNames = {"inspection_call_no", "heat_no"})
 })
 @Data
 public class RmPackingStorage {
@@ -48,8 +50,29 @@ public class RmPackingStorage {
     @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;
 
+    // Audit Fields
+    @Column(name = "created_by", length = 100)
+    private String createdBy;
+
     @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_by", length = 100)
+    private String updatedBy;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }
 
 
