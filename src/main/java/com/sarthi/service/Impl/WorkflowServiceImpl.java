@@ -801,6 +801,38 @@ public class WorkflowServiceImpl implements WorkflowService {
                     qty.setCompleted(false);
 
                     processIeQtyRepository.save(qty);
+
+
+                    if ("PROCESS".equalsIgnoreCase(ic.getTypeOfCall())) {
+
+//                        int totalOfferedQty =
+//                                processInspectionDetailsRepository
+//                                        .findOfferedQtyByIcId(ic.getId());
+
+                        int inspectedQty =
+                                processIeQtyRepository
+                                        .sumInspectedQtyByRequestId(req.getRequestId());
+
+                        if (inspectedQty < totalOfferedQty) {
+
+                            WorkflowTransition pause = createNextTransition(
+                                    current,
+                                    resolveConditionalTransition(current, req),
+                                    "PAUSE_INSPECTION_RESUME_NEXT_DAY",
+                                    "Partial inspection done. Remaining qty pending.",
+                                    req
+                            );
+
+                            pause.setStatus("PAUSE_INSPECTION_RESUME_NEXT_DAY");
+                            pause.setAction("PAUSE_INSPECTION_RESUME_NEXT_DAY");
+                            pause.setJobStatus("PAUSED");
+                            pause.setAssignedToUser(current.getProcessIeUserId());
+
+                            workflowTransitionRepository.save(pause);
+                            return mapWorkflowTransition(pause);
+                        }
+                    }
+
                 }
             }
 
@@ -1055,7 +1087,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
                 if (ic != null && "PROCESS".equalsIgnoreCase(ic.getTypeOfCall())) {
 
-                    Long icId = ic.getId();
+                  /*  Long icId = ic.getId();
 
 //                    Optional<ProcessInspectionDetails> list = processInspectionDetailsRepository.findByIcIdCals(icId);
 
@@ -1092,9 +1124,9 @@ public class WorkflowServiceImpl implements WorkflowService {
                         nextSwift.setAssignedToUser(current.getProcessIeUserId());
 
                         workflowTransitionRepository.save(nextSwift);*/
-                        return mapWorkflowTransition(next);
-                    }
-                    if (inspectedQty == totalOfferedQty) {
+                       // return mapWorkflowTransition(next);
+                  //  }
+                   // if (inspectedQty == totalOfferedQty) {
 
                         next.setStatus("INSPECTION_COMPLETE_CONFIRM");
                         next.setAction("INSPECTION_COMPLETE_CONFIRM");
@@ -1102,7 +1134,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
                         workflowTransitionRepository.save(next);
                         return mapWorkflowTransition(next);
-                    }
+                    //}
                 }
 
                 UserMaster user = userMasterRepository

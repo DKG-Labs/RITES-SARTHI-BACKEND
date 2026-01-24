@@ -8,5 +8,6 @@ import lombok.Data;
 public class UnitDetailsDTO {
     private String address;
     private String poiCode;
+    private String pinCode;
 }
 

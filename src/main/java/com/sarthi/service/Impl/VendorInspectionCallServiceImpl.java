@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -51,9 +52,13 @@ public class VendorInspectionCallServiceImpl implements VendorInspectionCallServ
     public List<VendorInspectionCallStatusDto> getVendorInspectionCallsWithStatus(String vendorId) {
         logger.info("Fetching inspection calls with workflow status for vendor: {}", vendorId);
 
+       Long t1 =System.currentTimeMillis();
+        System.out.println(t1);
         // Fetch all inspection calls for the vendor
         List<InspectionCall> inspectionCalls = inspectionCallRepository.findByVendorIdOrderByCreatedAtDesc(vendorId);
-        
+        Long t2 =System.currentTimeMillis();
+
+        System.out.println( t1-t2);
         logger.info("Found {} inspection calls for vendor: {}", inspectionCalls.size(), vendorId);
 
         // Map each inspection call to DTO with workflow status

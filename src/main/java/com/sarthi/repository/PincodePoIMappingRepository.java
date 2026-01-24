@@ -33,7 +33,7 @@ public interface PincodePoIMappingRepository extends JpaRepository<PincodePoIMap
     @Query("""
     SELECT DISTINCT p.companyName
     FROM PincodePoIMapping p
-    WHERE p.poiCode IN ('POI1', 'POI31')
+    WHERE p.poiCode IN ('POI1', 'POI31','POI32','POI33')
 """)
     List<String> findDistinctCompanyNames();
 
@@ -49,7 +49,8 @@ public interface PincodePoIMappingRepository extends JpaRepository<PincodePoIMap
     @Query("""
         SELECT new com.sarthi.dto.UnitDetailsDTO(
             p.address,
-            p.poiCode
+            p.poiCode,
+            p.pinCode
         )
         FROM PincodePoIMapping p
         WHERE p.companyName = :companyName
