@@ -30,4 +30,16 @@ public interface InspectionCompleteDetailsRepository extends JpaRepository<Inspe
             "ORDER BY icd.CERTIFICATE_NO DESC",
             nativeQuery = true)
     List<String> findProcessIcCertificateNumbersByVendor(@Param("vendorId") String vendorId);
+
+    /**
+     * Find all certificate numbers for RM ICs (ER prefix) filtered by PO number
+     * Used for Process Inspection Call dropdown to show only RM ICs for the specific PO
+     */
+    @Query(value = "SELECT DISTINCT icd.CERTIFICATE_NO " +
+            "FROM inspection_complete_details icd " +
+            "WHERE icd.CALL_NO LIKE 'ER-%' " +
+            "AND icd.PO_NO = :poNo " +
+            "ORDER BY icd.CERTIFICATE_NO DESC",
+            nativeQuery = true)
+    List<String> findCompletedRmIcCertificateNumbersByPoNo(@Param("poNo") String poNo);
 }
