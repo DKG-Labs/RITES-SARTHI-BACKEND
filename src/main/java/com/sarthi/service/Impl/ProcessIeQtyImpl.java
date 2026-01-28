@@ -50,6 +50,7 @@ public class ProcessIeQtyImpl implements ProcessIeQtyService {
 //                view.getTotalManufactureQty()
 //        );
 //    }
+    /*
 @Override
 public InspectionQtySummaryResponse getQtySummary(String requestId) {
 
@@ -76,12 +77,16 @@ public InspectionQtySummaryResponse getQtySummary(String requestId) {
                 processInspectionDetailsRepository
                         .sumOfferedQtyByIcId(ic.getId());
 
-        InspectionQtySummaryView view =
-                processIeQtyRepository.getQtySummaryByRequestId(requestId);
+       // InspectionQtySummaryView view =
+      //          processIeQtyRepository.getQtySummaryByRequestId(requestId);
 
-        if (view == null) {
-            return new InspectionQtySummaryResponse(0, 0, 0, 0);
-        }
+        List<InspectionQtySummaryView> list =
+                processIeQtyRepository.getLotWiseQtySummary(requestId);
+
+
+//        if (view == null) {
+//            return new InspectionQtySummaryResponse(0, 0, 0, 0);
+//        }
 
         return new InspectionQtySummaryResponse(
                 view.getAcceptedQty(),
@@ -117,7 +122,57 @@ public InspectionQtySummaryResponse getQtySummary(String requestId) {
             0   ,                // manufactureQty,
             0
     );
+}*/
+@Override
+public List<InspectionQtySummaryResponse> getQtySummary(String requestId) {
+
+    InspectionCall ic =
+            inspectionCallRepository
+                    .findByIcNumber(requestId)
+                    .orElseThrow(() -> new BusinessException(
+                            new ErrorDetails(
+                                    AppConstant.ERROR_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                    "Invalid Inspection Call: " + requestId
+                            )
+                    ));
+
+    Integer offeredQty =
+            processInspectionDetailsRepository
+                    .sumOfferedQtyByIcId(ic.getId());
+
+    boolean hasProcessQty =
+            processIeQtyRepository.existsByRequestId(requestId);
+
+    // 🔹 CASE 2: No process qty → return offeredQty only
+    if (!hasProcessQty) {
+        return List.of(
+                new InspectionQtySummaryResponse(
+                        null,           // lotNumber
+                        offeredQty,     // offeredQty
+                        null,           // acceptedQty
+                        null,           // manufacturedQty
+                        null            // rejectedQty
+                )
+        );
+    }
+
+    //  Process qty exists → lot-wise list
+    List<InspectionQtySummaryView> list =
+            processIeQtyRepository.getLotWiseQtySummary(requestId);
+
+    return list.stream()
+            .map(v -> new InspectionQtySummaryResponse(
+                    v.getLotNumber(),
+                    offeredQty,                 // SAME for all lots
+                    v.getAcceptedQty(),
+                    v.getManufacturedQty(),
+                    v.getRejectedQty()
+            ))
+            .toList();
 }
+
 
     @Override
     public String getpoNumberByCallNo(String requestId) {

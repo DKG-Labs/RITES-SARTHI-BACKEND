@@ -46,7 +46,7 @@ public interface ProcessIeQtyRepository
                 @Param("lotNumber") String lotNumber
         );
 
-    @Query("""
+  /*  @Query("""
     SELECT 
         COALESCE(SUM(p.inspectedQty), 0) AS acceptedQty,
         COALESCE(SUM(p.offeredQty), 0) AS totalOfferedQty,
@@ -57,7 +57,22 @@ public interface ProcessIeQtyRepository
 """)
     InspectionQtySummaryView getQtySummaryByRequestId(
             @Param("requestId") String requestId
-    );
+    );*/
+  @Query("""
+    SELECT 
+        p.lotNumber AS lotNumber,
+        COALESCE(SUM(p.inspectedQty), 0)   AS acceptedQty,
+        COALESCE(SUM(p.manufactureQty), 0) AS manufacturedQty,
+        COALESCE(SUM(p.rejectedQty), 0)    AS rejectedQty
+    FROM ProcessIeQty p
+    WHERE p.requestId = :requestId
+    GROUP BY p.lotNumber
+""")
+  List<InspectionQtySummaryView> getLotWiseQtySummary(
+          @Param("requestId") String requestId
+  );
+
+
 
     boolean existsByRequestId(String requestId);
 

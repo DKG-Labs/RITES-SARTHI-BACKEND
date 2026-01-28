@@ -7,11 +7,23 @@ import lombok.Data;
 @AllArgsConstructor
 public class InspectionQtySummaryResponse {
 
-    private int acceptedQty;
-    private int totalOfferedQty;
-    private int totalManufactureQty;
+//    private int acceptedQty;
+//    private int totalOfferedQty;
+//    private int totalManufactureQty;
+//
+//    private int totalRejectedQty;
 
-    private int totalRejectedQty;
+
+    private String lotNumber;
+
+    private Integer offeredQty;        // same for all lots
+
+    private Integer acceptedQty;       // lot-wise (nullable)
+
+    private Integer manufacturedQty;   // lot-wise (nullable)
+
+    private Integer rejectedQty;
+
 
 }
 

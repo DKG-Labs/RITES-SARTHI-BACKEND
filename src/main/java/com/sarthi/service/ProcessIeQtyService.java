@@ -4,10 +4,12 @@ import com.sarthi.dto.InspectionQtySummaryResponse;
 import com.sarthi.dto.TotalManufaturedQtyOfPoDto;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public interface ProcessIeQtyService {
 
-    public InspectionQtySummaryResponse getQtySummary(String requestId);
+    public List<InspectionQtySummaryResponse> getQtySummary(String requestId);
 
 
     public String getpoNumberByCallNo(String requestedId);
