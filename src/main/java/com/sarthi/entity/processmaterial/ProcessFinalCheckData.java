@@ -76,6 +76,28 @@ public class ProcessFinalCheckData {
     @Column(name = "rejected_no_3")
     private Integer rejectedNo3;
 
+    // Separate rejection fields for each measurement
+    @Column(name = "box_gauge_rejected")
+    private Integer boxGaugeRejected;
+
+    @Column(name = "flat_bearing_area_rejected")
+    private Integer flatBearingAreaRejected;
+
+    @Column(name = "falling_gauge_rejected")
+    private Integer fallingGaugeRejected;
+
+    @Column(name = "surface_defect_rejected")
+    private Integer surfaceDefectRejected;
+
+    @Column(name = "embossing_defect_rejected")
+    private Integer embossingDefectRejected;
+
+    @Column(name = "marking_rejected")
+    private Integer markingRejected;
+
+    @Column(name = "tempering_hardness_rejected")
+    private Integer temperingHardnessRejected;
+
     @Column(name = "remarks", length = 500)
     private String remarks;
 

@@ -41,6 +41,9 @@ public class ProcessLineDataDto {
     // Final Check Data (8-Hour Grid)
     private List<ProcessFinalCheckDataDTO> finalCheckData;
 
+    // Testing & Finishing Data (8-Hour Grid)
+    private List<ProcessTestingFinishingDataDTO> testingFinishingData;
+
     // Oil Tank Counter (if applicable)
     private ProcessOilTankCounterDTO oilTankCounter;
 

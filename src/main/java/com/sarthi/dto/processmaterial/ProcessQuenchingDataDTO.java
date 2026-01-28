@@ -21,6 +21,15 @@ public class ProcessQuenchingDataDTO {
     private BigDecimal quenchingHardness1;
     private BigDecimal quenchingHardness2;
     private Integer rejectedQty;
+
+    // Separate rejection fields for each measurement
+    private Integer quenchingTemperatureRejected;
+    private Integer quenchingDurationRejected;
+    private Integer quenchingHardnessRejected;
+    private Integer boxGaugeRejected;
+    private Integer flatBearingAreaRejected;
+    private Integer fallingGaugeRejected;
+
     private String remarks;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
