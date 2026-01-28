@@ -119,10 +119,17 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
     /* ==================== Process IC Support Operations ==================== */
 
     @Override
-    public List<String> getCompletedRmIcNumbers() {
-        logger.info("Fetching completed RM IC certificate numbers");
+    public List<String> getCompletedRmIcNumbers(String poNo) {
+        logger.info("Fetching completed RM IC certificate numbers for PO: {}", poNo);
 
-        // Get all completed details
+        // If PO number is provided, use the optimized query with PO filter
+        if (poNo != null && !poNo.trim().isEmpty()) {
+            logger.info("Using PO-filtered query for PO: {}", poNo);
+            return inspectionCompleteDetailsRepository.findCompletedRmIcCertificateNumbersByPoNo(poNo);
+        }
+
+        // Otherwise, fall back to the original logic (fetch all ER ICs)
+        logger.info("No PO filter provided, fetching all ER ICs");
         List<InspectionCompleteDetails> completedDetails = inspectionCompleteDetailsRepository.findAll();
 
         // Filter by ER prefix (Raw Material inspections) and return certificate numbers
