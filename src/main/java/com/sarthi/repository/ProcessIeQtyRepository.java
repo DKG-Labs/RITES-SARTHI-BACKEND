@@ -50,7 +50,8 @@ public interface ProcessIeQtyRepository
     SELECT 
         COALESCE(SUM(p.inspectedQty), 0) AS acceptedQty,
         COALESCE(SUM(p.offeredQty), 0) AS totalOfferedQty,
-        COALESCE(SUM(p.manufactureQty), 0) AS totalManufactureQty
+        COALESCE(SUM(p.manufactureQty), 0) AS totalManufactureQty,
+          COALESCE(SUM(p.rejectedQty), 0) AS totalRejectedQty
     FROM ProcessIeQty p
     WHERE p.requestId = :requestId
 """)

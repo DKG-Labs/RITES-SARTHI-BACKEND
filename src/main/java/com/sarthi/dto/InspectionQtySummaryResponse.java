@@ -10,5 +10,8 @@ public class InspectionQtySummaryResponse {
     private int acceptedQty;
     private int totalOfferedQty;
     private int totalManufactureQty;
+
+    private int totalRejectedQty;
+
 }
 

@@ -5,4 +5,5 @@ public interface InspectionQtySummaryView {
     Integer getAcceptedQty();
     Integer getTotalOfferedQty();
     Integer getTotalManufactureQty();
+    Integer getTotalRejectedQty();
 }

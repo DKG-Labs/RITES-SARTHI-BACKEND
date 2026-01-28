@@ -12,6 +12,7 @@ public class TotalManufaturedQtyOfPoDto {
     private BigDecimal rmAcceptedQty;
     private BigDecimal acceptedQty;
     private String heatNo;
+    private BigDecimal weightAcceptedMt;
 
     public TotalManufaturedQtyOfPoDto(
             BigDecimal manufaturedQty,
@@ -19,6 +20,7 @@ public class TotalManufaturedQtyOfPoDto {
             BigDecimal rmAcceptedQty,
             BigDecimal acceptedQty,
             String heatNo
+           // BigDecimal weightAcceptedMt
     ) {
         this.manufaturedQty = manufaturedQty;
         this.rejectedQty = rejectedQty;

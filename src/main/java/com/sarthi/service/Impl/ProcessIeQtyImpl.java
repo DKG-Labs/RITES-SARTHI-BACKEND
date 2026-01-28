@@ -80,13 +80,14 @@ public InspectionQtySummaryResponse getQtySummary(String requestId) {
                 processIeQtyRepository.getQtySummaryByRequestId(requestId);
 
         if (view == null) {
-            return new InspectionQtySummaryResponse(0, 0, 0);
+            return new InspectionQtySummaryResponse(0, 0, 0, 0);
         }
 
         return new InspectionQtySummaryResponse(
                 view.getAcceptedQty(),
                 totalOfferedQty,
-                view.getTotalManufactureQty()
+                view.getTotalManufactureQty(),
+                view.getTotalRejectedQty()
         );
     }
 
@@ -113,7 +114,8 @@ public InspectionQtySummaryResponse getQtySummary(String requestId) {
     return new InspectionQtySummaryResponse(
             0,                  // acceptedQty
             totalOfferedQty,    // offeredQty from lots
-            0                   // manufactureQty
+            0   ,                // manufactureQty,
+            0
     );
 }
 
@@ -152,8 +154,12 @@ public InspectionQtySummaryResponse getQtySummary(String requestId) {
         BigDecimal rmAcceptedQty =
                 rmHeatFinalResultRepository.sumRmAcceptedQty(callNos, heatNo);
 
+        BigDecimal weightAcceptedMt =
+                rmHeatFinalResultRepository.sumWeightAcceptedMt(callNos, heatNo);
+
         dto.setRmAcceptedQty(rmAcceptedQty);
         dto.setHeatNo(heatNo);
+        dto.setWeightAcceptedMt(weightAcceptedMt);
 
         return dto;
     }

@@ -32,5 +32,17 @@ public interface RmHeatFinalResultRepository extends JpaRepository<RmHeatFinalRe
             @Param("heatNo") String heatNo
     );
 
+    @Query("""
+    SELECT COALESCE(SUM(r.weightAcceptedMt), 0)
+    FROM RmHeatFinalResult r
+    WHERE r.inspectionCallNo IN :callNos
+    AND r.heatNo = :heatNo
+""")
+    BigDecimal sumWeightAcceptedMt(
+            @Param("callNos") List<String> callNos,
+            @Param("heatNo") String heatNo
+    );
+
+
 }
 
