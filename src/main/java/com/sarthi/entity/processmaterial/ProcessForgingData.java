@@ -62,6 +62,22 @@ public class ProcessForgingData {
     @Column(name = "rejected_qty")
     private Integer rejectedQty;
 
+    // Separate rejection fields for each measurement
+    @Column(name = "forging_temperature_rejected")
+    private Integer forgingTemperatureRejected;
+
+    @Column(name = "forging_stabilisation_rejected")
+    private Integer forgingStabilisationRejected;
+
+    @Column(name = "improper_forging_rejected")
+    private Integer improperForgingRejected;
+
+    @Column(name = "forging_defect_rejected")
+    private Integer forgingDefectRejected;
+
+    @Column(name = "embossing_defect_rejected")
+    private Integer embossingDefectRejected;
+
     @Column(name = "remarks", length = 500)
     private String remarks;
 

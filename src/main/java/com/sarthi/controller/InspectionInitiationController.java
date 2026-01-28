@@ -38,8 +38,15 @@ public class InspectionInitiationController {
         logger.info("POST /api/inspection-initiation - Creating initiation for call: {}", dto.getCallNo());
         InspectionInitiationDto created = service.createInitiation(dto);
 
-        if(dto.getProductType().equalsIgnoreCase("Process")){   
-        TransitionActionReqDto req = new TransitionActionReqDto();
+        String callNumber = dto.getCallNo();
+        String productType = null;
+
+        if (callNumber.startsWith("EP")) {
+            productType = "Process";
+        }
+
+
+        if(productType.equalsIgnoreCase("Process")){        TransitionActionReqDto req = new TransitionActionReqDto();
 
         req.setWorkflowTransitionId(dto.getWorkflowTransitionId());
         req.setRequestId(dto.getCallNo());

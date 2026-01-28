@@ -63,6 +63,25 @@ public class ProcessQuenchingData {
     @Column(name = "rejected_qty")
     private Integer rejectedQty;
 
+    // Separate rejection fields for each measurement
+    @Column(name = "quenching_temperature_rejected")
+    private Integer quenchingTemperatureRejected;
+
+    @Column(name = "quenching_duration_rejected")
+    private Integer quenchingDurationRejected;
+
+    @Column(name = "quenching_hardness_rejected")
+    private Integer quenchingHardnessRejected;
+
+    @Column(name = "box_gauge_rejected")
+    private Integer boxGaugeRejected;
+
+    @Column(name = "flat_bearing_area_rejected")
+    private Integer flatBearingAreaRejected;
+
+    @Column(name = "falling_gauge_rejected")
+    private Integer fallingGaugeRejected;
+
     @Column(name = "remarks", length = 500)
     private String remarks;
 

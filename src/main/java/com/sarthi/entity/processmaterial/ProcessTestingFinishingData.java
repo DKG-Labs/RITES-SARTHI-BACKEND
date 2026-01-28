@@ -6,16 +6,16 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * Entity for Tempering Section data in 8-Hour Grid.
- * Stores hourly tempering temperature, duration and quantity data.
+ * Entity for Testing & Finishing Section data in 8-Hour Grid.
+ * Stores hourly toe load, weight, paint identification and ERC coating test data.
  */
 @Entity
-@Table(name = "process_tempering_data", indexes = {
-    @Index(name = "idx_proc_temper_call_no", columnList = "inspection_call_no"),
-    @Index(name = "idx_proc_temper_po_no", columnList = "po_no")
+@Table(name = "process_testing_finishing_data", indexes = {
+    @Index(name = "idx_proc_test_call_no", columnList = "inspection_call_no"),
+    @Index(name = "idx_proc_test_po_no", columnList = "po_no")
 })
 @Data
-public class ProcessTemperingData {
+public class ProcessTestingFinishingData {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,12 +46,33 @@ public class ProcessTemperingData {
     @Column(name = "lot_no", length = 50)
     private String lotNo;
 
-    // Tempering parameters
-    @Column(name = "tempering_temperature", precision = 10, scale = 2)
-    private BigDecimal temperingTemperature;
+    // Toe Load - 2 readings
+    @Column(name = "toe_load_1", precision = 10, scale = 2)
+    private BigDecimal toeLoad1;
 
-    @Column(name = "tempering_duration", precision = 10, scale = 2)
-    private BigDecimal temperingDuration;
+    @Column(name = "toe_load_2", precision = 10, scale = 2)
+    private BigDecimal toeLoad2;
+
+    // Weight - 2 readings
+    @Column(name = "weight_1", precision = 10, scale = 2)
+    private BigDecimal weight1;
+
+    @Column(name = "weight_2", precision = 10, scale = 2)
+    private BigDecimal weight2;
+
+    // Paint Identification - 2 readings
+    @Column(name = "paint_identification_1", length = 50)
+    private String paintIdentification1;
+
+    @Column(name = "paint_identification_2", length = 50)
+    private String paintIdentification2;
+
+    // ERC Coating - 2 readings
+    @Column(name = "erc_coating_1", length = 50)
+    private String ercCoating1;
+
+    @Column(name = "erc_coating_2", length = 50)
+    private String ercCoating2;
 
     @Column(name = "accepted_qty")
     private Integer acceptedQty;
@@ -60,11 +81,17 @@ public class ProcessTemperingData {
     private Integer rejectedQty;
 
     // Separate rejection fields for each measurement
-    @Column(name = "tempering_temperature_rejected")
-    private Integer temperingTemperatureRejected;
+    @Column(name = "toe_load_rejected")
+    private Integer toeLoadRejected;
 
-    @Column(name = "tempering_duration_rejected")
-    private Integer temperingDurationRejected;
+    @Column(name = "weight_rejected")
+    private Integer weightRejected;
+
+    @Column(name = "paint_identification_rejected")
+    private Integer paintIdentificationRejected;
+
+    @Column(name = "erc_coating_rejected")
+    private Integer ercCoatingRejected;
 
     @Column(name = "remarks", length = 500)
     private String remarks;

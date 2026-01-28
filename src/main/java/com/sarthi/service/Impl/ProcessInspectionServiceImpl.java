@@ -62,6 +62,9 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
     private ProcessFinalCheckDataService finalCheckService;
 
     @Autowired
+    private ProcessTestingFinishingDataService testingFinishingService;
+
+    @Autowired
     private ProcessOilTankCounterService oilTankService;
 
     @Override
@@ -220,7 +223,19 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
                 finalCheckService.saveAll(lineData.getFinalCheckData());
             }
 
-            // 10. Save Oil Tank Counter (no saveAll, use individual save)
+            // 10. Save Testing & Finishing Data
+            if (lineData.getTestingFinishingData() != null && !lineData.getTestingFinishingData().isEmpty()) {
+                lineData.getTestingFinishingData().forEach(d -> {
+                    d.setInspectionCallNo(callNo);
+                    d.setPoNo(poNo);
+                    d.setLineNo(lineNo);
+                    if (d.getId() == null) d.setCreatedBy(userId);
+                    d.setUpdatedBy(userId);
+                });
+                testingFinishingService.saveAll(lineData.getTestingFinishingData());
+            }
+
+            // 11. Save Oil Tank Counter (no saveAll, use individual save)
             if (lineData.getOilTankCounter() != null) {
                 ProcessOilTankCounterDTO d = lineData.getOilTankCounter();
                 d.setInspectionCallNo(callNo);

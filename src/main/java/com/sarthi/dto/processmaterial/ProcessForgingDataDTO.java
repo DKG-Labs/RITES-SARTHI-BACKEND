@@ -21,6 +21,14 @@ public class ProcessForgingDataDTO {
     private BigDecimal forgingTemp3;
     private Integer acceptedQty;
     private Integer rejectedQty;
+
+    // Separate rejection fields for each measurement
+    private Integer forgingTemperatureRejected;
+    private Integer forgingStabilisationRejected;
+    private Integer improperForgingRejected;
+    private Integer forgingDefectRejected;
+    private Integer embossingDefectRejected;
+
     private String remarks;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
