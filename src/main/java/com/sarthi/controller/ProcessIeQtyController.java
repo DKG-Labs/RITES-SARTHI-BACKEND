@@ -26,4 +26,23 @@ public class ProcessIeQtyController {
                 HttpStatus.OK
         );
     }
+
+    @GetMapping("/getPoNumnerByCallId/{requestId}")
+    public ResponseEntity<Object> getPoNumnerByCallId(@PathVariable String requestId) {
+
+        return new ResponseEntity<>(
+                ResponseBuilder.getSuccessResponse(processIeQtyService.getpoNumberByCallNo(requestId)),
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/getManufaturedQtyOfPo/{heatNo}/{poNo}")
+    public ResponseEntity<Object> getTotalManufaturedQty(@PathVariable String heatNo, @PathVariable String poNo) {
+
+        return new ResponseEntity<>(
+                ResponseBuilder.getSuccessResponse(processIeQtyService.getTotalManufaturedQtyPo(heatNo,poNo)),
+                HttpStatus.OK
+        );
+    }
+
 }

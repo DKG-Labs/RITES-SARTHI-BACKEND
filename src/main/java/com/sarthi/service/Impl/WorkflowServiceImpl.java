@@ -796,6 +796,9 @@ public class WorkflowServiceImpl implements WorkflowService {
                     qty.setInspectedQty(newQty);
                     qty.setOfferedQty(lotOfferedQty);
                     qty.setManufactureQty(req.getManufacturedQty());
+                    qty.setHeatNo(req.getHeatNo());
+                    qty.setRejectedQty(req.getRejectedQty());
+
                     //qty.setOfferedQty(req.getOfferedQty());
                     qty.setLotNumber(req.getLotNo());
                     qty.setCompleted(false);

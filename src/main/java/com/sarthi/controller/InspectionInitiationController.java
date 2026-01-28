@@ -39,7 +39,15 @@ public class InspectionInitiationController {
         InspectionInitiationDto created = service.createInitiation(dto);
 
 
-        if(dto.getProductType().equalsIgnoreCase("Process")){
+        String callNumber = dto.getCallNo();
+        String productType = null;
+
+        if (callNumber.startsWith("EP")) {
+            productType = "Process";
+        }
+
+
+        if(productType.equalsIgnoreCase("Process")){
         TransitionActionReqDto req = new TransitionActionReqDto();
 
 

@@ -3,6 +3,7 @@ package com.sarthi.service.Impl;
 import com.sarthi.constant.AppConstant;
 import com.sarthi.dto.InspectionQtySummaryResponse;
 import com.sarthi.dto.InspectionQtySummaryView;
+import com.sarthi.dto.TotalManufaturedQtyOfPoDto;
 import com.sarthi.entity.ProcessIeQty;
 import com.sarthi.entity.processmaterial.ProcessInspectionDetails;
 import com.sarthi.entity.rawmaterial.InspectionCall;
@@ -15,6 +16,10 @@ import com.sarthi.service.ProcessIeQtyService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ProcessIeQtyImpl implements ProcessIeQtyService {
@@ -109,6 +114,36 @@ public InspectionQtySummaryResponse getQtySummary(String requestId) {
     );
 }
 
+    @Override
+    public String getpoNumberByCallNo(String requestId) {
+
+
+        InspectionCall ic =
+                inspectionCallRepository
+                        .findByIcNumber(requestId)
+                        .orElseThrow(() -> new BusinessException(
+                                new ErrorDetails(
+                                        AppConstant.ERROR_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                        AppConstant.ERROR_TYPE_VALIDATION,
+                                        "Invalid Inspection Call: " + requestId
+                                )
+                        ));
+        return ic.getPoNo();
+    }
+
+    @Override
+    public TotalManufaturedQtyOfPoDto getTotalManufaturedQtyPo(String heatNo, String poNo) {
+
+       List<String> callNos= inspectionCallRepository.findCallNumbersByPoNo(poNo);
+        BigDecimal totalQty =
+                processIeQtyRepository.sumManufacturedQtyByCallNos(callNos, heatNo);
+
+        TotalManufaturedQtyOfPoDto dto = new TotalManufaturedQtyOfPoDto();
+        dto.setManufaturedQty(totalQty);
+
+        return dto;
+    }
 
 
 

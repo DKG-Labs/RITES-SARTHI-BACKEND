@@ -3,6 +3,7 @@ package com.sarthi.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
@@ -37,6 +38,9 @@ public class ProcessIeQty {
     private String lotNumber;
     private int offeredQty;
     private int manufactureQty;
+
+    private String heatNo;
+    private BigDecimal rejectedQty;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "CREATED_DATE")

@@ -2,6 +2,8 @@ package com.sarthi.dto.WorkflowDtos;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class TransitionActionReqDto {
 
@@ -43,6 +45,10 @@ public class TransitionActionReqDto {
     private int offeredQty;
 
     private int manufacturedQty;
+
+    private String heatNo;
+    private BigDecimal rejectedQty;
+
 
 }
 
