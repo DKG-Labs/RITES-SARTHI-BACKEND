@@ -226,5 +226,55 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
         logger.info("Found {} lot numbers", lotNumbers.size());
         return lotNumbers;
     }
+
+    // ==================== NEW METHODS FOR REVERSED DROPDOWN FLOW ====================
+
+    @Override
+    public List<String> getRmIcCertificateNumbers(String vendorId) {
+        logger.info("Fetching RM IC certificate numbers for vendor: {}", vendorId);
+        List<String> certificateNumbers = inspectionCompleteDetailsRepository.findRmIcNumbersByVendor(vendorId);
+        logger.info("Found {} RM IC certificate numbers", certificateNumbers.size());
+        return certificateNumbers;
+    }
+
+    @Override
+    public List<String> getProcessIcCertificateNumbersByRmCertificate(String rmCertificateNo) {
+        logger.info("Fetching Process IC certificate numbers for RM certificate: {}", rmCertificateNo);
+        List<String> certificateNumbers = inspectionCompleteDetailsRepository.findProcessIcNumbersByRmIcNumber(rmCertificateNo);
+        logger.info("Found {} Process IC certificate numbers", certificateNumbers.size());
+        return certificateNumbers;
+    }
+
+    @Override
+    public List<String> getLotNumbersByRmAndProcessCertificates(String rmCertificateNo, String processCertificateNo) {
+        logger.info("Fetching lot numbers for RM certificate: {} and Process certificate: {}", rmCertificateNo, processCertificateNo);
+        List<String> lotNumbers = processInspectionDetailsRepository.findLotNumbersByRmAndProcessIcNumbers(rmCertificateNo, processCertificateNo);
+        logger.info("Found {} lot numbers", lotNumbers.size());
+        return lotNumbers;
+    }
+
+    @Override
+    public List<String> getHeatNumbersByLotNumber(String lotNumber, String rmCertificateNo) {
+        logger.info("Fetching heat numbers for lot number: {} and RM certificate: {}", lotNumber, rmCertificateNo);
+        List<String> heatNumbers = processInspectionDetailsRepository.findHeatNumbersByLotNumber(lotNumber, rmCertificateNo);
+        logger.info("Found {} heat numbers", heatNumbers.size());
+        return heatNumbers;
+    }
+
+    @Override
+    public List<String> getProcessIcCertificateNumbersByMultipleRmCertificates(List<String> rmCertificateNos) {
+        logger.info("Fetching Process IC certificate numbers for multiple RM certificates: {}", rmCertificateNos);
+        List<String> certificateNumbers = inspectionCompleteDetailsRepository.findProcessIcNumbersByMultipleRmIcNumbers(rmCertificateNos);
+        logger.info("Found {} Process IC certificate numbers", certificateNumbers.size());
+        return certificateNumbers;
+    }
+
+    @Override
+    public List<String> getLotNumbersByMultipleRmAndProcessCertificates(List<String> rmCertificateNos, List<String> processCertificateNos) {
+        logger.info("Fetching lot numbers for multiple RM certificates: {} and Process certificates: {}", rmCertificateNos, processCertificateNos);
+        List<String> lotNumbers = processInspectionDetailsRepository.findLotNumbersByMultipleRmAndProcessIcNumbers(rmCertificateNos, processCertificateNos);
+        logger.info("Found {} lot numbers", lotNumbers.size());
+        return lotNumbers;
+    }
 }
 

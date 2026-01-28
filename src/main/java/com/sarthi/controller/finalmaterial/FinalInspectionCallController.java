@@ -293,6 +293,96 @@ public class FinalInspectionCallController {
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(lotNumbers), HttpStatus.OK);
     }
 
+    // ==================== NEW ENDPOINTS FOR REVERSED DROPDOWN FLOW ====================
+
+    /**
+     * Get RM IC certificate numbers for Final Inspection Call dropdown
+     * Returns CERTIFICATE_NO (e.g., "N/ER-01120005/RAJK") for display
+     * GET /api/final-material/rm-ic-certificates?vendorId=xxx
+     */
+    @GetMapping("/rm-ic-certificates")
+    @Operation(summary = "Get RM IC certificate numbers", description = "Get RM IC certificate numbers from completed inspections, filtered by vendor")
+    public ResponseEntity<Object> getRmIcCertificates(@RequestParam String vendorId) {
+        logger.info("Fetching RM IC certificate numbers for vendor: {}", vendorId);
+        List<String> certificateNumbers = finalInspectionCallService.getRmIcCertificateNumbers(vendorId);
+        logger.info("Found {} RM IC certificate numbers", certificateNumbers.size());
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(certificateNumbers), HttpStatus.OK);
+    }
+
+    /**
+     * Get Process IC certificate numbers by RM IC certificate
+     * Returns CERTIFICATE_NO (e.g., "N/EP-01170002/RAJK") for Process ICs that used the specified RM IC
+     * GET /api/final-material/process-ic-by-rm?rmCertificateNo=xxx
+     */
+    @GetMapping("/process-ic-by-rm")
+    @Operation(summary = "Get Process IC certificates by RM IC", description = "Get Process IC certificate numbers that used the given RM IC certificate")
+    public ResponseEntity<Object> getProcessIcByRmCertificate(@RequestParam String rmCertificateNo) {
+        logger.info("Fetching Process IC certificate numbers for RM certificate: {}", rmCertificateNo);
+        List<String> certificateNumbers = finalInspectionCallService.getProcessIcCertificateNumbersByRmCertificate(rmCertificateNo);
+        logger.info("Found {} Process IC certificate numbers", certificateNumbers.size());
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(certificateNumbers), HttpStatus.OK);
+    }
+
+    /**
+     * Get Lot numbers by RM IC and Process IC certificate numbers
+     * Converts certificates to IC numbers internally, then finds lots
+     * GET /api/final-material/lot-numbers-by-certificates?rmCertificateNo=xxx&processCertificateNo=yyy
+     */
+    @GetMapping("/lot-numbers-by-certificates")
+    @Operation(summary = "Get Lot numbers by RM and Process IC certificates", description = "Get lot numbers for given RM IC and Process IC certificate numbers")
+    public ResponseEntity<Object> getLotNumbersByCertificates(
+            @RequestParam String rmCertificateNo,
+            @RequestParam String processCertificateNo) {
+        logger.info("Fetching lot numbers for RM certificate: {} and Process certificate: {}", rmCertificateNo, processCertificateNo);
+        List<String> lotNumbers = finalInspectionCallService.getLotNumbersByRmAndProcessCertificates(rmCertificateNo, processCertificateNo);
+        logger.info("Found {} lot numbers", lotNumbers.size());
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(lotNumbers), HttpStatus.OK);
+    }
+
+    /**
+     * Get Heat numbers by lot number and RM IC certificate (NEW FLOW)
+     * GET /api/final-material/heat-numbers-by-lot?lotNumber=xxx&rmCertificateNo=yyy
+     */
+    @GetMapping("/heat-numbers-by-lot")
+    @Operation(summary = "Get Heat numbers by Lot and RM IC", description = "Get heat numbers for a given lot number and RM IC certificate")
+    public ResponseEntity<Object> getHeatNumbersByLot(
+            @RequestParam String lotNumber,
+            @RequestParam String rmCertificateNo) {
+        logger.info("Fetching heat numbers for lot: {} and RM certificate: {}", lotNumber, rmCertificateNo);
+        List<String> heatNumbers = finalInspectionCallService.getHeatNumbersByLotNumber(lotNumber, rmCertificateNo);
+        logger.info("Found {} heat numbers", heatNumbers.size());
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(heatNumbers), HttpStatus.OK);
+    }
+
+    /**
+     * Get Process IC certificate numbers for multiple RM IC certificates
+     * GET /api/final-material/process-ic-by-multiple-rm?rmCertificateNos=xxx,yyy,zzz
+     */
+    @GetMapping("/process-ic-by-multiple-rm")
+    @Operation(summary = "Get Process IC certificates by multiple RM ICs", description = "Get Process IC certificate numbers for multiple RM IC certificates")
+    public ResponseEntity<Object> getProcessIcByMultipleRmCertificates(
+            @RequestParam List<String> rmCertificateNos) {
+        logger.info("Fetching Process IC certificate numbers for multiple RM certificates: {}", rmCertificateNos);
+        List<String> certificateNumbers = finalInspectionCallService.getProcessIcCertificateNumbersByMultipleRmCertificates(rmCertificateNos);
+        logger.info("Found {} Process IC certificate numbers", certificateNumbers.size());
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(certificateNumbers), HttpStatus.OK);
+    }
+
+    /**
+     * Get Lot numbers for multiple RM IC and Process IC certificates
+     * GET /api/final-material/lot-numbers-by-multiple-certificates?rmCertificateNos=xxx,yyy&processCertificateNos=aaa,bbb
+     */
+    @GetMapping("/lot-numbers-by-multiple-certificates")
+    @Operation(summary = "Get Lot numbers by multiple RM and Process IC certificates", description = "Get lot numbers for multiple RM IC and Process IC certificate combinations")
+    public ResponseEntity<Object> getLotNumbersByMultipleCertificates(
+            @RequestParam List<String> rmCertificateNos,
+            @RequestParam List<String> processCertificateNos) {
+        logger.info("Fetching lot numbers for multiple RM certificates: {} and Process certificates: {}", rmCertificateNos, processCertificateNos);
+        List<String> lotNumbers = finalInspectionCallService.getLotNumbersByMultipleRmAndProcessCertificates(rmCertificateNos, processCertificateNos);
+        logger.info("Found {} lot numbers", lotNumbers.size());
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(lotNumbers), HttpStatus.OK);
+    }
+
     /**
      * Inner class for response
      */
