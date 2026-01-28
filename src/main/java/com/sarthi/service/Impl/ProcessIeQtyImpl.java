@@ -165,7 +165,7 @@ public List<InspectionQtySummaryResponse> getQtySummary(String requestId) {
     return list.stream()
             .map(v -> new InspectionQtySummaryResponse(
                     v.getLotNumber(),
-                    offeredQty,                 // SAME for all lots
+                    v.getOfferedQty(),
                     v.getAcceptedQty(),
                     v.getManufacturedQty(),
                     v.getRejectedQty()

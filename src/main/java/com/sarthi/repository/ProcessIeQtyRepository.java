@@ -63,7 +63,8 @@ public interface ProcessIeQtyRepository
         p.lotNumber AS lotNumber,
         COALESCE(SUM(p.inspectedQty), 0)   AS acceptedQty,
         COALESCE(SUM(p.manufactureQty), 0) AS manufacturedQty,
-        COALESCE(SUM(p.rejectedQty), 0)    AS rejectedQty
+        COALESCE(SUM(p.rejectedQty), 0)    AS rejectedQty,
+        COALESCE(SUM(p.offeredQty), 0)    AS offeredQty
     FROM ProcessIeQty p
     WHERE p.requestId = :requestId
     GROUP BY p.lotNumber

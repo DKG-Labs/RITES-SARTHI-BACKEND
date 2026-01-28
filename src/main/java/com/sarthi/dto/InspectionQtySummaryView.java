@@ -22,4 +22,5 @@ public interface InspectionQtySummaryView {
     Integer getManufacturedQty();
 
    Integer getRejectedQty();
+   Integer getOfferedQty();
 }

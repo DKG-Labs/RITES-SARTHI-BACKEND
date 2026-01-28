@@ -816,7 +816,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                                 processIeQtyRepository
                                         .sumInspectedQtyByRequestId(req.getRequestId());
 
-                        if (inspectedQty < totalOfferedQty) {
+                       // if (inspectedQty < totalOfferedQty) {
 
                             WorkflowTransition pause = createNextTransition(
                                     current,
@@ -833,7 +833,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
                             workflowTransitionRepository.save(pause);
                             return mapWorkflowTransition(pause);
-                        }
+                       // }
                     }
 
                 }
