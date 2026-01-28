@@ -38,7 +38,6 @@ public class InspectionCall {
     private LocalDate desiredInspectionDate;
     private LocalDate actualInspectionDate;
 
-    // ---- LOCATION ----
     @Column(name = "place_of_inspection")
     private String placeOfInspection;
 
@@ -60,8 +59,6 @@ public class InspectionCall {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-
-    // ---- RELATION ----
     @OneToOne(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
     @ToString.Exclude
     private RmInspectionDetails rmInspectionDetails;

@@ -116,8 +116,8 @@ WHERE ic.icNumber IN :icNumbers
     );
 
 
-    @Query("SELECT ic.icNumber FROM InspectionCall ic WHERE ic.poNo = :poNo")
-    List<String> findCallNumbersByPoNo(@Param("poNo") String poNo);
+    @Query("SELECT ic.icNumber FROM InspectionCall ic WHERE ic.poSerialNo = :poSerialNo")
+    List<String> findCallNumbersByPoNo(@Param("poSerialNo") String poSerialNo);
 
 }
 

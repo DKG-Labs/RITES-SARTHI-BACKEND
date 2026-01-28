@@ -1,6 +1,7 @@
 package com.sarthi.repository;
 
 import com.sarthi.dto.InspectionQtySummaryView;
+import com.sarthi.dto.TotalManufaturedQtyOfPoDto;
 import com.sarthi.entity.ProcessIeQty;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -59,7 +60,7 @@ public interface ProcessIeQtyRepository
 
     boolean existsByRequestId(String requestId);
 
-    @Query("""
+    /*@Query("""
         SELECT COALESCE(SUM(p.manufactureQty), 0)
         FROM ProcessIeQty p
         WHERE p.requestId IN :callNos
@@ -68,6 +69,24 @@ public interface ProcessIeQtyRepository
     BigDecimal sumManufacturedQtyByCallNos(
             @Param("callNos") List<String> callNos,
             @Param("heatNo") String heatNo
+    );*/
+    @Query("""
+    SELECT new com.sarthi.dto.TotalManufaturedQtyOfPoDto(
+        CAST(COALESCE(SUM(p.manufactureQty), 0) AS big_decimal),
+        COALESCE(SUM(p.rejectedQty), 0),
+        NULL,
+        CAST(COALESCE(SUM(p.inspectedQty), 0) AS big_decimal),
+        :heatNo
+    )
+    FROM ProcessIeQty p
+    WHERE p.requestId IN :callNos
+    AND p.heatNo = :heatNo
+""")
+    TotalManufaturedQtyOfPoDto sumProcessQty(
+            @Param("callNos") List<String> callNos,
+            @Param("heatNo") String heatNo
     );
+
+
 }
 

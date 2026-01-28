@@ -10,6 +10,7 @@ import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.exception.BusinessException;
 import com.sarthi.exception.ErrorDetails;
 import com.sarthi.repository.ProcessIeQtyRepository;
+import com.sarthi.repository.RmHeatFinalResultRepository;
 import com.sarthi.repository.processmaterial.ProcessInspectionDetailsRepository;
 import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.service.ProcessIeQtyService;
@@ -30,6 +31,8 @@ public class ProcessIeQtyImpl implements ProcessIeQtyService {
     private InspectionCallRepository inspectionCallRepository;
     @Autowired
     private ProcessInspectionDetailsRepository processInspectionDetailsRepository;
+    @Autowired
+    private RmHeatFinalResultRepository rmHeatFinalResultRepository;
 
 //    @Override
 //    public InspectionQtySummaryResponse getQtySummary(String requestId) {
@@ -129,21 +132,32 @@ public InspectionQtySummaryResponse getQtySummary(String requestId) {
                                         "Invalid Inspection Call: " + requestId
                                 )
                         ));
-        return ic.getPoNo();
+        String input = ic.getPoSerialNo();
+        String result = input.substring(input.lastIndexOf("/") + 1);
+
+        return result;
     }
 
     @Override
-    public TotalManufaturedQtyOfPoDto getTotalManufaturedQtyPo(String heatNo, String poNo) {
+    public TotalManufaturedQtyOfPoDto getTotalManufaturedQtyPo(String heatNo, String poSerialNo) {
 
-       List<String> callNos= inspectionCallRepository.findCallNumbersByPoNo(poNo);
-        BigDecimal totalQty =
-                processIeQtyRepository.sumManufacturedQtyByCallNos(callNos, heatNo);
+        List<String> callNos =
+                inspectionCallRepository.findCallNumbersByPoNo(poSerialNo);
 
-        TotalManufaturedQtyOfPoDto dto = new TotalManufaturedQtyOfPoDto();
-        dto.setManufaturedQty(totalQty);
+
+        TotalManufaturedQtyOfPoDto dto =
+                processIeQtyRepository.sumProcessQty(callNos, heatNo);
+
+
+        BigDecimal rmAcceptedQty =
+                rmHeatFinalResultRepository.sumRmAcceptedQty(callNos, heatNo);
+
+        dto.setRmAcceptedQty(rmAcceptedQty);
+        dto.setHeatNo(heatNo);
 
         return dto;
     }
+
 
 
 

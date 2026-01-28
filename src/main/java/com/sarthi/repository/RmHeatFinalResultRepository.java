@@ -2,8 +2,11 @@ package com.sarthi.repository;
 
 import com.sarthi.entity.RmHeatFinalResult;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -17,5 +20,17 @@ public interface RmHeatFinalResultRepository extends JpaRepository<RmHeatFinalRe
     List<RmHeatFinalResult> findByInspectionCallNoAndHeatNo(String inspectionCallNo, String heatNo);
 
     void deleteByInspectionCallNo(String inspectionCallNo);
+
+    @Query("""
+    SELECT COALESCE(SUM(r.acceptedQtyMt), 0)
+    FROM RmHeatFinalResult r
+    WHERE r.inspectionCallNo IN :callNos
+    AND r.heatNo = :heatNo
+""")
+    BigDecimal sumRmAcceptedQty(
+            @Param("callNos") List<String> callNos,
+            @Param("heatNo") String heatNo
+    );
+
 }
 
