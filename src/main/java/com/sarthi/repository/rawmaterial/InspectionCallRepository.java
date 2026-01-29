@@ -116,7 +116,14 @@ WHERE ic.icNumber IN :icNumbers
     );
 
 
-    @Query("SELECT ic.icNumber FROM InspectionCall ic WHERE ic.poSerialNo = :poSerialNo")
+//    @Query("SELECT ic.icNumber FROM InspectionCall ic WHERE ic.poSerialNo = :poSerialNo")
+//    List<String> findCallNumbersByPoNo(@Param("poSerialNo") String poSerialNo);
+
+    @Query("""
+SELECT ic.icNumber 
+FROM InspectionCall ic 
+WHERE ic.poSerialNo LIKE CONCAT('%/', :poSerialNo)
+""")
     List<String> findCallNumbersByPoNo(@Param("poSerialNo") String poSerialNo);
 
 }
