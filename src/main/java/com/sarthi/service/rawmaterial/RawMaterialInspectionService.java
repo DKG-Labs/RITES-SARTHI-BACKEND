@@ -89,5 +89,14 @@ public interface RawMaterialInspectionService {
      * @return List of heat numbers with details
      */
     List<RmHeatQuantityDto> getHeatNumbersByRmIcNumber(String rmIcNumber);
+
+    /**
+     * Get inspection call details by certificate number
+     * Maps certificate number from inspection_complete_details to IC number, then fetches inspection call details
+     * Used for Process IC to fetch company_id, unit_id, and other details from the RM IC
+     * @param certificateNo Certificate number from inspection_complete_details (e.g., "N/ER-0118005/RAJK")
+     * @return Inspection call details including company_id, unit_id, company_name, unit_name, unit_address
+     */
+    InspectionCallDto getInspectionCallByCertificateNo(String certificateNo);
 }
 

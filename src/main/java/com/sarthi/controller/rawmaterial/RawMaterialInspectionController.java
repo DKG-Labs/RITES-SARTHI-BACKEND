@@ -172,6 +172,20 @@ public class RawMaterialInspectionController {
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(heatNumbers), HttpStatus.OK);
     }
 
+    /**
+     * Get RM IC details by Certificate Number
+     * Fetches inspection call details (company_id, unit_id, etc.) using the certificate number
+     * from inspection_complete_details table
+     * GET /api/raw-material/ic-by-certificate/{certificateNo}
+     */
+    @GetMapping("/ic-by-certificate/{certificateNo}")
+    @Operation(summary = "Get RM IC details by certificate number", description = "Fetches inspection call details using the certificate number from inspection_complete_details")
+    public ResponseEntity<APIResponse> getRmIcDetailsByCertificateNo(@PathVariable String certificateNo) {
+        logger.info("Request: Get RM IC details for certificate number: {}", certificateNo);
+        InspectionCallDto call = rmService.getInspectionCallByCertificateNo(certificateNo);
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(call), HttpStatus.OK);
+    }
+
     /* ==================== Inspection Call Creation ==================== */
 
     // @PostMapping("/inspectionCall")

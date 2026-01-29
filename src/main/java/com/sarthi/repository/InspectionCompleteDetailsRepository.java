@@ -19,6 +19,12 @@ public interface InspectionCompleteDetailsRepository extends JpaRepository<Inspe
     Optional<InspectionCompleteDetails> findByCallNo(String callNo);
 
     /**
+     * Find InspectionCompleteDetails by certificate number
+     * Used to map certificate number to IC number for Process IC
+     */
+    Optional<InspectionCompleteDetails> findByCertificateNo(String certificateNo);
+
+    /**
      * Find all certificate numbers for Process ICs (EP prefix) filtered by vendor
      * Joins with inspection_calls table to filter by vendor_id
      */

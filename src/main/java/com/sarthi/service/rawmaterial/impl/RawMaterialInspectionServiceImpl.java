@@ -168,6 +168,60 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public InspectionCallDto getInspectionCallByCertificateNo(String certificateNo) {
+        logger.info("========== START: Fetching inspection call by certificate number: {} ==========", certificateNo);
+
+        try {
+            // 1. Find the inspection complete details by certificate number
+            logger.info("Step 1: Searching for InspectionCompleteDetails with certificateNo: {}", certificateNo);
+            InspectionCompleteDetails completeDetails = inspectionCompleteDetailsRepository.findByCertificateNo(certificateNo)
+                    .orElseThrow(() -> {
+                        logger.error("❌ Certificate not found in inspection_complete_details: {}", certificateNo);
+                        return createNotFoundException("Certificate not found: " + certificateNo);
+                    });
+
+            logger.info("✅ Step 1 SUCCESS: Found inspection complete details");
+            logger.info("   - Certificate No: {}", completeDetails.getCertificateNo());
+            logger.info("   - Call No (IC Number): {}", completeDetails.getCallNo());
+            logger.info("   - PO No: {}", completeDetails.getPoNo());
+
+            // 2. Get the IC number from the call_no field
+            String icNumber = completeDetails.getCallNo();
+            logger.info("Step 2: Extracted IC number from call_no: {}", icNumber);
+
+            // 3. Find the inspection call by IC number
+            logger.info("Step 3: Searching for InspectionCall with icNumber: {}", icNumber);
+            InspectionCall inspectionCall = inspectionCallRepository.findByIcNumber(icNumber)
+                    .orElseThrow(() -> {
+                        logger.error("❌ Inspection call not found for IC number: {}", icNumber);
+                        return createNotFoundException("Inspection call not found for IC number: " + icNumber);
+                    });
+
+            logger.info("✅ Step 3 SUCCESS: Found inspection call");
+            logger.info("   - IC ID: {}", inspectionCall.getId());
+            logger.info("   - IC Number: {}", inspectionCall.getIcNumber());
+            logger.info("   - Company ID: {}", inspectionCall.getCompanyId());
+            logger.info("   - Company Name: {}", inspectionCall.getCompanyName());
+            logger.info("   - Unit ID: {}", inspectionCall.getUnitId());
+            logger.info("   - Unit Name: {}", inspectionCall.getUnitName());
+
+            // 4. Map to DTO with all details
+            logger.info("Step 4: Mapping InspectionCall to DTO");
+            InspectionCallDto result = mapToCallDtoWithDetails(inspectionCall);
+
+            logger.info("✅ Step 4 SUCCESS: Mapped to DTO");
+            logger.info("   - DTO Company ID: {}", result.getCompanyId());
+            logger.info("   - DTO Unit ID: {}", result.getUnitId());
+            logger.info("========== END: Successfully fetched inspection call by certificate number ==========");
+
+            return result;
+        } catch (Exception e) {
+            logger.error("❌ ERROR in getInspectionCallByCertificateNo: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
     /* ==================== Private Mapping Methods ==================== */
 
     /**
