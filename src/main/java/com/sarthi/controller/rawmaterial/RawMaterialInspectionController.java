@@ -172,6 +172,29 @@ public class RawMaterialInspectionController {
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(heatNumbers), HttpStatus.OK);
     }
 
+    /* ==================== Chemical Analysis Endpoints ==================== */
+
+    /**
+     * Get chemical analysis by heat number
+     * GET /api/raw-material/chemical-analysis/heat/{heatNumber}
+     * Returns the most recent chemical analysis data for a given heat number
+     * Used for auto-fetching chemical analysis when vendor selects a previously used heat number
+     */
+    @GetMapping("/chemical-analysis/heat/{heatNumber}")
+    @Operation(summary = "Get chemical analysis by heat number", description = "Fetches the most recent chemical analysis data for a given heat number from previous inspection calls")
+    public ResponseEntity<APIResponse> getChemicalAnalysisByHeatNumber(@PathVariable String heatNumber) {
+        logger.info("Request: Get chemical analysis for heat number: {}", heatNumber);
+        com.sarthi.entity.rawmaterial.RmChemicalAnalysis analysis = rmService.getChemicalAnalysisByHeatNumber(heatNumber);
+
+        if (analysis == null) {
+            logger.info("No chemical analysis found for heat number: {}", heatNumber);
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(null), HttpStatus.OK);
+        }
+
+        logger.info("Found chemical analysis for heat number: {}", heatNumber);
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(analysis), HttpStatus.OK);
+    }
+
     /* ==================== Inspection Call Creation ==================== */
 
     // @PostMapping("/inspectionCall")

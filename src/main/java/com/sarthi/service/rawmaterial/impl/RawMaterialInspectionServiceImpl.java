@@ -34,6 +34,7 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
     private final InspectionCallRepository inspectionCallRepository;
     private final RmInspectionDetailsRepository rmDetailsRepository;
     private final RmHeatQuantityRepository heatQuantityRepository;
+    private final RmChemicalAnalysisRepository chemicalAnalysisRepository;
     private final InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository;
     private final RmHeatFinalResultRepository rmHeatFinalResultRepository;
 
@@ -42,11 +43,13 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
             InspectionCallRepository inspectionCallRepository,
             RmInspectionDetailsRepository rmDetailsRepository,
             RmHeatQuantityRepository heatQuantityRepository,
+            RmChemicalAnalysisRepository chemicalAnalysisRepository,
             InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository,
             RmHeatFinalResultRepository rmHeatFinalResultRepository) {
         this.inspectionCallRepository = inspectionCallRepository;
         this.rmDetailsRepository = rmDetailsRepository;
         this.heatQuantityRepository = heatQuantityRepository;
+        this.chemicalAnalysisRepository = chemicalAnalysisRepository;
         this.inspectionCompleteDetailsRepository = inspectionCompleteDetailsRepository;
         this.rmHeatFinalResultRepository = rmHeatFinalResultRepository;
     }
@@ -114,6 +117,26 @@ public class RawMaterialInspectionServiceImpl implements RawMaterialInspectionSe
         RmHeatQuantity heat = heatQuantityRepository.findById(heatId)
                 .orElseThrow(() -> createNotFoundException("Heat quantity not found with ID: " + heatId));
         return mapToHeatDto(heat);
+    }
+
+    /* ==================== Chemical Analysis Operations ==================== */
+
+    @Override
+    public RmChemicalAnalysis getChemicalAnalysisByHeatNumber(String heatNumber) {
+        logger.info("Fetching most recent chemical analysis for heat number: {}", heatNumber);
+
+        // Get all chemical analyses for this heat number, ordered by created_at DESC
+        List<RmChemicalAnalysis> analyses = chemicalAnalysisRepository.findByHeatNumberOrderByCreatedAtDesc(heatNumber);
+
+        if (analyses.isEmpty()) {
+            logger.info("No chemical analysis found for heat number: {}", heatNumber);
+            return null;
+        }
+
+        // Return the most recent one (first in the list)
+        RmChemicalAnalysis mostRecent = analyses.get(0);
+        logger.info("Found chemical analysis for heat number: {} (created at: {})", heatNumber, mostRecent.getCreatedAt());
+        return mostRecent;
     }
 
     /* ==================== Process IC Support Operations ==================== */

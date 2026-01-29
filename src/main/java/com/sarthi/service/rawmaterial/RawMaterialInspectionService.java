@@ -3,6 +3,7 @@ package com.sarthi.service.rawmaterial;
 import com.sarthi.dto.rawmaterial.InspectionCallDto;
 import com.sarthi.dto.rawmaterial.RmHeatQuantityDto;
 import com.sarthi.dto.rawmaterial.RmInspectionDetailsDto;
+import com.sarthi.entity.rawmaterial.RmChemicalAnalysis;
 
 import java.util.List;
 
@@ -69,6 +70,16 @@ public interface RawMaterialInspectionService {
      * @return Heat details
      */
     RmHeatQuantityDto getHeatQuantityById(Integer heatId);
+
+    /* ==================== Chemical Analysis Operations ==================== */
+
+    /**
+     * Get the most recent chemical analysis for a given heat number
+     * Used for auto-fetching chemical analysis when vendor selects a previously used heat number
+     * @param heatNumber Heat number to search for
+     * @return Most recent chemical analysis data or null if not found
+     */
+    RmChemicalAnalysis getChemicalAnalysisByHeatNumber(String heatNumber);
 
     /* ==================== Process IC Support Operations ==================== */
 
