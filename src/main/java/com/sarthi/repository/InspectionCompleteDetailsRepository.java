@@ -2,6 +2,7 @@ package com.sarthi.repository;
 
 
 import com.sarthi.entity.InspectionCompleteDetails;
+import org.springframework.beans.PropertyValues;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -98,4 +99,22 @@ public interface InspectionCompleteDetailsRepository extends JpaRepository<Inspe
             "ORDER BY icd.CERTIFICATE_NO DESC",
             nativeQuery = true)
     List<String> findProcessIcNumbersByMultipleRmIcNumbers(@Param("rmCertificateNos") List<String> rmCertificateNos);
+
+    @Query("""
+        SELECT i.certificateNo
+        FROM InspectionCompleteDetails i
+        WHERE i.callNo = :callNo
+    """)
+    String findCertificateNoByCallNo(
+            @Param("callNo") String callNo);
+
+  @Query("""
+    SELECT i.callNo, i.certificateNo
+    FROM InspectionCompleteDetails i
+    WHERE i.callNo IN :callNos
+""")
+List<Object[]> findCertificateNosByCallNos(
+        @Param("callNos") List<String> callNos
+);
+
 }

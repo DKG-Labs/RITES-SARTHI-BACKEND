@@ -3,6 +3,8 @@ package com.sarthi.repository.rawmaterial;
 import com.sarthi.dto.InspectionDataDto;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import org.hibernate.query.SelectionQuery;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -125,6 +127,55 @@ FROM InspectionCall ic
 WHERE ic.poSerialNo LIKE CONCAT('%/', :poSerialNo)
 """)
     List<String> findCallNumbersByPoNo(@Param("poSerialNo") String poSerialNo);
+
+    @Query("""
+SELECT ic.icNumber 
+FROM InspectionCall ic 
+WHERE ic.poNo =poNo
+""")
+    List<String> findCallNumbersByPo(@Param("poSerialNo") String poSerialNo);
+
+    @Query("""
+    SELECT 
+        CASE
+            WHEN SUM(r.weightOfferedMt) = 0 THEN 0.0
+            ELSE (SUM(r.weightRejectedMt) * 100.0) / SUM(r.weightOfferedMt)
+        END
+    FROM InspectionCall ic
+    JOIN RmHeatFinalResult r
+        ON r.inspectionCallNo = ic.icNumber
+    WHERE ic.poNo = :poNo
+""")
+    Double findRmRejectionPct(@Param("poNo") String poNo);
+
+    @Query("""
+    SELECT ic.icNumber
+    FROM InspectionCall ic
+    WHERE ic.poNo = :poNo
+      AND ic.poSerialNo LIKE CONCAT('%/', :poSerialNo)
+""")
+    List<String> findCallNosByPoAndSerial(
+            @Param("poNo") String poNo,
+            @Param("poSerialNo") String poSerialNo
+    );
+
+    @Query("""
+    SELECT ic
+    FROM InspectionCall ic
+    WHERE ic.poSerialNo LIKE CONCAT('%/', :serialNo)
+""")
+    List<InspectionCall> findBySerialNo(@Param("serialNo") String serialNo);
+
+    @Query("""
+    SELECT ic
+    FROM InspectionCall ic
+    WHERE ic.poSerialNo LIKE CONCAT('%/', :serialNo)
+""")
+    Page<InspectionCall> findBySerialNo(
+            @Param("serialNo") String serialNo,
+            Pageable pageable
+    );
+
 
 }
 

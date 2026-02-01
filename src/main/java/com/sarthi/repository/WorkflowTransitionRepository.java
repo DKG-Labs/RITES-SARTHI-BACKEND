@@ -1,6 +1,7 @@
 package com.sarthi.repository;
 
 import com.sarthi.entity.WorkflowTransition;
+import org.springframework.beans.PropertyValues;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -98,5 +99,40 @@ AND wt.jobStatus IN (
     List<WorkflowTransition> findBlockedTransitions();
 
     List<WorkflowTransition> findAllByStatusAndCreatedBy(String status, Integer createdBy);
+
+  @Query("""
+    SELECT
+        MIN(w.createdDate),
+        MAX(
+            CASE
+                WHEN w.status = 'INSPECTION_COMPLETE_CONFIRM'
+                THEN w.createdDate
+                ELSE NULL
+            END
+        )
+    FROM WorkflowTransition w
+    WHERE w.requestId = :requestId
+""")
+  List<Object[]> findStartAndEndDateByRequestId(
+          @Param("requestId") String requestId);
+
+
+  @Query("""
+    SELECT
+        w.requestId,
+        MIN(w.createdDate),
+        MAX(
+            CASE
+                WHEN w.status = 'INSPECTION_COMPLETE_CONFIRM'
+                THEN w.createdDate
+            END
+        )
+    FROM WorkflowTransition w
+    WHERE w.requestId IN :requestIds
+    GROUP BY w.requestId
+""")
+  List<Object[]> findStartAndEndDateByRequestIds(
+          @Param("requestIds") List<String> requestIds
+  );
 
 }

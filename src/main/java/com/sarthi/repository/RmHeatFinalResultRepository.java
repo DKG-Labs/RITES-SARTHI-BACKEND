@@ -44,5 +44,27 @@ public interface RmHeatFinalResultRepository extends JpaRepository<RmHeatFinalRe
     );
 
 
+    @Query("""
+    SELECT
+        SUM(r.totalQtyOfferedMt),
+        SUM(r.weightRejectedMt)
+    FROM RmHeatFinalResult r
+    WHERE r.inspectionCallNo IN :callNos
+""")
+    List<Object[]> findOfferedAndRejectedByCallNos(
+            @Param("callNos") List<String> callNos);
+
+    @Query("""
+    SELECT
+        SUM(r.acceptedQtyMt),
+        SUM(r.weightRejectedMt),
+        SUM(r.weightOfferedMt)
+    FROM RmHeatFinalResult r
+    WHERE r.inspectionCallNo IN :callNos
+""")
+    List<Object[]> findRmSummaryByCallNos(
+            @Param("callNos") List<String> callNos
+    );
+
 }
 

@@ -3,6 +3,7 @@ package com.sarthi.repository;
 import com.sarthi.dto.InspectionQtySummaryView;
 import com.sarthi.dto.TotalManufaturedQtyOfPoDto;
 import com.sarthi.entity.ProcessIeQty;
+import org.springframework.beans.PropertyValues;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -104,6 +105,54 @@ public interface ProcessIeQtyRepository
             @Param("heatNo") String heatNo
     );
 
+
+    @Query("""
+        SELECT
+            CASE
+                WHEN SUM(p.offeredQty) = 0 THEN 0.0
+                ELSE (SUM(p.rejectedQty) * 100.0) / SUM(p.offeredQty)
+            END
+        FROM ProcessIeQty p
+        WHERE p.requestId IN :callNos
+    """)
+    Double findProcessRejectionPctByCallNos(
+            @Param("callNos") List<String> callNos);
+
+    @Query("""
+    SELECT
+        SUM(p.inspectedQty),
+        SUM(p.rejectedQty),
+        SUM(p.offeredQty)
+    FROM ProcessIeQty p
+    WHERE p.requestId IN :callNos
+""")
+    List<Object[]> findProcessSummaryByCallNos(
+            @Param("callNos") List<String> callNos);
+
+    @Query("""
+    SELECT
+        SUM(p.offeredQty),
+        SUM(p.inspectedQty),
+        SUM(p.rejectedQty)
+    FROM ProcessIeQty p
+    WHERE p.requestId = :callNo
+""")
+    List<Object[]> findProcessQtyByCallNo(
+            @Param("callNo") String callNo);
+
+    @Query("""
+    SELECT
+        p.requestId,
+        SUM(p.offeredQty),
+        SUM(p.inspectedQty),
+        SUM(p.rejectedQty)
+    FROM ProcessIeQty p
+    WHERE p.requestId IN :callNos
+    GROUP BY p.requestId
+""")
+    List<Object[]> findProcessQtyByCallNos(
+            @Param("callNos") List<String> callNos
+    );
 
 }
 

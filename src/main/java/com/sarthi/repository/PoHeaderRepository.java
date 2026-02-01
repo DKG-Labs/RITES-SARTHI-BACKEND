@@ -1,5 +1,6 @@
 package com.sarthi.repository;
 
+import com.sarthi.dto.reports.PoInspection1stLevelStatusDto;
 import com.sarthi.entity.PoHeader;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -36,4 +37,62 @@ public interface PoHeaderRepository extends JpaRepository<PoHeader, Long> {
         where h.vendorCode = :vendorCode
     """)
     List<PoHeader> findAllByVendorCodeWithItems(String vendorCode);
+
+  /*  @Query("""
+        SELECT new com.sarthi.dto.reports.PoInspection1stLevelStatusDto(
+            0,
+            ph.rlyShortName,
+            ph.poNo,
+            ph.poDate,
+            ph.vendorDetails,
+            ph.inspectingAgency,
+            SUM(pi.qty),
+            null,
+            null,
+            null,
+            null,
+            null,
+            ph.poStatus
+        )
+        FROM PoHeader ph
+        JOIN ph.items pi
+        GROUP BY
+            ph.rlyShortName,
+            ph.poNo,
+            ph.poDate,
+            ph.vendorDetails,
+            ph.inspectingAgency,
+            ph.poStatus
+    """)
+    List<PoInspection1stLevelStatusDto> fetchPoInspectionStatus();*/
+
+    @Query("""
+    SELECT new com.sarthi.dto.reports.PoInspection1stLevelStatusDto(
+        0,
+        ph.rlyShortName,
+        ph.poNo,
+        ph.poDate,
+        ph.vendorDetails,
+        ph.inspectingAgency,
+        SUM(pi.qty),
+        null,
+        null,
+        null,
+        null,
+        null,
+        ph.poStatus
+    )
+    FROM PoHeader ph
+    JOIN ph.items pi
+    GROUP BY
+        ph.rlyShortName,
+        ph.poNo,
+        ph.poDate,
+        ph.vendorDetails,
+        ph.inspectingAgency,
+        ph.poStatus
+""")
+    List<PoInspection1stLevelStatusDto> fetchPoInspectionStatus();
+
+
 }
