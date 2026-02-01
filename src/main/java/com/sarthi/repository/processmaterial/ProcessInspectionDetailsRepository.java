@@ -50,7 +50,20 @@ public interface ProcessInspectionDetailsRepository extends JpaRepository<Proces
 """)
 Integer findOfferedQtyByIcId(@Param("icId") Long icId);
 
-
+    /**
+     * Calculate total offered quantity for a specific heat number across multiple inspection calls
+     * Used to calculate "Offered Earlier" for heat summary
+     */
+    @Query("""
+    SELECT COALESCE(SUM(pd.offeredQty), 0)
+    FROM ProcessInspectionDetails pd
+    WHERE pd.inspectionCall.icNumber IN :callNos
+    AND pd.heatNumber = :heatNo
+""")
+    Integer sumOfferedQtyByCallNosAndHeatNo(
+            @Param("callNos") List<String> callNos,
+            @Param("heatNo") String heatNo
+    );
 
     /**
      * Find distinct RM IC numbers by Process IC certificate number

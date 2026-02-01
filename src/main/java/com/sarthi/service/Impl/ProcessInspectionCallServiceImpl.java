@@ -36,8 +36,7 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
             InspectionCallRepository inspectionCallRepository,
             ProcessInspectionDetailsRepository processDetailsRepository,
             ProcessRmIcMappingRepository processMappingRepository,
-            IcNumberGenerator icNumberGenerator
-    ) {
+            IcNumberGenerator icNumberGenerator) {
         this.inspectionCallRepository = inspectionCallRepository;
         this.processDetailsRepository = processDetailsRepository;
         this.processMappingRepository = processMappingRepository;
@@ -47,8 +46,7 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
     @Override
     public InspectionCall createProcessInspectionCall(
             InspectionCallRequestDto icRequest,
-            List<ProcessInspectionDetailsRequestDto> processDetailsList
-    ) {
+            List<ProcessInspectionDetailsRequestDto> processDetailsList) {
         logger.info("========== CREATE PROCESS INSPECTION CALL ==========");
         logger.info("IC Request: {}", icRequest);
         logger.info("ERC Type from Request: {}", icRequest.getErcType());
@@ -77,13 +75,11 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
         inspectionCall.setVendorId(icRequest.getVendorId());
 
         inspectionCall.setDesiredInspectionDate(
-                LocalDate.parse(icRequest.getDesiredInspectionDate())
-        );
+                LocalDate.parse(icRequest.getDesiredInspectionDate()));
 
         if (icRequest.getActualInspectionDate() != null) {
             inspectionCall.setActualInspectionDate(
-                    LocalDate.parse(icRequest.getActualInspectionDate())
-            );
+                    LocalDate.parse(icRequest.getActualInspectionDate()));
         }
 
         inspectionCall.setCompanyId(icRequest.getCompanyId());
@@ -102,9 +98,11 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
         inspectionCall = inspectionCallRepository.save(inspectionCall);
         logger.info("✅ Inspection Call saved with ID: {}", inspectionCall.getId());
 
-        // ================== 2. CREATE PROCESS INSPECTION DETAILS (MULTIPLE ROWS FOR MULTIPLE LOTS) ==================
+        // ================== 2. CREATE PROCESS INSPECTION DETAILS (MULTIPLE ROWS FOR
+        // MULTIPLE LOTS) ==================
         if (processDetailsList != null && !processDetailsList.isEmpty()) {
-            logger.info("📦 Creating {} lot records for Process IC: {}", processDetailsList.size(), inspectionCall.getIcNumber());
+            logger.info("📦 Creating {} lot records for Process IC: {}", processDetailsList.size(),
+                    inspectionCall.getIcNumber());
 
             // Get RM IC reference (same for all lots)
             ProcessInspectionDetailsRequestDto firstDetail = processDetailsList.get(0);
@@ -117,7 +115,8 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
                 java.util.regex.Matcher matcher = pattern.matcher(rmIcNumberFromRequest);
                 if (matcher.find()) {
                     callNumber = matcher.group(1);
-                    logger.info("📋 Extracted call number '{}' from certificate number '{}'", callNumber, rmIcNumberFromRequest);
+                    logger.info("📋 Extracted call number '{}' from certificate number '{}'", callNumber,
+                            rmIcNumberFromRequest);
                 }
             }
 
@@ -128,7 +127,8 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
                 if (rmIc != null) {
                     logger.info("✅ Found RM IC with call number '{}' and ID: {}", callNumber, rmIc.getId());
                 } else {
-                    logger.warn("⚠️ RM IC not found for call number: {}. Proceeding without RM IC reference.", callNumber);
+                    logger.warn("⚠️ RM IC not found for call number: {}. Proceeding without RM IC reference.",
+                            callNumber);
                 }
             }
 
@@ -157,11 +157,16 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
                 processDetails.setTotalAcceptedQtyRm(detail.getTotalAcceptedQtyRm());
 
                 // Set place of inspection (from request or from RM IC if available)
-                processDetails.setCompanyId(detail.getCompanyId() != null ? detail.getCompanyId() : (rmIc != null ? rmIc.getCompanyId() : null));
-                processDetails.setCompanyName(detail.getCompanyName() != null ? detail.getCompanyName() : (rmIc != null ? rmIc.getCompanyName() : null));
-                processDetails.setUnitId(detail.getUnitId() != null ? detail.getUnitId() : (rmIc != null ? rmIc.getUnitId() : null));
-                processDetails.setUnitName(detail.getUnitName() != null ? detail.getUnitName() : (rmIc != null ? rmIc.getUnitName() : null));
-                processDetails.setUnitAddress(detail.getUnitAddress() != null ? detail.getUnitAddress() : (rmIc != null ? rmIc.getUnitAddress() : null));
+                processDetails.setCompanyId(detail.getCompanyId() != null ? detail.getCompanyId()
+                        : (rmIc != null ? rmIc.getCompanyId() : null));
+                processDetails.setCompanyName(detail.getCompanyName() != null ? detail.getCompanyName()
+                        : (rmIc != null ? rmIc.getCompanyName() : null));
+                processDetails.setUnitId(
+                        detail.getUnitId() != null ? detail.getUnitId() : (rmIc != null ? rmIc.getUnitId() : null));
+                processDetails.setUnitName(detail.getUnitName() != null ? detail.getUnitName()
+                        : (rmIc != null ? rmIc.getUnitName() : null));
+                processDetails.setUnitAddress(detail.getUnitAddress() != null ? detail.getUnitAddress()
+                        : (rmIc != null ? rmIc.getUnitAddress() : null));
 
                 // Save each lot as a separate row
                 processDetails = processDetailsRepository.save(processDetails);
@@ -183,7 +188,8 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
                     mapping.setRmIcNumber(detail.getRmIcNumber());
                     mapping.setHeatNumber(detail.getHeatNumber());
                     mapping.setManufacturer(detail.getManufacturer());
-                    mapping.setRmQtyAccepted(detail.getTotalAcceptedQtyRm() != null ? detail.getTotalAcceptedQtyRm() : 0);
+                    mapping.setRmQtyAccepted(
+                            detail.getTotalAcceptedQtyRm() != null ? detail.getTotalAcceptedQtyRm() : 0);
                     mapping.setRmIcDate(rmIc.getDesiredInspectionDate());
 
                     processMappingRepository.save(mapping);
@@ -198,4 +204,3 @@ public class ProcessInspectionCallServiceImpl implements ProcessInspectionCallSe
         return inspectionCall;
     }
 }
-

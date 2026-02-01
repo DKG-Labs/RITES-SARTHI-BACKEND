@@ -102,6 +102,9 @@ public class RmHeatFinalResult {
     @Column(name = "no_of_erc_finished")
     private Integer noOfErcFinished;
 
+    @Column(name = "offered_earlier")
+    private Integer offeredEarlier;
+
     // -------------------------
     // Remarks
     // -------------------------

@@ -222,7 +222,8 @@ public class RmInspectionServiceImpl implements RmInspectionService {
     private void saveHeatFinalResults(String callNo, List<RmHeatFinalResultDto> results) {
         for (RmHeatFinalResultDto dto : results) {
             // Try to find existing record
-            List<RmHeatFinalResult> existing = heatResultRepository.findByInspectionCallNoAndHeatNo(callNo, dto.getHeatNo());
+            List<RmHeatFinalResult> existing = heatResultRepository.findByInspectionCallNoAndHeatNo(callNo,
+                    dto.getHeatNo());
 
             RmHeatFinalResult entity;
             if (existing != null && !existing.isEmpty()) {
@@ -266,9 +267,9 @@ public class RmInspectionServiceImpl implements RmInspectionService {
         for (RmVisualInspectionDto dto : data) {
             // Find existing record by call number and heat number (one record per heat)
             RmVisualInspection entity = visualRepository.findByInspectionCallNoAndHeatNo(callNo, dto.getHeatNo())
-                .stream()
-                .findFirst()
-                .orElse(null);
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
 
             if (entity == null) {
                 // Create new record
@@ -278,7 +279,8 @@ public class RmInspectionServiceImpl implements RmInspectionService {
                 entity.setHeatIndex(dto.getHeatIndex());
                 logger.info("Creating new visual inspection record for call: {} heat: {}", callNo, dto.getHeatNo());
             } else {
-                logger.info("Updating existing visual inspection record for call: {} heat: {}", callNo, dto.getHeatNo());
+                logger.info("Updating existing visual inspection record for call: {} heat: {}", callNo,
+                        dto.getHeatNo());
             }
 
             final RmVisualInspection finalEntity = entity;
@@ -392,9 +394,9 @@ public class RmInspectionServiceImpl implements RmInspectionService {
         for (RmDimensionalCheckDto dto : data) {
             // Find existing record by call number and heat number (one record per heat)
             RmDimensionalCheck entity = dimensionalRepository.findByInspectionCallNoAndHeatNo(callNo, dto.getHeatNo())
-                .stream()
-                .findFirst()
-                .orElse(null);
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
 
             if (entity == null) {
                 // Create new record
@@ -404,32 +406,53 @@ public class RmInspectionServiceImpl implements RmInspectionService {
                 entity.setHeatIndex(dto.getHeatIndex());
                 logger.info("Creating new dimensional check record for call: {} heat: {}", callNo, dto.getHeatNo());
             } else {
-                logger.info("Updating existing dimensional check record for call: {} heat: {}", callNo, dto.getHeatNo());
+                logger.info("Updating existing dimensional check record for call: {} heat: {}", callNo,
+                        dto.getHeatNo());
             }
 
             // Set all 20 sample diameters from list
             if (dto.getSampleDiameters() != null) {
                 List<BigDecimal> samples = dto.getSampleDiameters();
-                if (samples.size() > 0) entity.setSample1Diameter(samples.get(0));
-                if (samples.size() > 1) entity.setSample2Diameter(samples.get(1));
-                if (samples.size() > 2) entity.setSample3Diameter(samples.get(2));
-                if (samples.size() > 3) entity.setSample4Diameter(samples.get(3));
-                if (samples.size() > 4) entity.setSample5Diameter(samples.get(4));
-                if (samples.size() > 5) entity.setSample6Diameter(samples.get(5));
-                if (samples.size() > 6) entity.setSample7Diameter(samples.get(6));
-                if (samples.size() > 7) entity.setSample8Diameter(samples.get(7));
-                if (samples.size() > 8) entity.setSample9Diameter(samples.get(8));
-                if (samples.size() > 9) entity.setSample10Diameter(samples.get(9));
-                if (samples.size() > 10) entity.setSample11Diameter(samples.get(10));
-                if (samples.size() > 11) entity.setSample12Diameter(samples.get(11));
-                if (samples.size() > 12) entity.setSample13Diameter(samples.get(12));
-                if (samples.size() > 13) entity.setSample14Diameter(samples.get(13));
-                if (samples.size() > 14) entity.setSample15Diameter(samples.get(14));
-                if (samples.size() > 15) entity.setSample16Diameter(samples.get(15));
-                if (samples.size() > 16) entity.setSample17Diameter(samples.get(16));
-                if (samples.size() > 17) entity.setSample18Diameter(samples.get(17));
-                if (samples.size() > 18) entity.setSample19Diameter(samples.get(18));
-                if (samples.size() > 19) entity.setSample20Diameter(samples.get(19));
+                if (samples.size() > 0)
+                    entity.setSample1Diameter(samples.get(0));
+                if (samples.size() > 1)
+                    entity.setSample2Diameter(samples.get(1));
+                if (samples.size() > 2)
+                    entity.setSample3Diameter(samples.get(2));
+                if (samples.size() > 3)
+                    entity.setSample4Diameter(samples.get(3));
+                if (samples.size() > 4)
+                    entity.setSample5Diameter(samples.get(4));
+                if (samples.size() > 5)
+                    entity.setSample6Diameter(samples.get(5));
+                if (samples.size() > 6)
+                    entity.setSample7Diameter(samples.get(6));
+                if (samples.size() > 7)
+                    entity.setSample8Diameter(samples.get(7));
+                if (samples.size() > 8)
+                    entity.setSample9Diameter(samples.get(8));
+                if (samples.size() > 9)
+                    entity.setSample10Diameter(samples.get(9));
+                if (samples.size() > 10)
+                    entity.setSample11Diameter(samples.get(10));
+                if (samples.size() > 11)
+                    entity.setSample12Diameter(samples.get(11));
+                if (samples.size() > 12)
+                    entity.setSample13Diameter(samples.get(12));
+                if (samples.size() > 13)
+                    entity.setSample14Diameter(samples.get(13));
+                if (samples.size() > 14)
+                    entity.setSample15Diameter(samples.get(14));
+                if (samples.size() > 15)
+                    entity.setSample16Diameter(samples.get(15));
+                if (samples.size() > 16)
+                    entity.setSample17Diameter(samples.get(16));
+                if (samples.size() > 17)
+                    entity.setSample18Diameter(samples.get(17));
+                if (samples.size() > 18)
+                    entity.setSample19Diameter(samples.get(18));
+                if (samples.size() > 19)
+                    entity.setSample20Diameter(samples.get(19));
             }
 
             // Set audit fields
@@ -444,31 +467,35 @@ public class RmInspectionServiceImpl implements RmInspectionService {
     private void saveMaterialTesting(String callNo, List<RmMaterialTestingDto> data) {
         for (RmMaterialTestingDto dto : data) {
             // Try to find existing record by call number, heat number, and sample number
-            List<RmMaterialTesting> existing = materialTestingRepository.findByInspectionCallNoAndHeatNo(callNo, dto.getHeatNo());
+            List<RmMaterialTesting> existing = materialTestingRepository.findByInspectionCallNoAndHeatNo(callNo,
+                    dto.getHeatNo());
 
             RmMaterialTesting entity;
             if (existing != null && !existing.isEmpty()) {
                 // Update existing record - find the one matching sample number
                 var matchingRecord = existing.stream()
-                    .filter(e -> e.getSampleNumber() != null && e.getSampleNumber().equals(dto.getSampleNumber()))
-                    .findFirst();
+                        .filter(e -> e.getSampleNumber() != null && e.getSampleNumber().equals(dto.getSampleNumber()))
+                        .findFirst();
 
                 if (matchingRecord.isPresent()) {
                     entity = matchingRecord.get();
-                    logger.info("Updating existing material testing for call: {} heat: {} sample: {}", callNo, dto.getHeatNo(), dto.getSampleNumber());
+                    logger.info("Updating existing material testing for call: {} heat: {} sample: {}", callNo,
+                            dto.getHeatNo(), dto.getSampleNumber());
                 } else {
                     // No matching sample found, create new record
                     entity = new RmMaterialTesting();
                     entity.setInspectionCallNo(callNo);
                     entity.setHeatNo(dto.getHeatNo());
-                    logger.info("Creating new material testing for call: {} heat: {} sample: {}", callNo, dto.getHeatNo(), dto.getSampleNumber());
+                    logger.info("Creating new material testing for call: {} heat: {} sample: {}", callNo,
+                            dto.getHeatNo(), dto.getSampleNumber());
                 }
             } else {
                 // Create new record
                 entity = new RmMaterialTesting();
                 entity.setInspectionCallNo(callNo);
                 entity.setHeatNo(dto.getHeatNo());
-                logger.info("Creating new material testing for call: {} heat: {} sample: {}", callNo, dto.getHeatNo(), dto.getSampleNumber());
+                logger.info("Creating new material testing for call: {} heat: {} sample: {}", callNo, dto.getHeatNo(),
+                        dto.getSampleNumber());
             }
 
             // Set all fields
@@ -510,7 +537,8 @@ public class RmInspectionServiceImpl implements RmInspectionService {
     private void savePackingStorage(String callNo, List<RmPackingStorageDto> dtoList) {
         for (RmPackingStorageDto dto : dtoList) {
             // Try to find existing record by call number and heat number
-            List<RmPackingStorage> existing = packingRepository.findByInspectionCallNoAndHeatNo(callNo, dto.getHeatNo());
+            List<RmPackingStorage> existing = packingRepository.findByInspectionCallNoAndHeatNo(callNo,
+                    dto.getHeatNo());
 
             RmPackingStorage entity;
             if (existing != null && !existing.isEmpty()) {
@@ -548,7 +576,8 @@ public class RmInspectionServiceImpl implements RmInspectionService {
     private void saveCalibrationDocuments(String callNo, List<RmCalibrationDocumentsDto> data) {
         for (RmCalibrationDocumentsDto dto : data) {
             // Try to find existing record by call number and heat number
-            List<RmCalibrationDocuments> existing = calibrationRepository.findByInspectionCallNoAndHeatNo(callNo, dto.getHeatNo());
+            List<RmCalibrationDocuments> existing = calibrationRepository.findByInspectionCallNoAndHeatNo(callNo,
+                    dto.getHeatNo());
 
             RmCalibrationDocuments entity;
             if (existing != null && !existing.isEmpty()) {
@@ -583,7 +612,8 @@ public class RmInspectionServiceImpl implements RmInspectionService {
     }
 
     private LocalDate parseDate(String dateStr) {
-        if (dateStr == null || dateStr.isEmpty()) return null;
+        if (dateStr == null || dateStr.isEmpty())
+            return null;
         try {
             return LocalDate.parse(dateStr.substring(0, 10));
         } catch (Exception e) {
@@ -592,7 +622,8 @@ public class RmInspectionServiceImpl implements RmInspectionService {
     }
 
     private LocalDateTime parseDateTime(String dateTimeStr) {
-        if (dateTimeStr == null || dateTimeStr.isEmpty()) return null;
+        if (dateTimeStr == null || dateTimeStr.isEmpty())
+            return null;
         try {
             return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_DATE_TIME);
         } catch (Exception e) {
@@ -819,17 +850,28 @@ public class RmInspectionServiceImpl implements RmInspectionService {
 
         // Convert entity defect lengths to map
         Map<String, BigDecimal> defectLengths = new HashMap<>();
-        if (entity.getDistortionLength() != null) defectLengths.put("Distortion", entity.getDistortionLength());
-        if (entity.getTwistLength() != null) defectLengths.put("Twist", entity.getTwistLength());
-        if (entity.getKinkLength() != null) defectLengths.put("Kink", entity.getKinkLength());
-        if (entity.getNotStraightLength() != null) defectLengths.put("Not Straight", entity.getNotStraightLength());
-        if (entity.getFoldLength() != null) defectLengths.put("Fold", entity.getFoldLength());
-        if (entity.getLapLength() != null) defectLengths.put("Lap", entity.getLapLength());
-        if (entity.getCrackLength() != null) defectLengths.put("Crack", entity.getCrackLength());
-        if (entity.getPitLength() != null) defectLengths.put("Pit", entity.getPitLength());
-        if (entity.getGrooveLength() != null) defectLengths.put("Groove", entity.getGrooveLength());
-        if (entity.getExcessiveScalingLength() != null) defectLengths.put("Excessive Scaling", entity.getExcessiveScalingLength());
-        if (entity.getInternalDefectLength() != null) defectLengths.put("Internal Defect (Piping, Segregation)", entity.getInternalDefectLength());
+        if (entity.getDistortionLength() != null)
+            defectLengths.put("Distortion", entity.getDistortionLength());
+        if (entity.getTwistLength() != null)
+            defectLengths.put("Twist", entity.getTwistLength());
+        if (entity.getKinkLength() != null)
+            defectLengths.put("Kink", entity.getKinkLength());
+        if (entity.getNotStraightLength() != null)
+            defectLengths.put("Not Straight", entity.getNotStraightLength());
+        if (entity.getFoldLength() != null)
+            defectLengths.put("Fold", entity.getFoldLength());
+        if (entity.getLapLength() != null)
+            defectLengths.put("Lap", entity.getLapLength());
+        if (entity.getCrackLength() != null)
+            defectLengths.put("Crack", entity.getCrackLength());
+        if (entity.getPitLength() != null)
+            defectLengths.put("Pit", entity.getPitLength());
+        if (entity.getGrooveLength() != null)
+            defectLengths.put("Groove", entity.getGrooveLength());
+        if (entity.getExcessiveScalingLength() != null)
+            defectLengths.put("Excessive Scaling", entity.getExcessiveScalingLength());
+        if (entity.getInternalDefectLength() != null)
+            defectLengths.put("Internal Defect (Piping, Segregation)", entity.getInternalDefectLength());
         visualDto.setDefectLengths(defectLengths);
 
         return visualDto;
@@ -839,7 +881,8 @@ public class RmInspectionServiceImpl implements RmInspectionService {
      * Format LocalDate to String (dd/MM/yyyy)
      */
     private String formatDate(LocalDate date) {
-        if (date == null) return null;
+        if (date == null)
+            return null;
         return date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
     }
 
@@ -847,7 +890,8 @@ public class RmInspectionServiceImpl implements RmInspectionService {
      * Format LocalDateTime to ISO String
      */
     private String formatDateTime(LocalDateTime dateTime) {
-        if (dateTime == null) return null;
+        if (dateTime == null)
+            return null;
         return dateTime.format(DateTimeFormatter.ISO_DATE_TIME);
     }
 
@@ -948,19 +992,25 @@ public class RmInspectionServiceImpl implements RmInspectionService {
 
                 // Chemical composition validations (max value 99.9999 for DECIMAL(6,4))
                 if (mt.getCarbonPercent() != null && mt.getCarbonPercent().compareTo(new BigDecimal("99")) > 0) {
-                    errors.add(prefix + "Carbon % value (" + mt.getCarbonPercent() + ") is too large. Max allowed: 99%");
+                    errors.add(
+                            prefix + "Carbon % value (" + mt.getCarbonPercent() + ") is too large. Max allowed: 99%");
                 }
                 if (mt.getSiliconPercent() != null && mt.getSiliconPercent().compareTo(new BigDecimal("99")) > 0) {
-                    errors.add(prefix + "Silicon % value (" + mt.getSiliconPercent() + ") is too large. Max allowed: 99%");
+                    errors.add(
+                            prefix + "Silicon % value (" + mt.getSiliconPercent() + ") is too large. Max allowed: 99%");
                 }
                 if (mt.getManganesePercent() != null && mt.getManganesePercent().compareTo(new BigDecimal("99")) > 0) {
-                    errors.add(prefix + "Manganese % value (" + mt.getManganesePercent() + ") is too large. Max allowed: 99%");
+                    errors.add(prefix + "Manganese % value (" + mt.getManganesePercent()
+                            + ") is too large. Max allowed: 99%");
                 }
-                if (mt.getPhosphorusPercent() != null && mt.getPhosphorusPercent().compareTo(new BigDecimal("99")) > 0) {
-                    errors.add(prefix + "Phosphorus % value (" + mt.getPhosphorusPercent() + ") is too large. Max allowed: 99%");
+                if (mt.getPhosphorusPercent() != null
+                        && mt.getPhosphorusPercent().compareTo(new BigDecimal("99")) > 0) {
+                    errors.add(prefix + "Phosphorus % value (" + mt.getPhosphorusPercent()
+                            + ") is too large. Max allowed: 99%");
                 }
                 if (mt.getSulphurPercent() != null && mt.getSulphurPercent().compareTo(new BigDecimal("99")) > 0) {
-                    errors.add(prefix + "Sulphur % value (" + mt.getSulphurPercent() + ") is too large. Max allowed: 99%");
+                    errors.add(
+                            prefix + "Sulphur % value (" + mt.getSulphurPercent() + ") is too large. Max allowed: 99%");
                 }
 
                 // Inclusion ratings validation (max value 99.99 for DECIMAL(4,2))
@@ -985,19 +1035,24 @@ public class RmInspectionServiceImpl implements RmInspectionService {
                 String heatNo = cal.getHeatNo();
                 String prefix = "Heat " + heatNo + " Calibration: ";
 
-                if (cal.getLadleCarbonPercent() != null && cal.getLadleCarbonPercent().compareTo(new BigDecimal("99")) > 0) {
+                if (cal.getLadleCarbonPercent() != null
+                        && cal.getLadleCarbonPercent().compareTo(new BigDecimal("99")) > 0) {
                     errors.add(prefix + "Ladle Carbon % value is too large. Max allowed: 99%");
                 }
-                if (cal.getLadleSiliconPercent() != null && cal.getLadleSiliconPercent().compareTo(new BigDecimal("99")) > 0) {
+                if (cal.getLadleSiliconPercent() != null
+                        && cal.getLadleSiliconPercent().compareTo(new BigDecimal("99")) > 0) {
                     errors.add(prefix + "Ladle Silicon % value is too large. Max allowed: 99%");
                 }
-                if (cal.getLadleManganesePercent() != null && cal.getLadleManganesePercent().compareTo(new BigDecimal("99")) > 0) {
+                if (cal.getLadleManganesePercent() != null
+                        && cal.getLadleManganesePercent().compareTo(new BigDecimal("99")) > 0) {
                     errors.add(prefix + "Ladle Manganese % value is too large. Max allowed: 99%");
                 }
-                if (cal.getLadlePhosphorusPercent() != null && cal.getLadlePhosphorusPercent().compareTo(new BigDecimal("99")) > 0) {
+                if (cal.getLadlePhosphorusPercent() != null
+                        && cal.getLadlePhosphorusPercent().compareTo(new BigDecimal("99")) > 0) {
                     errors.add(prefix + "Ladle Phosphorus % value is too large. Max allowed: 99%");
                 }
-                if (cal.getLadleSulphurPercent() != null && cal.getLadleSulphurPercent().compareTo(new BigDecimal("99")) > 0) {
+                if (cal.getLadleSulphurPercent() != null
+                        && cal.getLadleSulphurPercent().compareTo(new BigDecimal("99")) > 0) {
                     errors.add(prefix + "Ladle Sulphur % value is too large. Max allowed: 99%");
                 }
             }
@@ -1008,6 +1063,7 @@ public class RmInspectionServiceImpl implements RmInspectionService {
 
     /**
      * Get the current user ID from ThreadLocal
+     * 
      * @return User ID from ThreadLocal or "system" as fallback
      */
     private String getCurrentUser() {
