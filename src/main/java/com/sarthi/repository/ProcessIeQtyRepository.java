@@ -93,7 +93,8 @@ public interface ProcessIeQtyRepository
         COALESCE(SUM(p.rejectedQty), 0),
         NULL,
         CAST(COALESCE(SUM(p.inspectedQty), 0) AS big_decimal),
-        :heatNo
+        :heatNo,
+        NULL
     )
     FROM ProcessIeQty p
     WHERE p.requestId IN :callNos

@@ -25,201 +25,192 @@ import java.util.Optional;
 @Service
 public class ProcessIeQtyImpl implements ProcessIeQtyService {
 
-    @Autowired
-    private ProcessIeQtyRepository processIeQtyRepository;
-    @Autowired
-    private InspectionCallRepository inspectionCallRepository;
-    @Autowired
-    private ProcessInspectionDetailsRepository processInspectionDetailsRepository;
-    @Autowired
-    private RmHeatFinalResultRepository rmHeatFinalResultRepository;
+        @Autowired
+        private ProcessIeQtyRepository processIeQtyRepository;
+        @Autowired
+        private InspectionCallRepository inspectionCallRepository;
+        @Autowired
+        private ProcessInspectionDetailsRepository processInspectionDetailsRepository;
+        @Autowired
+        private RmHeatFinalResultRepository rmHeatFinalResultRepository;
 
-//    @Override
-//    public InspectionQtySummaryResponse getQtySummary(String requestId) {
-//
-//        InspectionQtySummaryView view =
-//                processIeQtyRepository.getQtySummaryByRequestId(requestId);
-//
-//        if (view == null) {
-//            return new InspectionQtySummaryResponse(0, 0, 0);
-//        }
-//
-//        return new InspectionQtySummaryResponse(
-//                view.getAcceptedQty(),
-//                view.getTotalOfferedQty(),
-//                view.getTotalManufactureQty()
-//        );
-//    }
-    /*
-@Override
-public InspectionQtySummaryResponse getQtySummary(String requestId) {
+        // @Override
+        // public InspectionQtySummaryResponse getQtySummary(String requestId) {
+        //
+        // InspectionQtySummaryView view =
+        // processIeQtyRepository.getQtySummaryByRequestId(requestId);
+        //
+        // if (view == null) {
+        // return new InspectionQtySummaryResponse(0, 0, 0);
+        // }
+        //
+        // return new InspectionQtySummaryResponse(
+        // view.getAcceptedQty(),
+        // view.getTotalOfferedQty(),
+        // view.getTotalManufactureQty()
+        // );
+        // }
+        /*
+         * @Override
+         * public InspectionQtySummaryResponse getQtySummary(String requestId) {
+         * 
+         * 
+         * boolean hasProcessQty =
+         * processIeQtyRepository.existsByRequestId(requestId);
+         * 
+         * 
+         * if (hasProcessQty) {
+         * InspectionCall ic =
+         * inspectionCallRepository
+         * .findByIcNumber(requestId)
+         * .orElseThrow(() -> new BusinessException(
+         * new ErrorDetails(
+         * AppConstant.ERROR_CODE_RESOURCE,
+         * AppConstant.ERROR_TYPE_CODE_RESOURCE,
+         * AppConstant.ERROR_TYPE_VALIDATION,
+         * "Invalid Inspection Call: " + requestId
+         * )
+         * ));
+         * 
+         * 
+         * Integer totalOfferedQty =
+         * processInspectionDetailsRepository
+         * .sumOfferedQtyByIcId(ic.getId());
+         * 
+         * // InspectionQtySummaryView view =
+         * // processIeQtyRepository.getQtySummaryByRequestId(requestId);
+         * 
+         * List<InspectionQtySummaryView> list =
+         * processIeQtyRepository.getLotWiseQtySummary(requestId);
+         * 
+         * 
+         * // if (view == null) {
+         * // return new InspectionQtySummaryResponse(0, 0, 0, 0);
+         * // }
+         * 
+         * return new InspectionQtySummaryResponse(
+         * view.getAcceptedQty(),
+         * totalOfferedQty,
+         * view.getTotalManufactureQty(),
+         * view.getTotalRejectedQty()
+         * );
+         * }
+         * 
+         * 
+         * InspectionCall ic =
+         * inspectionCallRepository
+         * .findByIcNumber(requestId)
+         * .orElseThrow(() -> new BusinessException(
+         * new ErrorDetails(
+         * AppConstant.ERROR_CODE_RESOURCE,
+         * AppConstant.ERROR_TYPE_CODE_RESOURCE,
+         * AppConstant.ERROR_TYPE_VALIDATION,
+         * "Invalid Inspection Call: " + requestId
+         * )
+         * ));
+         * 
+         * 
+         * Integer totalOfferedQty =
+         * processInspectionDetailsRepository
+         * .sumOfferedQtyByIcId(ic.getId());
+         * System.out.print("totsl"+totalOfferedQty);
+         * 
+         * 
+         * return new InspectionQtySummaryResponse(
+         * 0, // acceptedQty
+         * totalOfferedQty, // offeredQty from lots
+         * 0 , // manufactureQty,
+         * 0
+         * );
+         * }
+         */
+        @Override
+        public List<InspectionQtySummaryResponse> getQtySummary(String requestId) {
 
+                InspectionCall ic = inspectionCallRepository
+                                .findByIcNumber(requestId)
+                                .orElseThrow(() -> new BusinessException(
+                                                new ErrorDetails(
+                                                                AppConstant.ERROR_CODE_RESOURCE,
+                                                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                                                AppConstant.ERROR_TYPE_VALIDATION,
+                                                                "Invalid Inspection Call: " + requestId)));
 
-    boolean hasProcessQty =
-            processIeQtyRepository.existsByRequestId(requestId);
+                Integer offeredQty = processInspectionDetailsRepository
+                                .sumOfferedQtyByIcId(ic.getId());
 
+                boolean hasProcessQty = processIeQtyRepository.existsByRequestId(requestId);
 
-    if (hasProcessQty) {
-        InspectionCall ic =
-                inspectionCallRepository
-                        .findByIcNumber(requestId)
-                        .orElseThrow(() -> new BusinessException(
-                                new ErrorDetails(
-                                        AppConstant.ERROR_CODE_RESOURCE,
-                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
-                                        AppConstant.ERROR_TYPE_VALIDATION,
-                                        "Invalid Inspection Call: " + requestId
-                                )
-                        ));
+                // Integer offeredEarlier = RmHeatFinalResultRepository.
 
+                // 🔹 CASE 2: No process qty → return offeredQty only
+                if (!hasProcessQty) {
+                        return List.of(
+                                        new InspectionQtySummaryResponse(
+                                                        null, // lotNumber
+                                                        offeredQty, // offeredQty
+                                                        null, // acceptedQty
+                                                        null, // manufacturedQty
+                                                        null
+                                        // rejectedQty
+                                        ));
+                }
 
-        Integer totalOfferedQty =
-                processInspectionDetailsRepository
-                        .sumOfferedQtyByIcId(ic.getId());
+                // Process qty exists → lot-wise list
+                List<InspectionQtySummaryView> list = processIeQtyRepository.getLotWiseQtySummary(requestId);
 
-       // InspectionQtySummaryView view =
-      //          processIeQtyRepository.getQtySummaryByRequestId(requestId);
+                return list.stream()
+                                .map(v -> new InspectionQtySummaryResponse(
+                                                v.getLotNumber(),
+                                                v.getOfferedQty(),
+                                                v.getAcceptedQty(),
+                                                v.getManufacturedQty(),
+                                                v.getRejectedQty()))
+                                .toList();
+        }
 
-        List<InspectionQtySummaryView> list =
-                processIeQtyRepository.getLotWiseQtySummary(requestId);
+        @Override
+        public String getpoNumberByCallNo(String requestId) {
 
+                InspectionCall ic = inspectionCallRepository
+                                .findByIcNumber(requestId)
+                                .orElseThrow(() -> new BusinessException(
+                                                new ErrorDetails(
+                                                                AppConstant.ERROR_CODE_RESOURCE,
+                                                                AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                                                AppConstant.ERROR_TYPE_VALIDATION,
+                                                                "Invalid Inspection Call: " + requestId)));
+                String input = ic.getPoSerialNo();
+                String result = input.substring(input.lastIndexOf("/") + 1);
 
-//        if (view == null) {
-//            return new InspectionQtySummaryResponse(0, 0, 0, 0);
-//        }
+                return result;
+        }
 
-        return new InspectionQtySummaryResponse(
-                view.getAcceptedQty(),
-                totalOfferedQty,
-                view.getTotalManufactureQty(),
-                view.getTotalRejectedQty()
-        );
-    }
+        @Override
+        public TotalManufaturedQtyOfPoDto getTotalManufaturedQtyPo(String heatNo, String poSerialNo) {
 
+                List<String> callNos = inspectionCallRepository.findCallNumbersByPoNo(poSerialNo);
 
-    InspectionCall ic =
-            inspectionCallRepository
-                    .findByIcNumber(requestId)
-                    .orElseThrow(() -> new BusinessException(
-                            new ErrorDetails(
-                                    AppConstant.ERROR_CODE_RESOURCE,
-                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
-                                    AppConstant.ERROR_TYPE_VALIDATION,
-                                    "Invalid Inspection Call: " + requestId
-                            )
-                    ));
+                TotalManufaturedQtyOfPoDto dto = processIeQtyRepository.sumProcessQty(callNos, heatNo);
 
+                BigDecimal rmAcceptedQty = rmHeatFinalResultRepository.sumRmAcceptedQty(callNos, heatNo);
 
-    Integer totalOfferedQty =
-            processInspectionDetailsRepository
-                    .sumOfferedQtyByIcId(ic.getId());
-    System.out.print("totsl"+totalOfferedQty);
+                BigDecimal weightAcceptedMt = rmHeatFinalResultRepository.sumWeightAcceptedMt(callNos, heatNo);
 
+                // Calculate "Offered Earlier" - total offered quantity across all process ICs
+                // for this heat and PO
+                Integer offeredEarlier = processInspectionDetailsRepository.sumOfferedQtyByCallNosAndHeatNo(callNos,
+                                heatNo);
+                // Integer offeredEarlier =
+                // rmHeatFinalResultRepository
+                // .sumOfferedEarlierByHeatNoAndInspectionCallNos(heatNo, callNos);
 
-    return new InspectionQtySummaryResponse(
-            0,                  // acceptedQty
-            totalOfferedQty,    // offeredQty from lots
-            0   ,                // manufactureQty,
-            0
-    );
-}*/
-@Override
-public List<InspectionQtySummaryResponse> getQtySummary(String requestId) {
+                dto.setRmAcceptedQty(rmAcceptedQty);
+                dto.setHeatNo(heatNo);
+                dto.setWeightAcceptedMt(weightAcceptedMt);
+                dto.setOfferedEarlier(offeredEarlier != null ? offeredEarlier : 0);
 
-    InspectionCall ic =
-            inspectionCallRepository
-                    .findByIcNumber(requestId)
-                    .orElseThrow(() -> new BusinessException(
-                            new ErrorDetails(
-                                    AppConstant.ERROR_CODE_RESOURCE,
-                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
-                                    AppConstant.ERROR_TYPE_VALIDATION,
-                                    "Invalid Inspection Call: " + requestId
-                            )
-                    ));
-
-    Integer offeredQty =
-            processInspectionDetailsRepository
-                    .sumOfferedQtyByIcId(ic.getId());
-
-    boolean hasProcessQty =
-            processIeQtyRepository.existsByRequestId(requestId);
-
-    // 🔹 CASE 2: No process qty → return offeredQty only
-    if (!hasProcessQty) {
-        return List.of(
-                new InspectionQtySummaryResponse(
-                        null,           // lotNumber
-                        offeredQty,     // offeredQty
-                        null,           // acceptedQty
-                        null,           // manufacturedQty
-                        null            // rejectedQty
-                )
-        );
-    }
-
-    //  Process qty exists → lot-wise list
-    List<InspectionQtySummaryView> list =
-            processIeQtyRepository.getLotWiseQtySummary(requestId);
-
-    return list.stream()
-            .map(v -> new InspectionQtySummaryResponse(
-                    v.getLotNumber(),
-                    v.getOfferedQty(),
-                    v.getAcceptedQty(),
-                    v.getManufacturedQty(),
-                    v.getRejectedQty()
-            ))
-            .toList();
-}
-
-
-    @Override
-    public String getpoNumberByCallNo(String requestId) {
-
-
-        InspectionCall ic =
-                inspectionCallRepository
-                        .findByIcNumber(requestId)
-                        .orElseThrow(() -> new BusinessException(
-                                new ErrorDetails(
-                                        AppConstant.ERROR_CODE_RESOURCE,
-                                        AppConstant.ERROR_TYPE_CODE_RESOURCE,
-                                        AppConstant.ERROR_TYPE_VALIDATION,
-                                        "Invalid Inspection Call: " + requestId
-                                )
-                        ));
-        String input = ic.getPoSerialNo();
-        String result = input.substring(input.lastIndexOf("/") + 1);
-
-        return result;
-    }
-
-    @Override
-    public TotalManufaturedQtyOfPoDto getTotalManufaturedQtyPo(String heatNo, String poSerialNo) {
-
-        List<String> callNos =
-                inspectionCallRepository.findCallNumbersByPoNo(poSerialNo);
-
-
-        TotalManufaturedQtyOfPoDto dto =
-                processIeQtyRepository.sumProcessQty(callNos, heatNo);
-
-
-        BigDecimal rmAcceptedQty =
-                rmHeatFinalResultRepository.sumRmAcceptedQty(callNos, heatNo);
-
-        BigDecimal weightAcceptedMt =
-                rmHeatFinalResultRepository.sumWeightAcceptedMt(callNos, heatNo);
-
-        dto.setRmAcceptedQty(rmAcceptedQty);
-        dto.setHeatNo(heatNo);
-        dto.setWeightAcceptedMt(weightAcceptedMt);
-
-        return dto;
-    }
-
-
-
+                return dto;
+        }
 
 }

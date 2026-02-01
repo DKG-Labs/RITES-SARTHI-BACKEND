@@ -75,12 +75,12 @@ public interface RawMaterialInspectionService {
     /**
      * Get completed RM IC certificate numbers for Process IC dropdown
      * Fetches certificate_no from inspection_complete_details table
-     * Filters by ER prefix in call_no (Raw Material inspections) and PO number
+     * Filters by ER prefix in call_no (Raw Material inspections) and PO Serial Number
      * Used for Process IC dropdown when call type is "Process"
-     * @param poNo Purchase Order Number to filter by (optional - if null, returns all ER ICs)
+     * @param poSerialNo Purchase Order Serial Number to filter by (optional - if null, returns all ER ICs)
      * @return List of completed RM IC certificate numbers (e.g., "N/ER-01080001/RAJK")
      */
-    List<String> getCompletedRmIcNumbers(String poNo);
+    List<String> getCompletedRmIcNumbers(String poSerialNo);
 
     /**
      * Get heat numbers for a specific RM IC number

@@ -23,4 +23,6 @@ public interface InspectionQtySummaryView {
 
    Integer getRejectedQty();
    Integer getOfferedQty();
+   Integer getofferedEarlier();
+
 }

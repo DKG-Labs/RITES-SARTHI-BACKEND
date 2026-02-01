@@ -22,27 +22,37 @@ public interface RmHeatFinalResultRepository extends JpaRepository<RmHeatFinalRe
     void deleteByInspectionCallNo(String inspectionCallNo);
 
     @Query("""
-    SELECT COALESCE(SUM(r.acceptedQtyMt), 0)
-    FROM RmHeatFinalResult r
-    WHERE r.inspectionCallNo IN :callNos
-    AND r.heatNo = :heatNo
-""")
+                SELECT COALESCE(SUM(r.acceptedQtyMt), 0)
+                FROM RmHeatFinalResult r
+                WHERE r.inspectionCallNo IN :callNos
+                AND r.heatNo = :heatNo
+            """)
     BigDecimal sumRmAcceptedQty(
             @Param("callNos") List<String> callNos,
-            @Param("heatNo") String heatNo
-    );
+            @Param("heatNo") String heatNo);
 
     @Query("""
-    SELECT COALESCE(SUM(r.weightAcceptedMt), 0)
-    FROM RmHeatFinalResult r
-    WHERE r.inspectionCallNo IN :callNos
-    AND r.heatNo = :heatNo
-""")
+                SELECT COALESCE(SUM(r.weightAcceptedMt), 0)
+                FROM RmHeatFinalResult r
+                WHERE r.inspectionCallNo IN :callNos
+                AND r.heatNo = :heatNo
+            """)
     BigDecimal sumWeightAcceptedMt(
             @Param("callNos") List<String> callNos,
-            @Param("heatNo") String heatNo
-    );
+            @Param("heatNo") String heatNo);
 
+    /**
+     * Sum offered earlier for a heat across multiple inspection calls
+     */
+    // @Query("""
+    // SELECT COALESCE(SUM(r.offeredEarlier), 0)
+    // FROM RmHeatFinalResult r
+    // WHERE r.inspectionCallNo IN :callNos
+    // AND r.heatNo = :heatNo
+    // """)
+    // Integer sumOfferedEarlierByHeatNoAndInspectionCallNos(
+    // @Param("heatNo") String heatNo,
+    // @Param("callNos") List<String> callNos
+    // );
 
 }
-

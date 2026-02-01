@@ -19,6 +19,8 @@ public class RmHeatFinalResultDto {
     private BigDecimal weightRejectedMt;
     private BigDecimal acceptedQtyMt;
 
+    private Integer offeredEarlier;
+
     // Submodule Statuses
     private String calibrationStatus;
     private String visualStatus;
