@@ -1,12 +1,13 @@
 package com.sarthi.service.Impl;
 
 import com.sarthi.dto.PoInspection2ndLevelSerialStatusDto;
-import com.sarthi.dto.reports.PoInspection1stLevelStatusDto;
-import com.sarthi.dto.reports.PoInspection3rdLevelCallStatusDto;
+import com.sarthi.dto.reports.*;
 import com.sarthi.entity.RmHeatFinalResult;
 import com.sarthi.entity.WorkflowTransition;
+import com.sarthi.entity.processmaterial.ProcessLineFinalResult;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.repository.*;
+import com.sarthi.repository.processmaterial.ProcessLineFinalResultRepository;
 import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.service.reports;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +45,8 @@ public class reportsImpl implements reports {
     private WorkflowTransitionRepository workflowTransitionRepository;
     @Autowired
     private InspectionCompleteDetailsRepository inspectionCompleteDetailsRepository;
-
+    @Autowired
+    private ProcessLineFinalResultRepository processLineFinalResultRepository;
 
 
   /*  @Override
@@ -708,6 +710,251 @@ public Page<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBySerialNo(
     );
 }
 
+
+/*
+
+    public List<FourthLevelInspectionDto> getFourthLevelReport(String callId) {
+
+        InspectionCall call = inspectionCallRepository.findByIcNumber(callId)
+                .orElseThrow(() -> new RuntimeException("Call not found"));
+
+        FourthLevelInspectionDto dto = new FourthLevelInspectionDto();
+
+        List<ProcessLineFinalResult> processList =
+                processLineFinalResultRepository.findByInspectionCallNo(callId);
+
+        BasicDetailsDto basic = new BasicDetailsDto();
+
+        basic.setDate(call.getDate());
+        basic.setShift(call.getShift());
+        basic.setRlyName(call.getRlyName());
+        basic.setPoSrNo(call.getPoSrNo());
+        basic.setLotNumber(call.getLotNumber());
+        basic.setTotalAcceptedQty(call.getAcceptedQty());
+        basic.setTotalRejectionQty(call.getRejectedQty());
+
+        dto.setBasicDetails(basic);
+
+
+        // ================= PROCESS QTY =================
+        ProcessQtyDto process = new ProcessQtyDto();
+
+        process.setShearingProductionQty(call.getShearingProd());
+        process.setShearingRejectionQty(call.getShearingRej());
+
+        process.setTurningProductionQty(call.getTurningProd());
+        process.setTurningRejectionQty(call.getTurningRej());
+
+        process.setMpiProductionQty(call.getMpiProd());
+        process.setMpiRejectionQty(call.getMpiRej());
+
+        process.setForgingProductionQty(call.getForgingProd());
+        process.setForgingRejectionQty(call.getForgingRej());
+
+        process.setQuenchingProductionQty(call.getQuenchingProd());
+        process.setQuenchingRejectionQty(call.getQuenchingRej());
+
+        process.setTemperingProductionQty(call.getTemperingProd());
+        process.setTemperingRejectionQty(call.getTemperingRej());
+
+        dto.setProcessQty(process);
+
+
+        // ================= SHEARING DEFECTS =================
+        ShearingDefectsDto shearing = new ShearingDefectsDto();
+
+        shearing.setLengthOfCutBar(call.getLengthCut());
+        shearing.setOvalityImproperDiaAtEnd(call.getOvality());
+        shearing.setSharpEdges(call.getSharpEdges());
+        shearing.setCrackedEdges(call.getCrackedEdges());
+
+        dto.setShearingDefects(shearing);
+
+
+        // ================= TURNING DEFECTS =================
+        TurningDefectsDto turning = new TurningDefectsDto();
+
+        turning.setParallelLength(call.getParallelLength());
+        turning.setFullTurningLength(call.getFullTurning());
+        turning.setTurningDia(call.getTurningDia());
+
+        dto.setTurningDefects(turning);
+
+
+        // ================= FORGING DEFECTS =================
+        ForgingDefectsDto forging = new ForgingDefectsDto();
+
+        forging.setForgingTemperature(call.getForgingTemp());
+        forging.setForgingStabilisationRejection(call.getForgingStable());
+        forging.setImproperForging(call.getImproperForging());
+        forging.setForgingMarksNotches(call.getMarks());
+
+        dto.setForgingDefects(forging);
+
+
+        // ================= DIMENSIONAL =================
+        DimensionalDefectsDto dimensional = new DimensionalDefectsDto();
+
+        dimensional.setBoxGauge(call.getBoxGauge());
+        dimensional.setFlatBearingArea(call.getFlatArea());
+        dimensional.setFallingGauge(call.getFallingGauge());
+
+        dto.setDimensionalDefects(dimensional);
+
+
+        // ================= VISUAL =================
+        VisualDefectsDto visual = new VisualDefectsDto();
+
+        visual.setSurfaceDefect(call.getSurfaceDefect());
+        visual.setEmbossingDefect(call.getEmbossing());
+        visual.setMarking(call.getMarking());
+
+        dto.setVisualDefects(visual);
+
+
+        // ================= TESTING =================
+        TestingDefectsDto testing = new TestingDefectsDto();
+
+        testing.setTemperingHardness(call.getTemperingHardness());
+        testing.setToeLoad(call.getToeLoad());
+        testing.setWeight(call.getWeight());
+
+        dto.setTestingDefects(testing);
+
+
+        // ================= FINISHING =================
+        FinishingDefectsDto finishing = new FinishingDefectsDto();
+
+        finishing.setPaintIdentification(call.getPaintId());
+        finishing.setErcCoating(call.getErcCoating());
+
+        dto.setFinishingDefects(finishing);
+
+
+        return dto;
+    }
+
+*/
+public List<FourthLevelInspectionDto> getFourthLevelReport(String callId) {
+
+    // Get call master
+    InspectionCall call = inspectionCallRepository
+            .findByIcNumber(callId)
+            .orElseThrow(() -> new RuntimeException("Call not found"));
+
+
+    // Get all process rows
+    List<ProcessLineFinalResult> processList =
+            processLineFinalResultRepository
+                    .findByInspectionCallNo(callId);
+
+
+    List<FourthLevelInspectionDto> result = new ArrayList<>();
+
+
+    // Each process row → one DTO
+    for (ProcessLineFinalResult p : processList) {
+
+        FourthLevelInspectionDto dto =
+                new FourthLevelInspectionDto();
+
+
+        // ================= BASIC =================
+        BasicDetailsDto basic = new BasicDetailsDto();
+
+        basic.setDate(p.getCreatedAt().toLocalDate());
+        basic.setShift(p.getShift());
+        basic.setRlyName("");
+        basic.setPoSrNo(call.getPoSerialNo());
+        basic.setLotNumber(p.getLotNumber());
+        basic.setTotalAcceptedQty(p.getTotalAccepted());
+        basic.setTotalRejectionQty(p.getTotalRejected());
+
+        dto.setBasicDetails(basic);
+
+
+        // ================= PROCESS =================
+        ProcessQtyDto process = new ProcessQtyDto();
+
+        process.setShearingProductionQty(p.getShearingManufactured());
+        process.setShearingRejectionQty(p.getShearingRejected());
+
+        process.setTurningProductionQty(p.getTurningManufactured());
+        process.setTurningRejectionQty(p.getTurningRejected());
+
+        process.setMpiProductionQty(p.getMpiManufactured());
+        process.setMpiRejectionQty(p.getMpiRejected());
+
+        process.setForgingProductionQty(p.getForgingManufactured());
+        process.setForgingRejectionQty(p.getForgingRejected());
+
+        process.setQuenchingProductionQty(p.getQuenchingManufactured());
+        process.setQuenchingRejectionQty(p.getQuenchingRejected());
+
+        process.setTemperingProductionQty(p.getTemperingManufactured());
+        process.setTemperingRejectionQty(p.getTemperingRejected());
+
+        dto.setProcessQty(process);
+
+
+        // ================= DEFECTS (From Call) =================
+/*
+        ShearingDefectsDto shearing = new ShearingDefectsDto();
+        shearing.setLengthOfCutBar(call.getLengthCut());
+        shearing.setOvalityImproperDiaAtEnd(call.getOvality());
+        shearing.setSharpEdges(call.getSharpEdges());
+        shearing.setCrackedEdges(call.getCrackedEdges());
+        dto.setShearingDefects(shearing);
+
+
+        TurningDefectsDto turning = new TurningDefectsDto();
+        turning.setParallelLength(call.getParallelLength());
+        turning.setFullTurningLength(call.getFullTurning());
+        turning.setTurningDia(call.getTurningDia());
+        dto.setTurningDefects(turning);
+
+
+        ForgingDefectsDto forging = new ForgingDefectsDto();
+        forging.setForgingTemperature(call.getForgingTemp());
+        forging.setForgingStabilisationRejection(call.getForgingStable());
+        forging.setImproperForging(call.getImproperForging());
+        forging.setForgingMarksNotches(call.getMarks());
+        dto.setForgingDefects(forging);
+
+
+        DimensionalDefectsDto dimensional = new DimensionalDefectsDto();
+        dimensional.setBoxGauge(call.getBoxGauge());
+        dimensional.setFlatBearingArea(call.getFlatArea());
+        dimensional.setFallingGauge(call.getFallingGauge());
+        dto.setDimensionalDefects(dimensional);
+
+
+        VisualDefectsDto visual = new VisualDefectsDto();
+        visual.setSurfaceDefect(call.getSurfaceDefect());
+        visual.setEmbossingDefect(call.getEmbossing());
+        visual.setMarking(call.getMarking());
+        dto.setVisualDefects(visual);
+
+
+        TestingDefectsDto testing = new TestingDefectsDto();
+        testing.setTemperingHardness(call.getTemperingHardness());
+        testing.setToeLoad(call.getToeLoad());
+        testing.setWeight(call.getWeight());
+        dto.setTestingDefects(testing);
+
+
+        FinishingDefectsDto finishing = new FinishingDefectsDto();
+        finishing.setPaintIdentification(call.getPaintId());
+        finishing.setErcCoating(call.getErcCoating());
+        dto.setFinishingDefects(finishing);
+*/
+
+        result.add(dto);
+    }
+
+
+    return result;
+}
 
 
 

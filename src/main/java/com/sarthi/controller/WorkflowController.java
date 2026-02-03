@@ -27,6 +27,9 @@ public class WorkflowController {
 
     @GetMapping("/allPendingWorkflowTransition")
     public ResponseEntity<Object> allPendingWorkflowTransition(@RequestParam String roleName)  {
+        if(roleName.equalsIgnoreCase("Process IE")){
+            roleName="IE";
+        }
         return new ResponseEntity<Object>(ResponseBuilder.getSuccessResponse(workflowService.allPendingWorkflowTransition(roleName)), HttpStatus.OK);
     }
 

@@ -1,6 +1,7 @@
 package com.sarthi.service;
 
 import com.sarthi.dto.PoInspection2ndLevelSerialStatusDto;
+import com.sarthi.dto.reports.FourthLevelInspectionDto;
 import com.sarthi.dto.reports.PoInspection1stLevelStatusDto;
 import com.sarthi.dto.reports.PoInspection3rdLevelCallStatusDto;
 import org.springframework.data.domain.Page;
@@ -21,5 +22,5 @@ public interface reports {
             int page,
             int size);
 
-
+    public List<FourthLevelInspectionDto> getFourthLevelReport(String callId);
 }

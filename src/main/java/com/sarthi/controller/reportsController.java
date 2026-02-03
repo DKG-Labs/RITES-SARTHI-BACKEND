@@ -1,6 +1,7 @@
 package com.sarthi.controller;
 
 import com.sarthi.dto.PoInspection2ndLevelSerialStatusDto;
+import com.sarthi.dto.reports.FourthLevelInspectionDto;
 import com.sarthi.dto.reports.PoInspection1stLevelStatusDto;
 import com.sarthi.dto.reports.PoInspection3rdLevelCallStatusDto;
 import com.sarthi.service.reports;
@@ -54,6 +55,12 @@ public ResponseEntity<Object> getInspectionDataBasedOnSerialNo(
             HttpStatus.OK
     );
 }
+
+    @GetMapping("/4thLevelReportICData/{callNo}")
+    public ResponseEntity<Object> getProcessDataCallWise(@PathVariable String callNo) {
+        List<FourthLevelInspectionDto> list = reportService.getFourthLevelReport(callNo);
+        return new ResponseEntity<Object>(ResponseBuilder.getSuccessResponse(list), HttpStatus.OK);
+    }
 
 
 }

@@ -187,6 +187,8 @@ public class ProcessLineFinalResult {
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
+    private String shift;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
