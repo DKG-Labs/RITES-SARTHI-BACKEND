@@ -61,8 +61,7 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                     new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
                             AppConstant.ERROR_TYPE_CODE_INTERNAL,
                             AppConstant.ERROR_TYPE_ERROR,
-                            "Failed to create inventory entry: " + e.getMessage())
-            );
+                            "Failed to create inventory entry: " + e.getMessage()));
         }
     }
 
@@ -85,8 +84,7 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                     new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
                             AppConstant.ERROR_TYPE_CODE_INTERNAL,
                             AppConstant.ERROR_TYPE_ERROR,
-                            "Failed to fetch inventory entries: " + e.getMessage())
-            );
+                            "Failed to fetch inventory entries: " + e.getMessage()));
         }
     }
 
@@ -100,8 +98,7 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                         new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
                                 AppConstant.ERROR_TYPE_CODE_RESOURCE,
                                 AppConstant.ERROR_TYPE_RESOURCE,
-                                "Inventory entry not found with ID: " + id)
-                ));
+                                "Inventory entry not found with ID: " + id)));
 
         return mapEntityToResponse(entry);
     }
@@ -115,8 +112,7 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                         new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
                                 AppConstant.ERROR_TYPE_CODE_RESOURCE,
                                 AppConstant.ERROR_TYPE_RESOURCE,
-                                "Inventory entry not found with ID: " + id)
-                ));
+                                "Inventory entry not found with ID: " + id)));
 
         try {
             InventoryEntry.InventoryStatus newStatus = InventoryEntry.InventoryStatus.valueOf(status.toUpperCase());
@@ -131,8 +127,7 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                     new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
                             AppConstant.ERROR_TYPE_CODE_VALIDATION,
                             AppConstant.ERROR_TYPE_VALIDATION,
-                            "Invalid status value: " + status)
-            );
+                            "Invalid status value: " + status));
         }
     }
 
@@ -160,8 +155,7 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                         new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
                                 AppConstant.ERROR_TYPE_CODE_RESOURCE,
                                 AppConstant.ERROR_TYPE_RESOURCE,
-                                "Inventory entry not found with ID: " + id)
-                ));
+                                "Inventory entry not found with ID: " + id)));
 
         // Only allow updates for FRESH_PO status
         if (existingEntry.getStatus() != InventoryEntry.InventoryStatus.FRESH_PO) {
@@ -170,8 +164,7 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                             AppConstant.ERROR_TYPE_CODE_VALIDATION,
                             AppConstant.ERROR_TYPE_VALIDATION,
                             "Cannot update inventory entry with status: " + existingEntry.getStatus() +
-                            ". Only FRESH_PO entries can be modified.")
-            );
+                                    ". Only FRESH_PO entries can be modified."));
         }
 
         // Update entity with new data
@@ -195,8 +188,7 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                         new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
                                 AppConstant.ERROR_TYPE_CODE_RESOURCE,
                                 AppConstant.ERROR_TYPE_RESOURCE,
-                                "Inventory entry not found with ID: " + id)
-                ));
+                                "Inventory entry not found with ID: " + id)));
 
         // Only allow deletion for FRESH_PO status
         if (existingEntry.getStatus() != InventoryEntry.InventoryStatus.FRESH_PO) {
@@ -205,8 +197,7 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                             AppConstant.ERROR_TYPE_CODE_VALIDATION,
                             AppConstant.ERROR_TYPE_VALIDATION,
                             "Cannot delete inventory entry with status: " + existingEntry.getStatus() +
-                            ". Only FRESH_PO entries can be deleted.")
-            );
+                                    ". Only FRESH_PO entries can be deleted."));
         }
 
         // Delete the entry
@@ -225,11 +216,11 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                         new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
                                 AppConstant.ERROR_TYPE_CODE_RESOURCE,
                                 AppConstant.ERROR_TYPE_RESOURCE,
-                                "Inventory entry not found for heat: " + heatNumber + ", TC: " + tcNumber)
-                ));
+                                "Inventory entry not found for heat: " + heatNumber + ", TC: " + tcNumber)));
 
         // Validate that offered quantity doesn't exceed TC Qty Remaining
-        BigDecimal tcQtyRemaining = entry.getQtyLeftForInspection() != null ? entry.getQtyLeftForInspection() : BigDecimal.ZERO;
+        BigDecimal tcQtyRemaining = entry.getQtyLeftForInspection() != null ? entry.getQtyLeftForInspection()
+                : BigDecimal.ZERO;
         if (offeredQty.compareTo(tcQtyRemaining) > 0) {
             logger.warn("Offered quantity {} exceeds TC Qty Remaining {} for heat: {}, TC: {}",
                     offeredQty, tcQtyRemaining, heatNumber, tcNumber);
@@ -237,8 +228,8 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                     new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
                             AppConstant.ERROR_TYPE_CODE_RESOURCE,
                             AppConstant.ERROR_TYPE_RESOURCE,
-                            "Offered Qty (" + offeredQty + ") cannot be more than TC Qty Remaining with Vendor (" + tcQtyRemaining + ")")
-            );
+                            "Offered Qty (" + offeredQty + ") cannot be more than TC Qty Remaining with Vendor ("
+                                    + tcQtyRemaining + ")"));
         }
 
         // Update offered quantity (add to existing)
@@ -277,32 +268,28 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
                     new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
                             AppConstant.ERROR_TYPE_CODE_VALIDATION,
                             AppConstant.ERROR_TYPE_VALIDATION,
-                            "Vendor code is required")
-            );
+                            "Vendor code is required"));
         }
         if (dto.getSupplierName() == null || dto.getSupplierName().trim().isEmpty()) {
             throw new BusinessException(
                     new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
                             AppConstant.ERROR_TYPE_CODE_VALIDATION,
                             AppConstant.ERROR_TYPE_VALIDATION,
-                            "Supplier name is required")
-            );
+                            "Supplier name is required"));
         }
         if (dto.getRawMaterial() == null || dto.getRawMaterial().trim().isEmpty()) {
             throw new BusinessException(
                     new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
                             AppConstant.ERROR_TYPE_CODE_VALIDATION,
                             AppConstant.ERROR_TYPE_VALIDATION,
-                            "Raw material is required")
-            );
+                            "Raw material is required"));
         }
         if (dto.getHeatNumber() == null || dto.getHeatNumber().trim().isEmpty()) {
             throw new BusinessException(
                     new ErrorDetails(AppConstant.ERROR_CODE_INVALID,
                             AppConstant.ERROR_TYPE_CODE_VALIDATION,
                             AppConstant.ERROR_TYPE_VALIDATION,
-                            "Heat number is required")
-            );
+                            "Heat number is required"));
         }
     }
 
@@ -388,5 +375,11 @@ public class InventoryEntryServiceImpl implements InventoryEntryService {
             return null;
         }
     }
-}
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsByTcNumber(String tcNumber, String vendorCode) {
+        logger.info("Checking if TC number {} exists for vendor: {}", tcNumber, vendorCode);
+        return inventoryEntryRepository.existsByTcNumberAndVendorCode(tcNumber, vendorCode);
+    }
+}

@@ -4,8 +4,6 @@ import com.sarthi.constant.AppConstant;
 import com.sarthi.dto.InspectionQtySummaryResponse;
 import com.sarthi.dto.InspectionQtySummaryView;
 import com.sarthi.dto.TotalManufaturedQtyOfPoDto;
-import com.sarthi.entity.ProcessIeQty;
-import com.sarthi.entity.processmaterial.ProcessInspectionDetails;
 import com.sarthi.entity.rawmaterial.InspectionCall;
 import com.sarthi.exception.BusinessException;
 import com.sarthi.exception.ErrorDetails;
@@ -14,13 +12,11 @@ import com.sarthi.repository.RmHeatFinalResultRepository;
 import com.sarthi.repository.processmaterial.ProcessInspectionDetailsRepository;
 import com.sarthi.repository.rawmaterial.InspectionCallRepository;
 import com.sarthi.service.ProcessIeQtyService;
-import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ProcessIeQtyImpl implements ProcessIeQtyService {
@@ -211,6 +207,12 @@ public class ProcessIeQtyImpl implements ProcessIeQtyService {
                 dto.setOfferedEarlier(offeredEarlier != null ? offeredEarlier : 0);
 
                 return dto;
+        }
+
+        @Override
+        public int getAcceptedQtyForLot(String requestId, String lotNumber, String heatNo) {
+                return processIeQtyRepository.sumInspectedQtyByRequestIdAndLotNumberAndHeatNo(requestId, lotNumber,
+                                heatNo);
         }
 
 }

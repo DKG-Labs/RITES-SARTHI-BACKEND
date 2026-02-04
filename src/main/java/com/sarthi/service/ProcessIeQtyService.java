@@ -11,10 +11,10 @@ public interface ProcessIeQtyService {
 
     public List<InspectionQtySummaryResponse> getQtySummary(String requestId);
 
-
     public String getpoNumberByCallNo(String requestedId);
 
-
     public TotalManufaturedQtyOfPoDto getTotalManufaturedQtyPo(String heatNo, String poNo);
+
+    int getAcceptedQtyForLot(String requestId, String lotNumber, String heatNo);
 
 }

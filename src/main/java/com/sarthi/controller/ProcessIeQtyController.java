@@ -15,34 +15,44 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/processIe")
 public class ProcessIeQtyController {
 
-    @Autowired
-    private ProcessIeQtyService processIeQtyService;
+        @Autowired
+        private ProcessIeQtyService processIeQtyService;
 
-    @GetMapping("/qty-summary/{requestId}")
-    public ResponseEntity<Object> getInspectionQtySummary(@PathVariable String requestId) {
+        @GetMapping("/qty-summary/{requestId}")
+        public ResponseEntity<Object> getInspectionQtySummary(@PathVariable String requestId) {
 
-        return new ResponseEntity<>(
-                ResponseBuilder.getSuccessResponse(processIeQtyService.getQtySummary(requestId)),
-                HttpStatus.OK
-        );
-    }
+                return new ResponseEntity<>(
+                                ResponseBuilder.getSuccessResponse(processIeQtyService.getQtySummary(requestId)),
+                                HttpStatus.OK);
+        }
 
-    @GetMapping("/getPoNumnerByCallId/{requestId}")
-    public ResponseEntity<Object> getPoNumnerByCallId(@PathVariable String requestId) {
+        @GetMapping("/getPoNumnerByCallId/{requestId}")
+        public ResponseEntity<Object> getPoNumnerByCallId(@PathVariable String requestId) {
 
-        return new ResponseEntity<>(
-                ResponseBuilder.getSuccessResponse(processIeQtyService.getpoNumberByCallNo(requestId)),
-                HttpStatus.OK
-        );
-    }
+                return new ResponseEntity<>(
+                                ResponseBuilder.getSuccessResponse(processIeQtyService.getpoNumberByCallNo(requestId)),
+                                HttpStatus.OK);
+        }
 
-    @GetMapping("/getManufaturedQtyOfPo/{heatNo}/{poNo}")
-    public ResponseEntity<Object> getTotalManufaturedQty(@PathVariable String heatNo, @PathVariable String poNo) {
+        @GetMapping("/getManufaturedQtyOfPo/{heatNo}/{poNo}")
+        public ResponseEntity<Object> getTotalManufaturedQty(@PathVariable String heatNo, @PathVariable String poNo) {
 
-        return new ResponseEntity<>(
-                ResponseBuilder.getSuccessResponse(processIeQtyService.getTotalManufaturedQtyPo(heatNo,poNo)),
-                HttpStatus.OK
-        );
-    }
+                return new ResponseEntity<>(
+                                ResponseBuilder.getSuccessResponse(
+                                                processIeQtyService.getTotalManufaturedQtyPo(heatNo, poNo)),
+                                HttpStatus.OK);
+        }
+
+        @GetMapping("/accepted-qty-for-lot")
+        public ResponseEntity<Object> getAcceptedQtyForLot(
+                        @org.springframework.web.bind.annotation.RequestParam String requestId,
+                        @org.springframework.web.bind.annotation.RequestParam String lotNumber,
+                        @org.springframework.web.bind.annotation.RequestParam String heatNo) {
+                return new ResponseEntity<>(
+                                ResponseBuilder
+                                                .getSuccessResponse(processIeQtyService.getAcceptedQtyForLot(requestId,
+                                                                lotNumber, heatNo)),
+                                HttpStatus.OK);
+        }
 
 }

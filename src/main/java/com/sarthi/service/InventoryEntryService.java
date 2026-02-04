@@ -13,6 +13,7 @@ public interface InventoryEntryService {
 
     /**
      * Create a new inventory entry
+     * 
      * @param requestDto The inventory entry data
      * @return The created inventory entry
      */
@@ -20,6 +21,7 @@ public interface InventoryEntryService {
 
     /**
      * Get all inventory entries for a vendor
+     * 
      * @param vendorCode The vendor code
      * @return List of inventory entries
      */
@@ -27,6 +29,7 @@ public interface InventoryEntryService {
 
     /**
      * Get inventory entry by ID
+     * 
      * @param id The inventory entry ID
      * @return The inventory entry
      */
@@ -34,7 +37,8 @@ public interface InventoryEntryService {
 
     /**
      * Update inventory entry status
-     * @param id The inventory entry ID
+     * 
+     * @param id     The inventory entry ID
      * @param status The new status
      * @return The updated inventory entry
      */
@@ -42,15 +46,17 @@ public interface InventoryEntryService {
 
     /**
      * Get inventory entry by heat number and TC number combination
+     * 
      * @param heatNumber The heat number
-     * @param tcNumber The TC number
+     * @param tcNumber   The TC number
      * @return The inventory entry matching both criteria, or null if not found
      */
     InventoryEntryResponseDto getInventoryEntryByHeatAndTc(String heatNumber, String tcNumber);
 
     /**
      * Update an existing inventory entry
-     * @param id The inventory entry ID
+     * 
+     * @param id         The inventory entry ID
      * @param requestDto The updated inventory entry data
      * @return The updated inventory entry
      */
@@ -59,17 +65,27 @@ public interface InventoryEntryService {
     /**
      * Delete an inventory entry
      * Only allowed for entries with status = FRESH_PO
+     * 
      * @param id The inventory entry ID
      */
     void deleteInventoryEntry(Long id);
 
     /**
      * Update inventory offered quantity when an inspection call is created
+     * 
      * @param heatNumber The heat number
-     * @param tcNumber The TC number
+     * @param tcNumber   The TC number
      * @param offeredQty The quantity offered in the inspection call
      * @return The updated inventory entry
      */
     InventoryEntryResponseDto updateOfferedQuantity(String heatNumber, String tcNumber, BigDecimal offeredQty);
-}
 
+    /**
+     * Check if a TC number already exists in inventory for a vendor
+     * 
+     * @param tcNumber   The TC number to check
+     * @param vendorCode The vendor code
+     * @return true if exists, false otherwise
+     */
+    boolean existsByTcNumber(String tcNumber, String vendorCode);
+}
