@@ -101,6 +101,31 @@ AND wt.jobStatus IN (
     List<WorkflowTransition> findAllByStatusAndCreatedBy(String status, Integer createdBy);
 
   @Query("""
+SELECT DISTINCT wt
+FROM WorkflowTransition wt
+LEFT JOIN ProcessIeUsers pm
+       ON wt.processIeUserId = pm.processUserId
+WHERE wt.status = 'INSPECTION_COMPLETE_CONFIRM'
+  AND (
+       (wt.requestId LIKE 'EP%' AND
+           (pm.ieUserId = :userId
+            OR wt.processIeUserId = :userId
+            OR wt.createdBy = :userId)
+       )
+       OR
+       (wt.requestId NOT LIKE 'EP%'
+            AND wt.createdBy = :userId
+       )
+  )
+""")
+  List<WorkflowTransition> findCompletedByUserRule(
+          @Param("userId") Long userId
+  );
+
+
+
+
+  @Query("""
     SELECT
         MIN(w.createdDate),
         MAX(

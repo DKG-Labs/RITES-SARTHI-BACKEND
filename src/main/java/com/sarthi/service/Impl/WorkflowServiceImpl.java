@@ -3298,13 +3298,17 @@ private Integer getProcessIeUserFromPoi(String poiCode) {
 
     @Override
     public List<IcWorkflowTransitionDto> getInspectionCompletedByCreatedUser(Integer createdBy) {
-
+/*
         List<WorkflowTransition> entities =
                 workflowTransitionRepository
                         .findAllByStatusAndCreatedBy(
                                 "INSPECTION_COMPLETE_CONFIRM",
                                 createdBy
-                        );
+                        );*/
+        List<WorkflowTransition> entities =
+                workflowTransitionRepository
+                        .findCompletedByUserRule(Long.valueOf(createdBy));
+
 
         return entities.stream()
                 .map(this::mapToDto)
