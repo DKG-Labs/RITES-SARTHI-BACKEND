@@ -17,8 +17,8 @@ public class PoiServiceImpl implements poiService {
     private PincodePoIMappingRepository pincodePoIMappingRepository;
 
     @Override
-    public List<String> getCompanyList() {
-        return pincodePoIMappingRepository.findDistinctCompanyNames();
+    public List<String> getCompanyList(String vendorCode) {
+        return pincodePoIMappingRepository.findDistinctCompanyNamesByVendorCode(vendorCode);
     }
 
     //  Unit dropdown based on company

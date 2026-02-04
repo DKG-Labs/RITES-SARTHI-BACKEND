@@ -39,5 +39,7 @@ public class PincodePoIMapping {
 
     @Column(name = "poi_code", length = 50, unique = true)
     private String poiCode;
+
+    private String vendorCode;
 }
 

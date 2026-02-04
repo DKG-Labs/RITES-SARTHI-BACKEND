@@ -552,6 +552,16 @@ public class WorkflowServiceImpl implements WorkflowService {
                       .findTopByRequestIdOrderByWorkflowTransitionIdDesc(current.getRequestId());
 
           }
+            //  Stop if inspection already completed
+            if (last != null &&
+                    ("INSPECTION_COMPLETE_CONFIRM".equalsIgnoreCase(last.getStatus())
+                            || "INSPECTION_COMPLETE_CONFIRM".equalsIgnoreCase(last.getAction()))) {
+
+                System.out.println("Inspection already completed. No new transition.");
+
+                return mapWorkflowTransition(last); // Exit early
+            }
+
 
 //            String inspectionType ="PROCESS";
             Optional<InspectionCall> insp = inspectionCallRepository.findByIcNumber(req.getRequestId());
@@ -1925,7 +1935,7 @@ private Integer assignIE(
 //                                    AppConstant.ERROR_TYPE_VALIDATION,
 //                                    "No IE mapping for given pin/product/stage")));
 
-    System.out.print(pinCode+""+product +""+ stage +""+poiCode);
+    System.out.print(pinCode+" "+product +" "+ stage +" "+poiCode);
 
     IEFieldsMapping mapping =
             ieFieldsMappingRepository
@@ -1968,6 +1978,10 @@ private Integer assignIE(
 //    if (secondaryIe.isPresent()) {
 //        return secondaryIe.get();
 //    }
+    System.out.println(pinCode);
+    System.out.println(product);
+    System.out.println(poiCode);
+
     Optional<String> primaryIe =  iePincodePoiMappingRepository.findPrimaryIe(pinCode, product, poiCode);
     if (primaryIe.isPresent()) {
         UserMaster um = userMasterRepository.findByEmployeeCode(primaryIe.get());

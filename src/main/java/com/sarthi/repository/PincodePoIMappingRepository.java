@@ -37,6 +37,14 @@ public interface PincodePoIMappingRepository extends JpaRepository<PincodePoIMap
 """)
     List<String> findDistinctCompanyNames();
 
+    @Query("""
+    SELECT DISTINCT p.companyName
+    FROM PincodePoIMapping p
+    WHERE p.vendorCode = :vendorCode
+""")
+    List<String> findDistinctCompanyNamesByVendorCode(
+            @Param("vendorCode") String vendorCode
+    );
 
 
     @Query("""
