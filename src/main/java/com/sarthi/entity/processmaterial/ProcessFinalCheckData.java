@@ -67,14 +67,7 @@ public class ProcessFinalCheckData {
     private String hardnessCheck2;
 
     // Rejected numbers
-    @Column(name = "rejected_no_1")
-    private Integer rejectedNo1;
 
-    @Column(name = "rejected_no_2")
-    private Integer rejectedNo2;
-
-    @Column(name = "rejected_no_3")
-    private Integer rejectedNo3;
 
     // Separate rejection fields for each measurement
     @Column(name = "box_gauge_rejected")

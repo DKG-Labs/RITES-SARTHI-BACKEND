@@ -26,8 +26,9 @@ public class ProcessTurningDataDTO {
     private BigDecimal dia2;
     private BigDecimal dia3;
     private Integer acceptedQty;
-    private Integer rejectedQty1;
-    private Integer rejectedQty2;
+    private Integer parallelLengthRejected;
+    private Integer fullTurningLengthRejected;
+    private Integer turningDiaRejected;
     private String remarks;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
