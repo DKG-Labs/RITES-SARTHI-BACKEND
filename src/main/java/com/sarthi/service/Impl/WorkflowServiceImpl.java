@@ -556,6 +556,19 @@ public class WorkflowServiceImpl implements WorkflowService {
             if (last != null &&
                     ("INSPECTION_COMPLETE_CONFIRM".equalsIgnoreCase(last.getStatus())
                             || "INSPECTION_COMPLETE_CONFIRM".equalsIgnoreCase(last.getAction()))) {
+                ProcessIeQty qty = new ProcessIeQty();
+                qty.setRequestId(req.getRequestId());
+                qty.setSwiftCode("A");
+                qty.setIeUserId(req.getActionBy());
+                qty.setInspectedQty(req.getInspectedQty());
+                qty.setOfferedQty(req.getOfferedQty());
+                qty.setManufactureQty(req.getManufacturedQty());
+                qty.setHeatNo(req.getHeatNo());
+                qty.setRejectedQty(req.getRejectedQty());
+
+                //qty.setOfferedQty(req.getOfferedQty());
+                qty.setLotNumber(req.getLotNo());
+                qty.setCompleted(false);
 
                 System.out.println("Inspection already completed. No new transition.");
 
@@ -1099,6 +1112,22 @@ public class WorkflowServiceImpl implements WorkflowService {
                         ));
 
                 if (ic != null && "PROCESS".equalsIgnoreCase(ic.getTypeOfCall())) {
+
+                    ProcessIeQty qty = new ProcessIeQty();
+                    qty.setRequestId(req.getRequestId());
+                    qty.setSwiftCode("A");
+                    qty.setIeUserId(req.getActionBy());
+                    qty.setInspectedQty(req.getInspectedQty());
+                    qty.setOfferedQty(req.getOfferedQty());
+                    qty.setManufactureQty(req.getManufacturedQty());
+                    qty.setHeatNo(req.getHeatNo());
+                    qty.setRejectedQty(req.getRejectedQty());
+
+                    //qty.setOfferedQty(req.getOfferedQty());
+                    qty.setLotNumber(req.getLotNo());
+                    qty.setCompleted(false);
+
+                    processIeQtyRepository.save(qty);
 
                   /*  Long icId = ic.getId();
 
