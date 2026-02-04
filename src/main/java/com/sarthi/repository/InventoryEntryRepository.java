@@ -16,6 +16,7 @@ public interface InventoryEntryRepository extends JpaRepository<InventoryEntry, 
 
     /**
      * Find all inventory entries by vendor code
+     * 
      * @param vendorCode The vendor code to search for
      * @return List of inventory entries for the vendor
      */
@@ -23,14 +24,16 @@ public interface InventoryEntryRepository extends JpaRepository<InventoryEntry, 
 
     /**
      * Find inventory entries by vendor code and status
+     * 
      * @param vendorCode The vendor code
-     * @param status The inventory status
+     * @param status     The inventory status
      * @return List of inventory entries matching the criteria
      */
     List<InventoryEntry> findByVendorCodeAndStatus(String vendorCode, InventoryEntry.InventoryStatus status);
 
     /**
      * Find inventory entries by heat number
+     * 
      * @param heatNumber The heat/batch/lot number
      * @return List of inventory entries with the heat number
      */
@@ -38,6 +41,7 @@ public interface InventoryEntryRepository extends JpaRepository<InventoryEntry, 
 
     /**
      * Find inventory entries by sub PO number
+     * 
      * @param subPoNumber The sub PO number
      * @return List of inventory entries with the sub PO number
      */
@@ -45,6 +49,7 @@ public interface InventoryEntryRepository extends JpaRepository<InventoryEntry, 
 
     /**
      * Check if an entry exists with the given heat number and vendor code
+     * 
      * @param heatNumber The heat number
      * @param vendorCode The vendor code
      * @return true if exists, false otherwise
@@ -53,18 +58,30 @@ public interface InventoryEntryRepository extends JpaRepository<InventoryEntry, 
 
     /**
      * Find inventory entry by heat number and TC number combination
+     * 
      * @param heatNumber The heat number
-     * @param tcNumber The TC number
+     * @param tcNumber   The TC number
      * @return Optional inventory entry matching both criteria
      */
     Optional<InventoryEntry> findByHeatNumberAndTcNumber(String heatNumber, String tcNumber);
 
     /**
-     * Find all inventory entries for a vendor with FRESH_PO status (available inventory)
+     * Check if an entry exists with the given TC number and vendor code
+     * 
+     * @param tcNumber   The TC number
      * @param vendorCode The vendor code
-     * @param status The inventory status (FRESH_PO for available)
+     * @return true if exists, false otherwise
+     */
+    boolean existsByTcNumberAndVendorCode(String tcNumber, String vendorCode);
+
+    /**
+     * Find all inventory entries for a vendor with FRESH_PO status (available
+     * inventory)
+     * 
+     * @param vendorCode The vendor code
+     * @param status     The inventory status (FRESH_PO for available)
      * @return List of available inventory entries
      */
-    List<InventoryEntry> findByVendorCodeAndStatusOrderByCreatedDateDesc(String vendorCode, InventoryEntry.InventoryStatus status);
+    List<InventoryEntry> findByVendorCodeAndStatusOrderByCreatedDateDesc(String vendorCode,
+            InventoryEntry.InventoryStatus status);
 }
-

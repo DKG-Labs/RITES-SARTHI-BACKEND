@@ -44,9 +44,8 @@ public class InventoryEntryController {
         } catch (Exception e) {
             logger.error("Error creating inventory entry: {}", e.getMessage(), e);
             return new ResponseEntity<>(
-                ResponseBuilder.getSuccessResponse(null),
-                HttpStatus.INTERNAL_SERVER_ERROR
-            );
+                    ResponseBuilder.getSuccessResponse(null),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -66,9 +65,8 @@ public class InventoryEntryController {
         } catch (Exception e) {
             logger.error("Error fetching inventory entries: {}", e.getMessage(), e);
             return new ResponseEntity<>(
-                ResponseBuilder.getSuccessResponse(null),
-                HttpStatus.INTERNAL_SERVER_ERROR
-            );
+                    ResponseBuilder.getSuccessResponse(null),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -87,9 +85,8 @@ public class InventoryEntryController {
         } catch (Exception e) {
             logger.error("Error fetching inventory entry: {}", e.getMessage(), e);
             return new ResponseEntity<>(
-                ResponseBuilder.getSuccessResponse(null),
-                HttpStatus.NOT_FOUND
-            );
+                    ResponseBuilder.getSuccessResponse(null),
+                    HttpStatus.NOT_FOUND);
         }
     }
 
@@ -110,9 +107,8 @@ public class InventoryEntryController {
         } catch (Exception e) {
             logger.error("Error updating inventory status: {}", e.getMessage(), e);
             return new ResponseEntity<>(
-                ResponseBuilder.getSuccessResponse(null),
-                HttpStatus.BAD_REQUEST
-            );
+                    ResponseBuilder.getSuccessResponse(null),
+                    HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -137,9 +133,8 @@ public class InventoryEntryController {
         } catch (Exception e) {
             logger.error("Error fetching inventory entry: {}", e.getMessage(), e);
             return new ResponseEntity<>(
-                ResponseBuilder.getSuccessResponse(null),
-                HttpStatus.INTERNAL_SERVER_ERROR
-            );
+                    ResponseBuilder.getSuccessResponse(null),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -163,15 +158,13 @@ public class InventoryEntryController {
         } catch (Exception e) {
             logger.error("Error updating inventory entry: {}", e.getMessage(), e);
             ErrorDetails errorDetails = new ErrorDetails(
-                AppConstant.ERROR_CODE_INVALID,
-                AppConstant.ERROR_TYPE_CODE_VALIDATION,
-                AppConstant.ERROR_TYPE_VALIDATION,
-                e.getMessage()
-            );
+                    AppConstant.ERROR_CODE_INVALID,
+                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                    AppConstant.ERROR_TYPE_VALIDATION,
+                    e.getMessage());
             return new ResponseEntity<>(
-                ResponseBuilder.getErrorResponse(errorDetails),
-                HttpStatus.BAD_REQUEST
-            );
+                    ResponseBuilder.getErrorResponse(errorDetails),
+                    HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -189,23 +182,41 @@ public class InventoryEntryController {
             inventoryEntryService.deleteInventoryEntry(id);
             logger.info("Inventory entry deleted successfully with ID: {}", id);
             return new ResponseEntity<>(
-                ResponseBuilder.getSuccessResponse("Inventory entry deleted successfully"),
-                HttpStatus.OK
-            );
+                    ResponseBuilder.getSuccessResponse("Inventory entry deleted successfully"),
+                    HttpStatus.OK);
 
         } catch (Exception e) {
             logger.error("Error deleting inventory entry: {}", e.getMessage(), e);
             ErrorDetails errorDetails = new ErrorDetails(
-                AppConstant.ERROR_CODE_INVALID,
-                AppConstant.ERROR_TYPE_CODE_VALIDATION,
-                AppConstant.ERROR_TYPE_VALIDATION,
-                e.getMessage()
-            );
+                    AppConstant.ERROR_CODE_INVALID,
+                    AppConstant.ERROR_TYPE_CODE_VALIDATION,
+                    AppConstant.ERROR_TYPE_VALIDATION,
+                    e.getMessage());
             return new ResponseEntity<>(
-                ResponseBuilder.getErrorResponse(errorDetails),
-                HttpStatus.BAD_REQUEST
-            );
+                    ResponseBuilder.getErrorResponse(errorDetails),
+                    HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Check if a TC number already exists for a vendor
+     * GET /api/vendor/inventory/check-tc-uniqueness
+     */
+    @GetMapping("/check-tc-uniqueness")
+    public ResponseEntity<Object> checkTcUniqueness(
+            @RequestParam String tcNumber,
+            @RequestParam String vendorCode) {
+        logger.info("Received request to check TC uniqueness: {} for vendor: {}", tcNumber, vendorCode);
+
+        try {
+            boolean exists = inventoryEntryService.existsByTcNumber(tcNumber, vendorCode);
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(exists), HttpStatus.OK);
+
+        } catch (Exception e) {
+            logger.error("Error checking TC uniqueness: {}", e.getMessage(), e);
+            return new ResponseEntity<>(
+                    ResponseBuilder.getSuccessResponse(false),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
-
