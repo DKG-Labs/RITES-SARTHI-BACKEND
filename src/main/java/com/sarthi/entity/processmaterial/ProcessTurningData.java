@@ -79,11 +79,14 @@ public class ProcessTurningData {
     @Column(name = "accepted_qty")
     private Integer acceptedQty;
 
-    @Column(name = "rejected_qty_1")
-    private Integer rejectedQty1;
+    @Column(name = "parallel_length_rejected")
+    private Integer parallelLengthRejected;
 
-    @Column(name = "rejected_qty_2")
-    private Integer rejectedQty2;
+    @Column(name = "full_turning_length_rejected")
+    private Integer fullTurningLengthRejected;
+
+    @Column(name = "turning_dia_rejected")
+    private Integer turningDiaRejected;
 
     @Column(name = "remarks", length = 500)
     private String remarks;

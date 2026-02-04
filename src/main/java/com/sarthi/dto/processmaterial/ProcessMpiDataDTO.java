@@ -18,8 +18,7 @@ public class ProcessMpiDataDTO {
     private String testResult1;
     private String testResult2;
     private String testResult3;
-    private Integer rejectedQty1;
-    private Integer rejectedQty2;
+    private Integer mpiRejected;
     private String remarks;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

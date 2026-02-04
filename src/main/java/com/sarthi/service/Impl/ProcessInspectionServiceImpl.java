@@ -111,14 +111,15 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
         for (ProcessLineDataDto lineData : dto.getLinesData()) {
             String lineNo = lineData.getLineNo();
             String poNo = lineData.getPoNo();
+            String lineCallNo = lineData.getInspectionCallNo(); // Use line-specific call number
 
-            logger.info("Processing line: {} for call: {}", lineNo, callNo);
+            logger.info("Processing line: {} for call: {}", lineNo, lineCallNo);
 
             // Set audit fields (createdBy/updatedBy) for all DTOs before saving
             // 1. Save Calibration Documents
             if (lineData.getCalibrationDocuments() != null && !lineData.getCalibrationDocuments().isEmpty()) {
                 lineData.getCalibrationDocuments().forEach(d -> {
-                    d.setInspectionCallNo(callNo);
+                    d.setInspectionCallNo(lineCallNo);
                     d.setPoNo(poNo);
                     d.setLineNo(lineNo);
                     if (d.getId() == null) d.setCreatedBy(userId);
@@ -130,7 +131,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
             // 2. Save Static Periodic Checks (no saveAll, use individual save)
             if (lineData.getStaticPeriodicChecks() != null && !lineData.getStaticPeriodicChecks().isEmpty()) {
                 for (ProcessStaticPeriodicCheckDTO d : lineData.getStaticPeriodicChecks()) {
-                    d.setInspectionCallNo(callNo);
+                    d.setInspectionCallNo(lineCallNo);
                     d.setPoNo(poNo);
                     d.setLineNo(lineNo);
                     if (d.getId() == null) d.setCreatedBy(userId);
@@ -142,7 +143,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
             // 3. Save Shearing Data
             if (lineData.getShearingData() != null && !lineData.getShearingData().isEmpty()) {
                 lineData.getShearingData().forEach(d -> {
-                    d.setInspectionCallNo(callNo);
+                    d.setInspectionCallNo(lineCallNo);
                     d.setPoNo(poNo);
                     d.setLineNo(lineNo);
                     if (d.getId() == null) d.setCreatedBy(userId);
@@ -154,7 +155,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
             // 4. Save Turning Data
             if (lineData.getTurningData() != null && !lineData.getTurningData().isEmpty()) {
                 lineData.getTurningData().forEach(d -> {
-                    d.setInspectionCallNo(callNo);
+                    d.setInspectionCallNo(lineCallNo);
                     d.setPoNo(poNo);
                     d.setLineNo(lineNo);
                     if (d.getId() == null) d.setCreatedBy(userId);
@@ -166,7 +167,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
             // 5. Save MPI Data
             if (lineData.getMpiData() != null && !lineData.getMpiData().isEmpty()) {
                 lineData.getMpiData().forEach(d -> {
-                    d.setInspectionCallNo(callNo);
+                    d.setInspectionCallNo(lineCallNo);
                     d.setPoNo(poNo);
                     d.setLineNo(lineNo);
                     if (d.getId() == null) d.setCreatedBy(userId);
@@ -178,7 +179,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
             // 6. Save Forging Data
             if (lineData.getForgingData() != null && !lineData.getForgingData().isEmpty()) {
                 lineData.getForgingData().forEach(d -> {
-                    d.setInspectionCallNo(callNo);
+                    d.setInspectionCallNo(lineCallNo);
                     d.setPoNo(poNo);
                     d.setLineNo(lineNo);
                     if (d.getId() == null) d.setCreatedBy(userId);
@@ -190,7 +191,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
             // 7. Save Quenching Data
             if (lineData.getQuenchingData() != null && !lineData.getQuenchingData().isEmpty()) {
                 lineData.getQuenchingData().forEach(d -> {
-                    d.setInspectionCallNo(callNo);
+                    d.setInspectionCallNo(lineCallNo);
                     d.setPoNo(poNo);
                     d.setLineNo(lineNo);
                     if (d.getId() == null) d.setCreatedBy(userId);
@@ -202,7 +203,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
             // 8. Save Tempering Data
             if (lineData.getTemperingData() != null && !lineData.getTemperingData().isEmpty()) {
                 lineData.getTemperingData().forEach(d -> {
-                    d.setInspectionCallNo(callNo);
+                    d.setInspectionCallNo(lineCallNo);
                     d.setPoNo(poNo);
                     d.setLineNo(lineNo);
                     if (d.getId() == null) d.setCreatedBy(userId);
@@ -214,7 +215,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
             // 9. Save Final Check Data
             if (lineData.getFinalCheckData() != null && !lineData.getFinalCheckData().isEmpty()) {
                 lineData.getFinalCheckData().forEach(d -> {
-                    d.setInspectionCallNo(callNo);
+                    d.setInspectionCallNo(lineCallNo);
                     d.setPoNo(poNo);
                     d.setLineNo(lineNo);
                     if (d.getId() == null) d.setCreatedBy(userId);
@@ -226,7 +227,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
             // 10. Save Testing & Finishing Data
             if (lineData.getTestingFinishingData() != null && !lineData.getTestingFinishingData().isEmpty()) {
                 lineData.getTestingFinishingData().forEach(d -> {
-                    d.setInspectionCallNo(callNo);
+                    d.setInspectionCallNo(lineCallNo);
                     d.setPoNo(poNo);
                     d.setLineNo(lineNo);
                     if (d.getId() == null) d.setCreatedBy(userId);
@@ -238,7 +239,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
             // 11. Save Oil Tank Counter (no saveAll, use individual save)
             if (lineData.getOilTankCounter() != null) {
                 ProcessOilTankCounterDTO d = lineData.getOilTankCounter();
-                d.setInspectionCallNo(callNo);
+                d.setInspectionCallNo(lineCallNo);
                 d.setPoNo(poNo);
                 d.setLineNo(lineNo);
                 if (d.getId() == null) d.setCreatedBy(userId);
@@ -254,7 +255,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
             }
 
             if (finalResultDto != null) {
-                finalResultDto.setInspectionCallNo(callNo);
+                finalResultDto.setInspectionCallNo(lineCallNo);
                 finalResultDto.setPoNo(poNo);
                 finalResultDto.setLineNo(lineNo);
                 if (finalResultDto.getCreatedBy() == null) finalResultDto.setCreatedBy(userId);
@@ -265,7 +266,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
 
                 // Check if a final result already exists for this line
                 Optional<ProcessLineFinalResult> existingOpt = lineFinalResultRepository
-                        .findByInspectionCallNoAndLineNo(callNo, lineNo);
+                        .findByInspectionCallNoAndLineNo(lineCallNo, lineNo);
 
                 if (existingOpt.isPresent()) {
                     // Update existing record
@@ -396,8 +397,10 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
         // Aggregate from Shearing Data (only has rejected quantities)
         if (lineData.getShearingData() != null && !lineData.getShearingData().isEmpty()) {
             for (ProcessShearingDataDTO data : lineData.getShearingData()) {
-                if (data.getRejectedQty1() != null) totalRejected += data.getRejectedQty1();
-                if (data.getRejectedQty2() != null) totalRejected += data.getRejectedQty2();
+                if (data.getLengthCutBarRejected() != null) totalRejected += data.getLengthCutBarRejected();
+                if (data.getImproperDiaRejected() != null) totalRejected += data.getImproperDiaRejected();
+                if (data.getSharpEdgesRejected() != null) totalRejected += data.getSharpEdgesRejected();
+                if (data.getCrackedEdgesRejected() != null) totalRejected += data.getCrackedEdgesRejected();
             }
             result.setShearingStatus("COMPLETED");
         }
@@ -406,8 +409,9 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
         if (lineData.getTurningData() != null && !lineData.getTurningData().isEmpty()) {
             for (ProcessTurningDataDTO data : lineData.getTurningData()) {
                 if (data.getAcceptedQty() != null) totalAccepted += data.getAcceptedQty();
-                if (data.getRejectedQty1() != null) totalRejected += data.getRejectedQty1();
-                if (data.getRejectedQty2() != null) totalRejected += data.getRejectedQty2();
+                if (data.getParallelLengthRejected() != null) totalRejected += data.getParallelLengthRejected();
+                if (data.getFullTurningLengthRejected() != null) totalRejected += data.getFullTurningLengthRejected();
+                if (data.getTurningDiaRejected() != null) totalRejected += data.getTurningDiaRejected();
             }
             result.setTurningStatus("COMPLETED");
         }
@@ -415,8 +419,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
         // Aggregate from MPI Data
         if (lineData.getMpiData() != null && !lineData.getMpiData().isEmpty()) {
             for (ProcessMpiDataDTO data : lineData.getMpiData()) {
-                if (data.getRejectedQty1() != null) totalRejected += data.getRejectedQty1();
-                if (data.getRejectedQty2() != null) totalRejected += data.getRejectedQty2();
+                if (data.getMpiRejected() != null) totalRejected += data.getMpiRejected();
             }
             result.setMpiStatus("COMPLETED");
         }
@@ -450,9 +453,13 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
         // Aggregate from Final Check Data
         if (lineData.getFinalCheckData() != null && !lineData.getFinalCheckData().isEmpty()) {
             for (ProcessFinalCheckDataDTO data : lineData.getFinalCheckData()) {
-                if (data.getRejectedNo1() != null) totalRejected += data.getRejectedNo1();
-                if (data.getRejectedNo2() != null) totalRejected += data.getRejectedNo2();
-                if (data.getRejectedNo3() != null) totalRejected += data.getRejectedNo3();
+                if (data.getBoxGaugeRejected() != null) totalRejected += data.getBoxGaugeRejected();
+                if (data.getFlatBearingAreaRejected() != null) totalRejected += data.getFlatBearingAreaRejected();
+                if (data.getFallingGaugeRejected() != null) totalRejected += data.getFallingGaugeRejected();
+                if (data.getSurfaceDefectRejected() != null) totalRejected += data.getSurfaceDefectRejected();
+                if (data.getEmbossingDefectRejected() != null) totalRejected += data.getEmbossingDefectRejected();
+                if (data.getMarkingRejected() != null) totalRejected += data.getMarkingRejected();
+                if (data.getTemperingHardnessRejected() != null) totalRejected += data.getTemperingHardnessRejected();
             }
             result.setFinalCheckStatus("COMPLETED");
         }

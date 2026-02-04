@@ -55,11 +55,8 @@ public class ProcessMpiData {
     @Column(name = "test_result_3", length = 50)
     private String testResult3;
 
-    @Column(name = "rejected_qty_1")
-    private Integer rejectedQty1;
-
-    @Column(name = "rejected_qty_2")
-    private Integer rejectedQty2;
+    @Column(name = "mpi_rejected")
+    private Integer mpiRejected;
 
     @Column(name = "remarks", length = 500)
     private String remarks;

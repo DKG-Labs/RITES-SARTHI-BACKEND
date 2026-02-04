@@ -56,22 +56,48 @@ public class ProcessShearingData {
     @Column(name = "length_cut_bar_3", precision = 10, scale = 2)
     private BigDecimal lengthCutBar3;
 
+    // Improper Dia (Quality)
+    @Column(name = "improper_dia_1", length = 20)
+    private String improperDia1;
+
+    @Column(name = "improper_dia_2", length = 20)
+    private String improperDia2;
+
+    @Column(name = "improper_dia_3", length = 20)
+    private String improperDia3;
+
     // Sharp Edges checks
-    @Column(name = "sharp_edges_1")
-    private Boolean sharpEdges1 = false;
+    @Column(name = "sharp_edges_1", length = 20)
+    private String sharpEdges1;
 
-    @Column(name = "sharp_edges_2")
-    private Boolean sharpEdges2 = false;
+    @Column(name = "sharp_edges_2", length = 20)
+    private String sharpEdges2;
 
-    @Column(name = "sharp_edges_3")
-    private Boolean sharpEdges3 = false;
+    @Column(name = "sharp_edges_3", length = 20)
+    private String sharpEdges3;
+
+    // Cracked Edges
+    @Column(name = "cracked_edges_1", length = 20)
+    private String crackedEdges1;
+
+    @Column(name = "cracked_edges_2", length = 20)
+    private String crackedEdges2;
+
+    @Column(name = "cracked_edges_3", length = 20)
+    private String crackedEdges3;
 
     // Rejected quantity
-    @Column(name = "rejected_qty_1")
-    private Integer rejectedQty1;
+    @Column(name = "length_cut_bar_rejected")
+    private Integer lengthCutBarRejected;
 
-    @Column(name = "rejected_qty_2")
-    private Integer rejectedQty2;
+    @Column(name = "improper_dia_rejected")
+    private Integer improperDiaRejected;
+
+    @Column(name = "sharp_edges_rejected")
+    private Integer sharpEdgesRejected;
+
+    @Column(name = "cracked_edges_rejected")
+    private Integer crackedEdgesRejected;
 
     @Column(name = "remarks", length = 500)
     private String remarks;

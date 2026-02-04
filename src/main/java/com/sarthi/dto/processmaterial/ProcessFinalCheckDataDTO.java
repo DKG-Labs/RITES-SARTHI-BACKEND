@@ -21,9 +21,6 @@ public class ProcessFinalCheckDataDTO {
     private String dimensionCheck2;
     private String hardnessCheck1;
     private String hardnessCheck2;
-    private Integer rejectedNo1;
-    private Integer rejectedNo2;
-    private Integer rejectedNo3;
 
     // Separate rejection fields for each measurement
     private Integer boxGaugeRejected;
