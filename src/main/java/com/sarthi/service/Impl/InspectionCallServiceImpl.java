@@ -45,8 +45,7 @@ public class InspectionCallServiceImpl implements InspectionCallService {
     @Override
     public InspectionCall createInspectionCall(
             InspectionCallRequestDto icRequest,
-            RmInspectionDetailsRequestDto rmRequest
-    ) {
+            RmInspectionDetailsRequestDto rmRequest) {
         logger.info("========== CREATE RAW MATERIAL INSPECTION CALL ==========");
         logger.info("IC Request: {}", icRequest);
         logger.info("RM Details: {}", rmRequest);
@@ -69,13 +68,11 @@ public class InspectionCallServiceImpl implements InspectionCallService {
         inspectionCall.setPlaceOfInspection(icRequest.getPlaceOfInspection());
 
         inspectionCall.setDesiredInspectionDate(
-                LocalDate.parse(icRequest.getDesiredInspectionDate())
-        );
+                LocalDate.parse(icRequest.getDesiredInspectionDate()));
 
         if (icRequest.getActualInspectionDate() != null) {
             inspectionCall.setActualInspectionDate(
-                    LocalDate.parse(icRequest.getActualInspectionDate())
-            );
+                    LocalDate.parse(icRequest.getActualInspectionDate()));
         }
 
         inspectionCall.setCompanyId(icRequest.getCompanyId());
@@ -166,24 +163,26 @@ public class InspectionCallServiceImpl implements InspectionCallService {
                 // Update inventory offered quantity for this heat/TC combination
                 // This runs in a separate transaction (REQUIRES_NEW) to avoid rollback issues
                 try {
-                    if (heatReq.getHeatNumber() != null && heatReq.getTcNumber() != null && heatReq.getOfferedQty() != null) {
+                    if (heatReq.getHeatNumber() != null && heatReq.getTcNumber() != null
+                            && heatReq.getOfferedQty() != null) {
                         logger.info("Updating inventory for Heat: {}, TC: {}, Offered: {}",
                                 heatReq.getHeatNumber(), heatReq.getTcNumber(), heatReq.getOfferedQty());
 
                         inventoryEntryService.updateOfferedQuantity(
                                 heatReq.getHeatNumber(),
                                 heatReq.getTcNumber(),
-                                toBigDecimal(heatReq.getOfferedQty())
-                        );
+                                toBigDecimal(heatReq.getOfferedQty()));
 
                         logger.info("✅ Inventory updated successfully for Heat: {}", heatReq.getHeatNumber());
                     }
                 } catch (Exception e) {
                     // Log error but don't fail the inspection call creation
-                    // Inventory update runs in separate transaction, so this won't affect main transaction
+                    // Inventory update runs in separate transaction, so this won't affect main
+                    // transaction
                     logger.warn("⚠️ Failed to update inventory for Heat: {}, TC: {}. Error: {}",
                             heatReq.getHeatNumber(), heatReq.getTcNumber(), e.getMessage());
-                    logger.warn("⚠️ This is expected if inventory entry doesn't exist yet. Inspection call will still be created.");
+                    logger.warn(
+                            "⚠️ This is expected if inventory entry doesn't exist yet. Inspection call will still be created.");
                 }
             }
         }
@@ -216,12 +215,18 @@ public class InspectionCallServiceImpl implements InspectionCallService {
 
         rmDetails.setChemicalAnalysisList(chemEntities);
 
-
         return inspectionCallRepository.save(inspectionCall);
     }
 
     private BigDecimal toBigDecimal(Double value) {
         return value != null ? BigDecimal.valueOf(value) : null;
     }
-}
 
+    @Override
+    public boolean checkIfCallExistsForPoSerial(String poSerialNo) {
+        logger.info("Checking if inspection call exists for PO Serial No: {}", poSerialNo);
+        boolean exists = inspectionCallRepository.existsByPoSerialNo(poSerialNo);
+        logger.info("Inspection call exists for PO Serial No {}: {}", poSerialNo, exists);
+        return exists;
+    }
+}
