@@ -434,6 +434,82 @@ public UserDto createUser(userRequestDto userDto) {
         );
     }
 
+    @Override
+    public LoginResponseDto loginBasedOnType(LoginRequestBasedTypeDto loginDto) {
+
+        UserMaster user;
+
+        String loginType = loginDto.getLoginType();
+        String loginId   = loginDto.getLoginId();
+
+        // ================= IE LOGIN =================
+        if ("IE".equalsIgnoreCase(loginType)) {
+
+            user = userMasterRepository
+                    .findByEmployeeCode(loginId);
+        }
+
+        // ================= VENDOR LOGIN =================
+        else if ("VENDOR".equalsIgnoreCase(loginType)) {
+
+            user = userMasterRepository
+                    .findByUserName(loginId).
+                    orElseThrow(() -> new BusinessException(
+                            new ErrorDetails(
+                                    AppConstant.ERROR_CODE_INVALID,
+                                    AppConstant.ERROR_TYPE_CODE_INVALID,
+                                    AppConstant.ERROR_TYPE_INVALID,
+                                    "Invalid Vendor credentials."
+                            )
+                    ));
+        }
+
+        // ================= INVALID TYPE =================
+        else {
+            throw new BusinessException(
+                    new ErrorDetails(
+                            AppConstant.ERROR_CODE_INVALID,
+                            AppConstant.ERROR_TYPE_CODE_INVALID,
+                            AppConstant.ERROR_TYPE_INVALID,
+                            "Invalid login type."
+                    )
+            );
+        }
+
+        // ================= PASSWORD CHECK =================
+        if (!loginDto.getPassword().equals(user.getPassword())) {
+
+            throw new BusinessException(
+                    new ErrorDetails(
+                            AppConstant.ERROR_CODE_INVALID,
+                            AppConstant.ERROR_TYPE_CODE_INVALID,
+                            AppConstant.ERROR_TYPE_INVALID,
+                            "Invalid login credentials."
+                    )
+            );
+        }
+
+        // ================= RIO =================
+        String rio = rioUserRepository
+                .findByEmployeeCode(user.getEmployeeCode())
+                .map(RioUser::getRio)
+                .orElse(null);
+
+        // ================= TOKEN =================
+        String token = jwtService.generateToken(user);
+
+        // ================= RESPONSE =================
+        return new LoginResponseDto(
+                user.getUserId(),
+                user.getUsername(),
+                user.getRoleName(),
+                token,
+                rio,
+                user.getShortName()
+        );
+    }
+
+
 
 
     public UserDetails loadUserByUsername(Integer userId) throws UsernameNotFoundException {

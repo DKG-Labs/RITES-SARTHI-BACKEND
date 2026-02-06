@@ -1,5 +1,6 @@
 package com.sarthi.controller;
 
+import com.sarthi.dto.LoginRequestBasedTypeDto;
 import com.sarthi.dto.LoginRequestDto;
 import com.sarthi.dto.LoginResponseDto;
 import com.sarthi.dto.UserDto;
@@ -29,6 +30,12 @@ public class UserMasterController {
     @PostMapping("/login")
     public ResponseEntity<Object> login(@RequestBody LoginRequestDto loginRequestDto) {
         LoginResponseDto res = userService.login(loginRequestDto);
+        return new ResponseEntity<Object>(ResponseBuilder.getSuccessResponse(res), HttpStatus.OK);
+    }
+
+    @PostMapping("/loginBasedOnType")
+    public ResponseEntity<Object> loginBasedOnType(@RequestBody LoginRequestBasedTypeDto loginRequestBasedTypeDto) {
+        LoginResponseDto res = userService.loginBasedOnType(loginRequestBasedTypeDto);
         return new ResponseEntity<Object>(ResponseBuilder.getSuccessResponse(res), HttpStatus.OK);
     }
 

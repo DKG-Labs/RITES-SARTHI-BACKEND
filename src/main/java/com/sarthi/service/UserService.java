@@ -1,5 +1,6 @@
 package com.sarthi.service;
 
+import com.sarthi.dto.LoginRequestBasedTypeDto;
 import com.sarthi.dto.LoginRequestDto;
 import com.sarthi.dto.LoginResponseDto;
 import com.sarthi.dto.UserDto;
@@ -11,4 +12,6 @@ public interface UserService {
 
     public UserDto createUser(userRequestDto userDto);
     public LoginResponseDto login(LoginRequestDto loginRequestDto);
+
+    public LoginResponseDto loginBasedOnType(LoginRequestBasedTypeDto loginDto);
 }

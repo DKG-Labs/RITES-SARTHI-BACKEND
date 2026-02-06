@@ -15,4 +15,8 @@ public interface UserMasterRepository extends JpaRepository<UserMaster, Integer>
     boolean existsByUserName(String vendorCode);
 
     UserMaster findByEmployeeCode(String employeeCode);
+
+
+
+
 }

@@ -1175,7 +1175,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                         next.setRemarks("Process inspection completed.");
 
                         workflowTransitionRepository.save(next);
-                        return mapWorkflowTransition(next);
+                     //   return mapWorkflowTransition(next);
                     //}
                 }
 
