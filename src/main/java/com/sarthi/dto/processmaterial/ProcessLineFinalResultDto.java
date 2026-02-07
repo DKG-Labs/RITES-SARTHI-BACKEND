@@ -14,6 +14,7 @@ public class ProcessLineFinalResultDto {
     private String lineNo;
     private String lotNumber;
     private String heatNumber;
+    private String shift;
 
     // Quantities
     private Integer offeredQty;
@@ -29,6 +30,9 @@ public class ProcessLineFinalResultDto {
     private Integer turningManufactured;
     private Integer turningAccepted;
     private Integer turningRejected;
+    private Integer parallelLengthRejected;
+    private Integer fullTurningLengthRejected;
+    private Integer turningDiaRejected;
 
     private Integer mpiManufactured;
     private Integer mpiAccepted;
@@ -58,6 +62,10 @@ public class ProcessLineFinalResultDto {
     private Integer hardnessCheckAccepted;
     private Integer hardnessCheckRejected;
 
+    private Integer testingFinishingManufactured;
+    private Integer testingFinishingAccepted;
+    private Integer testingFinishingRejected;
+
     // Submodule Statuses
     private String calibrationStatus;
     private String staticCheckStatus;
@@ -68,6 +76,7 @@ public class ProcessLineFinalResultDto {
     private String quenchingStatus;
     private String temperingStatus;
     private String finalCheckStatus;
+    private String testingFinishingStatus;
 
     // Final Status
     private String status; // ACCEPTED / REJECTED / PENDING

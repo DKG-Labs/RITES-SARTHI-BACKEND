@@ -18,15 +18,28 @@ public class ProcessForgingDataDTO {
     private String lotNo;
     private BigDecimal forgingTemp1;
     private BigDecimal forgingTemp2;
-    private BigDecimal forgingTemp3;
-    private Integer acceptedQty;
-    private Integer rejectedQty;
 
     // Separate rejection fields for each measurement
-    private Integer forgingTemperatureRejected;
-    private Integer forgingStabilisationRejected;
+    private Integer forgingTempRejected;
+
+    // Forging Stabilisation Rejection - 2 readings + rejected count
+    private String forgingStabilisationRejection1;
+    private String forgingStabilisationRejection2;
+    private Integer forgingStabilisationRejectionRejected;
+
+    // Improper Forging - 2 readings + rejected count
+    private String improperForging1;
+    private String improperForging2;
     private Integer improperForgingRejected;
+
+    // Forging Defect (Marks / Notches) - 2 readings + rejected count
+    private String forgingDefect1;
+    private String forgingDefect2;
     private Integer forgingDefectRejected;
+
+    // Embossing Defect - 2 readings + rejected count
+    private String embossingDefect1;
+    private String embossingDefect2;
     private Integer embossingDefectRejected;
 
     private String remarks;

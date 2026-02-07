@@ -264,20 +264,8 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
                 // Convert DTO to Entity
                 ProcessLineFinalResult entity = toFinalResultEntity(finalResultDto);
 
-                // Check if a final result already exists for this line
-                Optional<ProcessLineFinalResult> existingOpt = lineFinalResultRepository
-                        .findByInspectionCallNoAndLineNo(lineCallNo, lineNo);
-
-                if (existingOpt.isPresent()) {
-                    // Update existing record
-                    ProcessLineFinalResult existing = existingOpt.get();
-                    entity.setId(existing.getId());
-                    entity.setCreatedAt(existing.getCreatedAt());
-                    entity.setCreatedBy(existing.getCreatedBy());
-                }
-
                 lineFinalResultRepository.save(entity);
-                logger.info("✅ Saved Line Final Result for line: {}", lineNo);
+                logger.info("✅ Saved NEW Line Final Result row for line: {}", lineNo);
             }
         }
     }
@@ -348,7 +336,7 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
             });
 
             // Fetch Line Final Result (Summary with IE remarks, status, quantities)
-            lineFinalResultRepository.findByInspectionCallNoAndLineNo(callNo, lineNo)
+            lineFinalResultRepository.findFirstByInspectionCallNoAndLineNoOrderByCreatedAtDesc(callNo, lineNo)
                     .ifPresent(entity -> lineData.setLineFinalResult(toFinalResultDto(entity)));
 
             linesData.add(lineData);
@@ -427,8 +415,12 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
         // Aggregate from Forging Data
         if (lineData.getForgingData() != null && !lineData.getForgingData().isEmpty()) {
             for (ProcessForgingDataDTO data : lineData.getForgingData()) {
-                if (data.getAcceptedQty() != null) totalAccepted += data.getAcceptedQty();
-                if (data.getRejectedQty() != null) totalRejected += data.getRejectedQty();
+                // Sum individual rejection fields for Forging
+                if (data.getForgingTempRejected() != null) totalRejected += data.getForgingTempRejected();
+                if (data.getForgingStabilisationRejectionRejected() != null) totalRejected += data.getForgingStabilisationRejectionRejected();
+                if (data.getImproperForgingRejected() != null) totalRejected += data.getImproperForgingRejected();
+                if (data.getForgingDefectRejected() != null) totalRejected += data.getForgingDefectRejected();
+                if (data.getEmbossingDefectRejected() != null) totalRejected += data.getEmbossingDefectRejected();
             }
             result.setForgingStatus("COMPLETED");
         }
@@ -436,7 +428,13 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
         // Aggregate from Quenching Data
         if (lineData.getQuenchingData() != null && !lineData.getQuenchingData().isEmpty()) {
             for (ProcessQuenchingDataDTO data : lineData.getQuenchingData()) {
-                if (data.getRejectedQty() != null) totalRejected += data.getRejectedQty();
+                // Aggregate all granular rejection fields for Quenching
+                if (data.getQuenchingTemperatureRejected() != null) totalRejected += data.getQuenchingTemperatureRejected();
+                if (data.getQuenchingDurationRejected() != null) totalRejected += data.getQuenchingDurationRejected();
+                if (data.getQuenchingHardnessRejected() != null) totalRejected += data.getQuenchingHardnessRejected();
+                if (data.getBoxGaugeRejected() != null) totalRejected += data.getBoxGaugeRejected();
+                if (data.getFlatBearingAreaRejected() != null) totalRejected += data.getFlatBearingAreaRejected();
+                if (data.getFallingGaugeRejected() != null) totalRejected += data.getFallingGaugeRejected();
             }
             result.setQuenchingStatus("COMPLETED");
         }
@@ -445,7 +443,9 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
         if (lineData.getTemperingData() != null && !lineData.getTemperingData().isEmpty()) {
             for (ProcessTemperingDataDTO data : lineData.getTemperingData()) {
                 if (data.getAcceptedQty() != null) totalAccepted += data.getAcceptedQty();
-                if (data.getRejectedQty() != null) totalRejected += data.getRejectedQty();
+                // Aggregate all granular rejection fields for Tempering
+                if (data.getTemperingTemperatureRejected() != null) totalRejected += data.getTemperingTemperatureRejected();
+                if (data.getTemperingDurationRejected() != null) totalRejected += data.getTemperingDurationRejected();
             }
             result.setTemperingStatus("COMPLETED");
         }
@@ -462,6 +462,35 @@ public class ProcessInspectionServiceImpl implements ProcessInspectionService {
                 if (data.getTemperingHardnessRejected() != null) totalRejected += data.getTemperingHardnessRejected();
             }
             result.setFinalCheckStatus("COMPLETED");
+        }
+
+        // Aggregate from Testing & Finishing Data
+        if (lineData.getTestingFinishingData() != null && !lineData.getTestingFinishingData().isEmpty()) {
+            int tfAccepted = 0;
+            int tfRejected = 0;
+            
+            for (ProcessTestingFinishingDataDTO data : lineData.getTestingFinishingData()) {
+                if (data.getAcceptedQty() != null) {
+                    int acc = data.getAcceptedQty();
+                    tfAccepted += acc;
+                    totalAccepted += acc;
+                }
+                
+                // Aggregate all granular rejection fields for Testing & Finishing
+                int currentRejected = 0;
+                if (data.getToeLoadRejected() != null) currentRejected += data.getToeLoadRejected();
+                if (data.getWeightRejected() != null) currentRejected += data.getWeightRejected();
+                if (data.getPaintIdentificationRejected() != null) currentRejected += data.getPaintIdentificationRejected();
+                if (data.getErcCoatingRejected() != null) currentRejected += data.getErcCoatingRejected();
+                
+                tfRejected += currentRejected;
+                totalRejected += currentRejected;
+            }
+            
+            result.setTestingFinishingAccepted(tfAccepted);
+            result.setTestingFinishingRejected(tfRejected);
+            result.setTestingFinishingManufactured(tfAccepted + tfRejected);
+            result.setTestingFinishingStatus("COMPLETED");
         }
 
         // Set calibration and static check status

@@ -46,34 +46,53 @@ public class ProcessForgingData {
     @Column(name = "lot_no", length = 50)
     private String lotNo;
 
-    // Forging Temperature - 3 readings
+    // Forging Temperature - 2 readings
     @Column(name = "forging_temp_1", precision = 10, scale = 2)
     private BigDecimal forgingTemp1;
 
     @Column(name = "forging_temp_2", precision = 10, scale = 2)
     private BigDecimal forgingTemp2;
 
-    @Column(name = "forging_temp_3", precision = 10, scale = 2)
-    private BigDecimal forgingTemp3;
-
-    @Column(name = "accepted_qty")
-    private Integer acceptedQty;
-
-    @Column(name = "rejected_qty")
-    private Integer rejectedQty;
-
     // Separate rejection fields for each measurement
-    @Column(name = "forging_temperature_rejected")
-    private Integer forgingTemperatureRejected;
+    @Column(name = "forging_temp_rejected")
+    private Integer forgingTempRejected;
 
-    @Column(name = "forging_stabilisation_rejected")
-    private Integer forgingStabilisationRejected;
+    // Forging Stabilisation Rejection - 2 readings + rejected count
+    @Column(name = "forging_stabilisation_rejection_1", length = 30)
+    private String forgingStabilisationRejection1;
+
+    @Column(name = "forging_stabilisation_rejection_2", length = 30)
+    private String forgingStabilisationRejection2;
+
+    @Column(name = "forging_stabilisation_rejection_rejected")
+    private Integer forgingStabilisationRejectionRejected;
+
+    // Improper Forging - 2 readings + rejected count
+    @Column(name = "improper_forging_1", length = 30)
+    private String improperForging1;
+
+    @Column(name = "improper_forging_2", length = 30)
+    private String improperForging2;
 
     @Column(name = "improper_forging_rejected")
     private Integer improperForgingRejected;
 
+    // Forging Defect (Marks / Notches) - 2 readings + rejected count
+    @Column(name = "forging_defect_1", length = 30)
+    private String forgingDefect1;
+
+    @Column(name = "forging_defect_2", length = 30)
+    private String forgingDefect2;
+
     @Column(name = "forging_defect_rejected")
     private Integer forgingDefectRejected;
+
+    // Embossing Defect - 2 readings + rejected count
+    @Column(name = "embossing_defect_1", length = 30)
+    private String embossingDefect1;
+
+    @Column(name = "embossing_defect_2", length = 30)
+    private String embossingDefect2;
 
     @Column(name = "embossing_defect_rejected")
     private Integer embossingDefectRejected;

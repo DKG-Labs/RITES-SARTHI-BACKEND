@@ -45,26 +45,54 @@ public class ProcessFinalCheckData {
     @Column(name = "lot_no", length = 50)
     private String lotNo;
 
-    // Visual Check - 2 readings
-    @Column(name = "visual_check_1", length = 50)
-    private String visualCheck1;
+    // Box Gauge - 2 readings
+    @Column(name = "box_gauge_1", length = 50)
+    private String boxGauge1;
 
-    @Column(name = "visual_check_2", length = 50)
-    private String visualCheck2;
+    @Column(name = "box_gauge_2", length = 50)
+    private String boxGauge2;
 
-    // Dimension Check - 2 readings
-    @Column(name = "dimension_check_1", length = 50)
-    private String dimensionCheck1;
+    // Flat Bearing Area - 2 readings
+    @Column(name = "flat_bearing_area_1", length = 50)
+    private String flatBearingArea1;
 
-    @Column(name = "dimension_check_2", length = 50)
-    private String dimensionCheck2;
+    @Column(name = "flat_bearing_area_2", length = 50)
+    private String flatBearingArea2;
 
-    // Hardness Check - 2 readings
-    @Column(name = "hardness_check_1", length = 50)
-    private String hardnessCheck1;
+    // Falling Gauge - 2 readings
+    @Column(name = "falling_gauge_1", length = 50)
+    private String fallingGauge1;
 
-    @Column(name = "hardness_check_2", length = 50)
-    private String hardnessCheck2;
+    @Column(name = "falling_gauge_2", length = 50)
+    private String fallingGauge2;
+
+    // Surface Defect - 2 readings
+    @Column(name = "surface_defect_1", length = 50)
+    private String surfaceDefect1;
+
+    @Column(name = "surface_defect_2", length = 50)
+    private String surfaceDefect2;
+
+    // Embossing Defect - 2 readings
+    @Column(name = "embossing_defect_1", length = 50)
+    private String embossingDefect1;
+
+    @Column(name = "embossing_defect_2", length = 50)
+    private String embossingDefect2;
+
+    // Marking - 2 readings
+    @Column(name = "marking_1", length = 50)
+    private String marking1;
+
+    @Column(name = "marking_2", length = 50)
+    private String marking2;
+
+    // Tempering Hardness - 2 readings
+    @Column(name = "tempering_hardness_1", length = 50)
+    private String temperingHardness1;
+
+    @Column(name = "tempering_hardness_2", length = 50)
+    private String temperingHardness2;
 
     // Rejected numbers
 

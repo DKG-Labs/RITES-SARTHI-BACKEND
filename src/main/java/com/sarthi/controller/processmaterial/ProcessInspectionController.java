@@ -42,7 +42,10 @@ public class ProcessInspectionController {
             @RequestParam(required = false) String userId) {
         
         String callNo = dto.getInspectionCallNo();
-        String user = (userId != null && !userId.isEmpty()) ? userId : "SYSTEM";
+        
+        // Prioritize userId from request body (createdBy field) over query parameter
+        String user = (userId != null && !userId.isEmpty()) ? userId : 
+                     (dto.getCreatedBy() != null && !dto.getCreatedBy().isEmpty()) ? dto.getCreatedBy() : "SYSTEM";
         
         logger.info("POST /api/process-material/finish - Finishing inspection for call: {} by user: {}", callNo, user);
         
@@ -85,7 +88,10 @@ public class ProcessInspectionController {
             @RequestParam(required = false) String userId) {
         
         String callNo = dto.getInspectionCallNo();
-        String user = (userId != null && !userId.isEmpty()) ? userId : "SYSTEM";
+        
+        // Prioritize userId from request body (createdBy field) over query parameter
+        String user = (userId != null && !userId.isEmpty()) ? userId : 
+                     (dto.getCreatedBy() != null && !dto.getCreatedBy().isEmpty()) ? dto.getCreatedBy() : "SYSTEM";
         
         logger.info("POST /api/process-material/pause - Pausing inspection for call: {} by user: {}", callNo, user);
         
