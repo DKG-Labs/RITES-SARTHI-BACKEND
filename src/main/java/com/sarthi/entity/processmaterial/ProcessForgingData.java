@@ -56,18 +56,24 @@ public class ProcessForgingData {
     @Column(name = "forging_temp_3", precision = 10, scale = 2)
     private BigDecimal forgingTemp3;
 
-    @Column(name = "accepted_qty")
-    private Integer acceptedQty;
-
-    @Column(name = "rejected_qty")
-    private Integer rejectedQty;
+//    @Column(name = "accepted_qty")
+//    private Integer acceptedQty;
+//
+//    @Column(name = "rejected_qty")
+//    private Integer rejectedQty;
 
     // Separate rejection fields for each measurement
-    @Column(name = "forging_temperature_rejected")
-    private Integer forgingTemperatureRejected;
+//    @Column(name = "forging_temperature_rejected")
+//    private Integer forgingTemperatureRejected;
+//
+//    @Column(name = "forging_stabilisation_rejected")
+//    private Integer forgingStabilisationRejected;
+    @Column(name = "forging_temp_rejected")
+    private Integer forgingTempRejected;
 
-    @Column(name = "forging_stabilisation_rejected")
+    @Column(name = "forging_stabilisation_rejection_rejected")
     private Integer forgingStabilisationRejected;
+
 
     @Column(name = "improper_forging_rejected")
     private Integer improperForgingRejected;

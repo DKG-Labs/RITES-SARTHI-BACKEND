@@ -2,8 +2,11 @@ package com.sarthi.repository.processmaterial;
 
 import com.sarthi.entity.processmaterial.ProcessFinalCheckData;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,5 +24,116 @@ public interface ProcessFinalCheckDataRepository extends JpaRepository<ProcessFi
             String inspectionCallNo, String shift, Integer hourIndex);
 
     void deleteByInspectionCallNo(String inspectionCallNo);
-}
 
+    @Query("""
+            SELECT
+            COALESCE(SUM(p.surfaceDefectRejected),0),
+            COALESCE(SUM(p.markingRejected),0)
+            FROM ProcessFinalCheckData p
+            WHERE p.inspectionCallNo = :callNo
+            AND p.lotNo = :lotNo
+            AND p.shift = :shift
+            AND DATE(p.createdAt) = :date
+            """)
+    Object[] getVisualDefectsSumByDate(
+            @Param("callNo") String callNo,
+            @Param("lotNo") String lotNo,
+            @Param("shift") String shift,
+            @Param("date") LocalDate date
+    );
+
+
+    @Query("""
+            SELECT COALESCE(SUM(p.embossingDefectRejected),0)
+            FROM ProcessFinalCheckData p
+            WHERE p.inspectionCallNo = :callNo
+            AND p.lotNo = :lotNo
+            AND p.shift = :shift
+            AND DATE(p.createdAt) = :date
+            """)
+    Integer getFinalEmbossingSumByDate(
+            @Param("callNo") String callNo,
+            @Param("lotNo") String lotNo,
+            @Param("shift") String shift,
+            @Param("date") LocalDate date
+    );
+
+
+    @Query("""
+            SELECT COALESCE(SUM(p.temperingHardnessRejected),0)
+            FROM ProcessFinalCheckData p
+            WHERE p.inspectionCallNo = :callNo
+            AND p.lotNo = :lotNo
+            AND p.shift = :shift
+            AND DATE(p.createdAt) = :date
+            """)
+    Integer getTemperingHardnessSumByDate(
+            @Param("callNo") String callNo,
+            @Param("lotNo") String lotNo,
+            @Param("shift") String shift,
+            @Param("date") LocalDate date
+    );
+
+    @Query("""
+            SELECT COALESCE(SUM(p.boxGaugeRejected),0)
+            FROM ProcessFinalCheckData p
+            WHERE p.inspectionCallNo = :callNo
+            AND p.lotNo = :lotNo
+            AND p.shift = :shift
+            AND DATE(p.createdAt) = :date
+            """)
+    Integer getFinalBoxGaugeSum(
+            String callNo,
+            String lotNo,
+            String shift,
+            LocalDate date
+    );
+
+
+    @Query("""
+            SELECT
+            COALESCE(SUM(p.flatBearingAreaRejected),0),
+            COALESCE(SUM(p.fallingGaugeRejected),0)
+            FROM ProcessFinalCheckData p
+            WHERE p.inspectionCallNo = :callNo
+            AND p.lotNo = :lotNo
+            AND p.shift = :shift
+            AND DATE(p.createdAt) = :date
+            """)
+    Object[] getFinalDimensionalSum(
+            String callNo,
+            String lotNo,
+            String shift,
+            LocalDate date
+    );
+
+    @Query("""
+            SELECT COALESCE(SUM(p.flatBearingAreaRejected),0)
+            FROM ProcessFinalCheckData p
+            WHERE p.inspectionCallNo = :callNo
+            AND p.lotNo = :lotNo
+            AND p.shift = :shift
+            AND DATE(p.createdAt) = :date
+            """)
+    Integer getFinalFlatBearingSum(
+            String callNo,
+            String lotNo,
+            String shift,
+            LocalDate date
+    );
+
+    @Query("""
+            SELECT COALESCE(SUM(p.fallingGaugeRejected),0)
+            FROM ProcessFinalCheckData p
+            WHERE p.inspectionCallNo = :callNo
+            AND p.lotNo = :lotNo
+            AND p.shift = :shift
+            AND DATE(p.createdAt) = :date
+            """)
+    Integer getFinalFallingGaugeSum(
+            String callNo,
+            String lotNo,
+            String shift,
+            LocalDate date
+    );
+}

@@ -2,8 +2,11 @@ package com.sarthi.repository.processmaterial;
 
 import com.sarthi.entity.processmaterial.ProcessShearingData;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,5 +24,26 @@ public interface ProcessShearingDataRepository extends JpaRepository<ProcessShea
             String inspectionCallNo, String shift, Integer hourIndex);
 
     void deleteByInspectionCallNo(String inspectionCallNo);
+
+
+    @Query("""
+SELECT
+COALESCE(SUM(p.lengthCutBarRejected),0),
+COALESCE(SUM(p.improperDiaRejected),0),
+COALESCE(SUM(p.sharpEdgesRejected),0),
+COALESCE(SUM(p.crackedEdgesRejected),0)
+FROM ProcessShearingData p
+WHERE p.inspectionCallNo = :callNo
+AND p.lotNo = :lotNo
+AND p.shift = :shift
+AND DATE(p.createdAt) = :date
+""")
+    Object[] getShearingSumByDate(
+            @Param("callNo") String callNo,
+            @Param("lotNo") String lotNo,
+            @Param("shift") String shift,
+            @Param("date") LocalDate date
+    );
+
 }
 

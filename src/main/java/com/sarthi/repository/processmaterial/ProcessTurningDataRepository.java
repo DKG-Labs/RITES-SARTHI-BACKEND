@@ -2,8 +2,11 @@ package com.sarthi.repository.processmaterial;
 
 import com.sarthi.entity.processmaterial.ProcessTurningData;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,5 +24,26 @@ public interface ProcessTurningDataRepository extends JpaRepository<ProcessTurni
             String inspectionCallNo, String shift, Integer hourIndex);
 
     void deleteByInspectionCallNo(String inspectionCallNo);
+
+    Optional<ProcessTurningData> findByInspectionCallNoAndLotNoAndShift(String callId, String lotNumber, String shift);
+
+    @Query("""
+SELECT
+COALESCE(SUM(p.parallelLengthRejected),0),
+COALESCE(SUM(p.fullTurningLengthRejected),0),
+COALESCE(SUM(p.turningDiaRejected),0)
+FROM ProcessTurningData p
+WHERE p.inspectionCallNo = :callNo
+AND p.lotNo = :lotNo
+AND p.shift = :shift
+AND DATE(p.createdAt) = :date
+""")
+    Object[] getTurningSumByDate(
+            @Param("callNo") String callNo,
+            @Param("lotNo") String lotNo,
+            @Param("shift") String shift,
+            @Param("date") LocalDate date
+    );
+
 }
 

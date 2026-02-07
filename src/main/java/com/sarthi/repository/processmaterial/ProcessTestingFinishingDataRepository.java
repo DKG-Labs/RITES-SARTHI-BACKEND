@@ -2,8 +2,11 @@ package com.sarthi.repository.processmaterial;
 
 import com.sarthi.entity.processmaterial.ProcessTestingFinishingData;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,5 +24,23 @@ public interface ProcessTestingFinishingDataRepository extends JpaRepository<Pro
             String inspectionCallNo, String shift, Integer hourIndex);
 
     void deleteByInspectionCallNo(String inspectionCallNo);
-}
 
+    @Query("""
+            SELECT
+            COALESCE(SUM(p.toeLoadRejected),0),
+            COALESCE(SUM(p.weightRejected),0),
+            COALESCE(SUM(p.paintIdentificationRejected),0),
+            COALESCE(SUM(p.ercCoatingRejected),0)
+            FROM ProcessTestingFinishingData p
+            WHERE p.inspectionCallNo = :callNo
+            AND p.lotNo = :lotNo
+            AND p.shift = :shift
+            AND DATE(p.createdAt) = :date
+            """)
+    Object[] getTestingFinishingSumByDate(
+            @Param("callNo") String callNo,
+            @Param("lotNo") String lotNo,
+            @Param("shift") String shift,
+            @Param("date") LocalDate date
+    );
+}
