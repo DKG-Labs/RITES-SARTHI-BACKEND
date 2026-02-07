@@ -70,9 +70,10 @@ public class ProcessForgingData {
     @Column(name = "forging_temp_rejected")
     private Integer forgingTempRejected;
 
-    @Column(name = "forging_stabilisation_rejection_rejected")
-    private Integer forgingStabilisationRejected;
 
+
+    @Column(name = "forging_stabilisation_rejection_rejected")
+    private Integer forgingStabilisationRejectionRejected;
     // Separate rejection fields for each measurement
 
 
@@ -83,8 +84,7 @@ public class ProcessForgingData {
     @Column(name = "forging_stabilisation_rejection_2", length = 30)
     private String forgingStabilisationRejection2;
 
-    @Column(name = "forging_stabilisation_rejection_rejected")
-    private Integer forgingStabilisationRejectionRejected;
+
 
     // Improper Forging - 2 readings + rejected count
     @Column(name = "improper_forging_1", length = 30)

@@ -28,23 +28,24 @@ public interface ProcessForgingDataRepository extends JpaRepository<ProcessForgi
     Optional<ProcessForgingData> findByInspectionCallNoAndLotNoAndShift(String callId, String lotNumber, String shift);
 
     @Query("""
-            SELECT
-            COALESCE(SUM(p.forgingTempRejected),0),
-            COALESCE(SUM(p.forgingStabilisationRejected),0),
-            COALESCE(SUM(p.improperForgingRejected),0),
-            COALESCE(SUM(p.forgingDefectRejected),0)
-            FROM ProcessForgingData p
-            WHERE p.inspectionCallNo = :callNo
-            AND p.lotNo = :lotNo
-            AND p.shift = :shift
-            AND DATE(p.createdAt) = :date
-            """)
+SELECT
+COALESCE(SUM(p.forgingTempRejected),0),
+COALESCE(SUM(p.forgingStabilisationRejectionRejected),0),
+COALESCE(SUM(p.improperForgingRejected),0),
+COALESCE(SUM(p.forgingDefectRejected),0)
+FROM ProcessForgingData p
+WHERE p.inspectionCallNo = :callNo
+AND p.lotNo = :lotNo
+AND p.shift = :shift
+AND FUNCTION('DATE', p.createdAt) = :date
+""")
     Object[] getForgingSumByDate(
             @Param("callNo") String callNo,
             @Param("lotNo") String lotNo,
             @Param("shift") String shift,
             @Param("date") LocalDate date
     );
+
 
 
     @Query("""
