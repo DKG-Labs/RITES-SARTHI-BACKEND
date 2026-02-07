@@ -71,5 +71,14 @@ public class PoItem {
  private String allocation;
  private String userId;
  private String sourceSystem;
+
+
+ private String consigneeRly;
+ private String consigneeRlyShortName;
+ private String pRly;
+ private String billPayOff;
+ private String billPayOffDesc;
+ private String billPassOff;
+
 }
 

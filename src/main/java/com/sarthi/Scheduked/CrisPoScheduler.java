@@ -17,7 +17,7 @@ public class CrisPoScheduler {
         System.out.println("Scheduler triggered");
       //  asyncService.syncPos(LocalDate.now().minusDays(1));
 
-         asyncService.syncPos("2025-12-23");
+      //   asyncService.syncPos("2025-12-23");
 
        //  asyncService.syncMa("2019-06-19");
 

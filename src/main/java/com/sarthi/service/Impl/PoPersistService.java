@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,8 +37,17 @@ public class PoPersistService {
 
     private static final DateTimeFormatter PO_DT_FMT =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+//    private static final DateTimeFormatter TS_FMT =
+//            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
+
     private static final DateTimeFormatter TS_FMT =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S");
+            new DateTimeFormatterBuilder()
+                    .appendPattern("yyyy-MM-dd HH:mm:ss")
+                    .optionalStart()
+                    .appendPattern(".S")
+                    .optionalEnd()
+                    .toFormatter();
+
 
     @Transactional
     public void savePo(Map<String, Object> data) {
@@ -100,6 +110,18 @@ public class PoPersistService {
         h.setInspectingAgency((String) m.get("INSPECTING_AGENCY"));
         h.setPdfPath((String) m.get("PO_PDF_PATH"));
 
+        h.setRegionCode((String) m.get("REGION_CODE"));
+        h.setRemarks((String) m.get("REMARKS"));
+
+        h.setBillPayOff((String) m.get("BILL_PAY_OFF"));
+        h.setBillPayOffName((String) m.get("BILL_PAY_OFF_NAME"));
+
+        h.setPoiCd((String) m.get("POI_CD"));
+
+        h.setItemCat((String) m.get("ITEM_CAT"));
+        h.setItemCatDescr((String) m.get("ITEM_CAT_DESCR"));
+
+
         if (m.get("PO_DT") != null)
             h.setPoDate(LocalDateTime.parse(m.get("PO_DT").toString(), PO_DT_FMT));
 
@@ -126,6 +148,16 @@ public class PoPersistService {
         i.setImmsConsigneeCd((String) m.get("IMMS_CONSIGNEE_CD"));
         i.setImmsConsigneeName((String) m.get("IMMS_CONSIGNEE_NAME"));
         i.setConsigneeDetail((String) m.get("CONSIGNEE_DETAIL"));
+
+        i.setConsigneeRly((String) m.get("CONSIGNEE_RLY"));
+        i.setConsigneeRlyShortName((String) m.get("CONSIGNEE_RLY_SHORTNAME"));
+
+        i.setPRly((String) m.get("P_RLY"));
+
+        i.setBillPayOff((String) m.get("BILL_PAY_OFF"));
+        i.setBillPayOffDesc((String) m.get("BILL_PAY_OFF_DESC"));
+        i.setBillPassOff((String) m.get("BILL_PASS_OFF"));
+
 
         i.setUomCd((String) m.get("UOM_CD"));
         i.setUom((String) m.get("UOM"));

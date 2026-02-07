@@ -59,6 +59,15 @@ public class PoHeader {
 
         private String sourceSystem;
 
+        private String regionCode;
+        private String remarks;
+        private String billPayOff;
+        private String billPayOffName;
+        private String poiCd;
+        private String itemCat;
+        private String itemCatDescr;
+
+
         // ---- RELATION ----
         @OneToMany(mappedBy = "poHeader",
                 cascade = CascadeType.ALL,

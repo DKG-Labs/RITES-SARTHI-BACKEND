@@ -4,7 +4,6 @@ import com.sarthi.constant.AppConstant;
 import com.sarthi.dto.*;
 import com.sarthi.dto.WorkflowDtos.userRequestDto;
 import com.sarthi.entity.*;
-import com.sarthi.entity.ProcessIeMapping;
 import com.sarthi.entity.ProcessIeUsers;
 import com.sarthi.exception.BusinessException;
 import com.sarthi.exception.ErrorDetails;
@@ -15,8 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Optional;
 
@@ -517,6 +516,142 @@ public UserDto createUser(userRequestDto userDto) {
                 .orElseThrow(() -> new UsernameNotFoundException("user not found " + userId));
     }
 
+
+
+    @Transactional
+    @Override
+    public UserDto createUserAndRole(userRequestDto userDto) {
+
+        UserMaster userMaster = new UserMaster();
+
+        userMaster.setUserName(userDto.getUserName());
+        userMaster.setMobileNumber(userDto.getMobileNumber());
+        userMaster.setPassword(userDto.getPassword());
+        userMaster.setEmail(userDto.getEmail());
+        userMaster.setCreatedBy(userDto.getCreatedBy());
+        userMaster.setEmployeeId(userDto.getEmployeeId());
+
+        userMaster.setEmployeeCode(userDto.getEmployeeCode());
+        userMaster.setRitesEmployeeCode(userDto.getRitesEmployeeCode());
+        userMaster.setEmploymentType(userDto.getEmploymentType());
+        userMaster.setFullName(userDto.getFullName());
+        userMaster.setShortName(userDto.getShortName());
+        userMaster.setDesignation(userDto.getDesignation());
+        userMaster.setDiscipline(userDto.getDiscipline());
+
+        String rolesAsString = String.join(",", userDto.getRoleNames());
+        userMaster.setRoleName(rolesAsString);
+
+        userMasterRepository.save(userMaster);
+
+        // Role-based logic
+        for (String roleName : userDto.getRoleNames()) {
+
+            RoleMaster role = roleMasterRepository.findByRoleName(roleName)
+                    .orElseThrow(() -> new BusinessException(
+                            new ErrorDetails(AppConstant.ERROR_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_CODE_RESOURCE,
+                                    AppConstant.ERROR_TYPE_VALIDATION,
+                                    "Role not found: " + roleName)));
+
+            UserRoleMaster userRole = new UserRoleMaster();
+            userRole.setUserId(userMaster.getUserId());
+            userRole.setRoleId(role.getRoleId());
+            userRole.setReadPermission(true);
+            userRole.setWritePermission(true);
+            userRole.setCreatedBy(userDto.getCreatedBy());
+            userRole.setCreatedDate(new Date());
+
+            userRoleMasterRepository.save(userRole);
+        }
+
+        return mapToResponseDTO(userMaster);
+    }
+
+
+    @Transactional
+    public Object setupIe(Long userId, IeSetupRequestDto dto) {
+
+        UserMaster user = userMasterRepository.findById(Math.toIntExact(userId))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // IE Profile
+        IeProfile profile = new IeProfile();
+        profile.setEmployeeCode(user.getEmployeeCode());
+        profile.setRio(dto.getRio());
+        profile.setCurrentCityOfPosting(dto.getCurrentCityOfPosting());
+        profile.setMetalStampNo(dto.getMetalStampNo());
+
+        ieProfileRepository.save(profile);
+
+        // PIN + POI
+        if (dto.getIePinPoiList() != null) {
+
+            for (IePinPoiDto p : dto.getIePinPoiList()) {
+
+                IePincodePoiMapping map = new IePincodePoiMapping();
+
+                map.setEmployeeCode(user.getEmployeeCode());
+                map.setProduct(p.getProduct());
+                map.setPinCode(p.getPinCode());
+                map.setPoiCode(p.getPoiCode());
+                map.setIeType(p.getIeType());
+
+                iePincodePoiMappingRepository.save(map);
+            }
+        }
+
+        // Controlling Manager
+        if (dto.getControllingManagerUserId() != null) {
+
+            IeControllingManager cm = new IeControllingManager();
+
+            cm.setIeEmployeeCode(user.getEmployeeCode());
+            cm.setCmUserId(dto.getControllingManagerUserId());
+
+            ieControllingManagerRepository.save(cm);
+        }
+        return null;
+    }
+
+
+    @Transactional
+    @Override
+    public Object mapProcessIe(Long userId,
+                               ProcessIeMappingRequestDto dto,
+                               String createdBy) {
+
+//        if (dto.getIePoiMappings() == null || dto.getIePoiMappings().isEmpty()) {
+//            throw new BusinessException("Mapping required");
+//        }
+
+        for (IePoiMappingDto ieDto : dto.getIePoiMappings()) {
+
+            // Process IE → IE
+            ProcessIeUsers map = new ProcessIeUsers();
+
+            map.setProcessUserId(userId);
+            map.setIeUserId(ieDto.getIeUserId());
+            map.setCreatedBy(Long.valueOf(createdBy));
+            map.setCreatedDate(new Date());
+
+            processIeUsersRepository.save(map);
+
+            // IE → POI
+            for (String poi : ieDto.getPoiCodes()) {
+
+                IePoiMapping poiMap = new IePoiMapping();
+
+                poiMap.setIeUserId(ieDto.getIeUserId());
+                poiMap.setPoiCode(poi);
+                poiMap.setCreatedBy(Long.valueOf(createdBy));
+                poiMap.setCreatedDate(new Date());
+
+                iePoiMappingRepository.save(poiMap);
+            }
+        }
+        return null;
+    }
 
 
 

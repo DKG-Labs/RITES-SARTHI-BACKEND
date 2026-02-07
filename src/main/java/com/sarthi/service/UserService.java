@@ -1,9 +1,6 @@
 package com.sarthi.service;
 
-import com.sarthi.dto.LoginRequestBasedTypeDto;
-import com.sarthi.dto.LoginRequestDto;
-import com.sarthi.dto.LoginResponseDto;
-import com.sarthi.dto.UserDto;
+import com.sarthi.dto.*;
 import com.sarthi.dto.WorkflowDtos.userRequestDto;
 import org.springframework.stereotype.Service;
 
@@ -14,4 +11,13 @@ public interface UserService {
     public LoginResponseDto login(LoginRequestDto loginRequestDto);
 
     public LoginResponseDto loginBasedOnType(LoginRequestBasedTypeDto loginDto);
+
+
+    public Object mapProcessIe(Long userId,
+                               ProcessIeMappingRequestDto dto,
+                               String createdBy);
+
+    public Object setupIe(Long userId, IeSetupRequestDto dto);
+
+    public UserDto createUserAndRole(userRequestDto userDto);
 }
