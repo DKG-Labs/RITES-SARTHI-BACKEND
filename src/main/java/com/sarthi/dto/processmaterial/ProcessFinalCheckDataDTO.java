@@ -15,12 +15,20 @@ public class ProcessFinalCheckDataDTO {
     private String hourLabel;
     private Boolean noProduction;
     private String lotNo;
-    private String visualCheck1;
-    private String visualCheck2;
-    private String dimensionCheck1;
-    private String dimensionCheck2;
-    private String hardnessCheck1;
-    private String hardnessCheck2;
+    private String boxGauge1;
+    private String boxGauge2;
+    private String flatBearingArea1;
+    private String flatBearingArea2;
+    private String fallingGauge1;
+    private String fallingGauge2;
+    private String surfaceDefect1;
+    private String surfaceDefect2;
+    private String embossingDefect1;
+    private String embossingDefect2;
+    private String marking1;
+    private String marking2;
+    private String temperingHardness1;
+    private String temperingHardness2;
 
     // Separate rejection fields for each measurement
     private Integer boxGaugeRejected;

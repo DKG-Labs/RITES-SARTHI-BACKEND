@@ -16,14 +16,17 @@ public class ProcessTemperingDataDTO {
     private String hourLabel;
     private Boolean noProduction;
     private String lotNo;
-    private BigDecimal temperingTemperature;
-    private BigDecimal temperingDuration;
+    private BigDecimal temperingTemperature1;
+    private BigDecimal temperingTemperature2;
+    private BigDecimal temperingDuration1;
+    private BigDecimal temperingDuration2;
     private Integer acceptedQty;
     private Integer rejectedQty;
 
     // Separate rejection fields for each measurement
     private Integer temperingTemperatureRejected;
     private Integer temperingDurationRejected;
+    private Integer totalTemperingRejection;
 
     private String remarks;
     private LocalDateTime createdAt;

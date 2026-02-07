@@ -47,11 +47,17 @@ public class ProcessTemperingData {
     private String lotNo;
 
     // Tempering parameters
-    @Column(name = "tempering_temperature", precision = 10, scale = 2)
-    private BigDecimal temperingTemperature;
+    @Column(name = "tempering_temperature_1", precision = 10, scale = 2)
+    private BigDecimal temperingTemperature1;
 
-    @Column(name = "tempering_duration", precision = 10, scale = 2)
-    private BigDecimal temperingDuration;
+    @Column(name = "tempering_temperature_2", precision = 10, scale = 2)
+    private BigDecimal temperingTemperature2;
+
+    @Column(name = "tempering_duration_1", precision = 10, scale = 2)
+    private BigDecimal temperingDuration1;
+
+    @Column(name = "tempering_duration_2", precision = 10, scale = 2)
+    private BigDecimal temperingDuration2;
 
     @Column(name = "accepted_qty")
     private Integer acceptedQty;
@@ -65,6 +71,9 @@ public class ProcessTemperingData {
 
     @Column(name = "tempering_duration_rejected")
     private Integer temperingDurationRejected;
+
+    @Column(name = "total_tempering_rejection")
+    private Integer totalTemperingRejection;
 
     @Column(name = "remarks", length = 500)
     private String remarks;

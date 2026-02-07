@@ -46,12 +46,18 @@ public class ProcessQuenchingData {
     @Column(name = "lot_no", length = 50)
     private String lotNo;
 
-    // Quenching parameters
-    @Column(name = "quenching_temperature", precision = 10, scale = 2)
-    private BigDecimal quenchingTemperature;
+    // Quenching parameters (2 samples each)
+    @Column(name = "quenching_temperature_1", precision = 10, scale = 2)
+    private BigDecimal quenchingTemperature1;
 
-    @Column(name = "quenching_duration", precision = 10, scale = 2)
-    private BigDecimal quenchingDuration;
+    @Column(name = "quenching_temperature_2", precision = 10, scale = 2)
+    private BigDecimal quenchingTemperature2;
+
+    @Column(name = "quenching_duration_1", precision = 10, scale = 2)
+    private BigDecimal quenchingDuration1;
+
+    @Column(name = "quenching_duration_2", precision = 10, scale = 2)
+    private BigDecimal quenchingDuration2;
 
     // Quenching Hardness - 2 readings
     @Column(name = "quenching_hardness_1", precision = 10, scale = 2)
@@ -63,7 +69,7 @@ public class ProcessQuenchingData {
     @Column(name = "rejected_qty")
     private Integer rejectedQty;
 
-    // Separate rejection fields for each measurement
+    // Quenching Rejection - separate counts
     @Column(name = "quenching_temperature_rejected")
     private Integer quenchingTemperatureRejected;
 
@@ -73,11 +79,30 @@ public class ProcessQuenchingData {
     @Column(name = "quenching_hardness_rejected")
     private Integer quenchingHardnessRejected;
 
+    // Gauge Check - 2 readings each
+    @Column(name = "box_gauge_1", length = 30)
+    private String boxGauge1;
+
+    @Column(name = "box_gauge_2", length = 30)
+    private String boxGauge2;
+
     @Column(name = "box_gauge_rejected")
     private Integer boxGaugeRejected;
 
+    @Column(name = "flat_bearing_area_1", length = 30)
+    private String flatBearingArea1;
+
+    @Column(name = "flat_bearing_area_2", length = 30)
+    private String flatBearingArea2;
+
     @Column(name = "flat_bearing_area_rejected")
     private Integer flatBearingAreaRejected;
+
+    @Column(name = "falling_gauge_1", length = 30)
+    private String fallingGauge1;
+
+    @Column(name = "falling_gauge_2", length = 30)
+    private String fallingGauge2;
 
     @Column(name = "falling_gauge_rejected")
     private Integer fallingGaugeRejected;

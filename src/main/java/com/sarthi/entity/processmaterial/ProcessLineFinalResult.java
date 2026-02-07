@@ -10,9 +10,6 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "process_line_final_result", 
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"inspection_call_no", "line_no"})
-    },
     indexes = {
         @Index(name = "idx_proc_final_call_no", columnList = "inspection_call_no"),
         @Index(name = "idx_proc_final_po_no", columnList = "po_no"),
@@ -136,6 +133,16 @@ public class ProcessLineFinalResult {
     @Column(name = "hardness_check_rejected")
     private Integer hardnessCheckRejected;
 
+    @Column(name = "testing_finishing_manufactured")
+    private Integer testingFinishingManufactured;
+
+    @Column(name = "testing_finishing_accepted")
+    private Integer testingFinishingAccepted;
+
+    @Column(name = "testing_finishing_rejected")
+    private Integer testingFinishingRejected;
+
+
     // Submodule Statuses
     @Column(name = "calibration_status", length = 20)
     private String calibrationStatus;
@@ -163,6 +170,9 @@ public class ProcessLineFinalResult {
 
     @Column(name = "final_check_status", length = 20)
     private String finalCheckStatus;
+
+    @Column(name = "testing_finishing_status", length = 20)
+    private String testingFinishingStatus;
 
     // Final Status
     @Column(name = "status", length = 30)
