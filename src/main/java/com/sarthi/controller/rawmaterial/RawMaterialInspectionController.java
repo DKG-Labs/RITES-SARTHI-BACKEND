@@ -174,7 +174,8 @@ public class RawMaterialInspectionController {
 
     /**
      * Get RM IC details by Certificate Number
-     * Fetches inspection call details (company_id, unit_id, etc.) using the certificate number
+     * Fetches inspection call details (company_id, unit_id, etc.) using the
+     * certificate number
      * from inspection_complete_details table
      * GET /api/raw-material/ic-by-certificate/{certificateNo}
      */
@@ -186,15 +187,41 @@ public class RawMaterialInspectionController {
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(call), HttpStatus.OK);
     }
 
+    /* ==================== Chemical Analysis Endpoints ==================== */
+
+    /**
+     * Get chemical analysis by heat number
+     * Fetches the most recent chemical analysis data for a given heat number
+     * Used to auto-populate chemical analysis when raising a new inspection call
+     * for the same heat
+     * GET /api/raw-material/chemical-analysis/heat/{heatNumber}
+     */
+    @GetMapping("/chemical-analysis/heat/{heatNumber}")
+    @Operation(summary = "Get chemical analysis by heat number", description = "Fetches the most recent chemical analysis for a heat number to auto-populate in new inspection calls")
+    public ResponseEntity<APIResponse> getChemicalAnalysisByHeatNumber(@PathVariable String heatNumber) {
+        logger.info("Request: Get chemical analysis for heat number: {}", heatNumber);
+        com.sarthi.dto.rawmaterial.RmChemicalAnalysisDto analysis = rmService
+                .getChemicalAnalysisByHeatNumber(heatNumber);
+
+        if (analysis == null) {
+            logger.info("No chemical analysis found for heat number: {}", heatNumber);
+            return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(null), HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(analysis), HttpStatus.OK);
+    }
+
     /* ==================== Inspection Call Creation ==================== */
 
     // @PostMapping("/inspectionCall")
-    // public ResponseEntity<Object> createInspectionCall(@RequestBody InspectionCallRequestDto icRequest,
-    //                                                  @RequestBody  RmInspectionDetailsRequestDto rmRequest) {
+    // public ResponseEntity<Object> createInspectionCall(@RequestBody
+    // InspectionCallRequestDto icRequest,
+    // @RequestBody RmInspectionDetailsRequestDto rmRequest) {
 
-    //   InspectionCall ic =  inspectionCallService.createInspectionCall(icRequest, rmRequest);
-    //     return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(ic), HttpStatus.OK);
-
+    // InspectionCall ic = inspectionCallService.createInspectionCall(icRequest,
+    // rmRequest);
+    // return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(ic),
+    // HttpStatus.OK);
 
     /**
      * Create a new inspection call with RM details
@@ -215,8 +242,7 @@ public class RawMaterialInspectionController {
             // 1️⃣ Save inspection call
             InspectionCall ic = inspectionCallService.createInspectionCall(
                     request.getInspectionCall(),
-                    request.getRmInspectionDetails()
-            );
+                    request.getRmInspectionDetails());
 
             // 2️⃣ Trigger workflow ONLY on success
             String workflowName = "INSPECTION CALL";
@@ -224,14 +250,12 @@ public class RawMaterialInspectionController {
                     ic.getIcNumber(),
                     Integer.valueOf(ic.getCreatedBy()),
                     workflowName,
-                    "560001"
-            );
+                    "560001");
 
             logger.info("✅ Inspection call created successfully with ID: {}", ic.getId());
             return new ResponseEntity<>(
                     ResponseBuilder.getSuccessResponse(ic),
-                    HttpStatus.OK
-            );
+                    HttpStatus.OK);
 
         } catch (Exception e) {
 
@@ -241,18 +265,12 @@ public class RawMaterialInspectionController {
                     AppConstant.INTER_SERVER_ERROR,
                     AppConstant.ERROR_TYPE_CODE_INTERNAL,
                     AppConstant.ERROR_TYPE_ERROR,
-                    e.getMessage() != null ? e.getMessage() : "Failed to create inspection call"
-            );
+                    e.getMessage() != null ? e.getMessage() : "Failed to create inspection call");
 
             return new ResponseEntity<>(
                     ResponseBuilder.getErrorResponse(errorDetails),
-                    HttpStatus.INTERNAL_SERVER_ERROR
-            );
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-
-
-
 }
-
