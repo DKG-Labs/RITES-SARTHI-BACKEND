@@ -40,6 +40,9 @@ public class RmHeatFinalResultDto {
 
     // Remarks
     private String remarks;
+    
+    // Shift
+    private String shift;
 
     // Audit fields
     private String createdBy;

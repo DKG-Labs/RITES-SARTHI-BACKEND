@@ -26,29 +26,32 @@ public class RmPackingStorage {
     @Column(name = "heat_index")
     private Integer heatIndex;
 
-    @Column(name = "bundling_secure", length = 10)
-    private String bundlingSecure;
+    @Column(name = "stored_heat_wise", length = 10)
+    private String storedHeatWise;
 
-    @Column(name = "tags_attached", length = 10)
-    private String tagsAttached;
+    @Column(name = "supplied_in_bundles", length = 10)
+    private String suppliedInBundles;
 
-    @Column(name = "labels_correct", length = 10)
-    private String labelsCorrect;
+    @Column(name = "heat_number_ends", length = 10)
+    private String heatNumberEnds;
 
-    @Column(name = "protection_adequate", length = 10)
-    private String protectionAdequate;
+    @Column(name = "packing_strip_width", length = 10)
+    private String packingStripWidth;
 
-    @Column(name = "storage_condition", length = 10)
-    private String storageCondition;
+    @Column(name = "bundle_tied_locations", length = 10)
+    private String bundleTiedLocations;
 
-    @Column(name = "moisture_protection", length = 10)
-    private String moistureProtection;
+    @Column(name = "id_tag_bundle", length = 10)
+    private String identificationTagBundle;
 
-    @Column(name = "stacking_proper", length = 10)
-    private String stackingProper;
+    @Column(name = "metal_tag_info", length = 10)
+    private String metalTagInformation;
 
     @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;
+
+    @Column(name = "shift", length = 20)
+    private String shift;
 
     // Audit Fields
     @Column(name = "created_by", length = 100)

@@ -165,10 +165,10 @@ public class CertificateServiceImpl implements CertificateService {
                 .passedInstNo(calculatePassedInstallment(inspectionCall))
                 .contractor(buildContractorInfo(poHeader))
                 .manufacturer(buildManufacturerInfo(heatQuantities))
-                .placeOfInspection(inspectionCall.getPlaceOfInspection())
+                .placeOfInspection(buildPlaceOfInspection(inspectionCall))
                 .contractRef(buildContractRef(poHeader))
                 .contractorPo(buildContractorPo(rmDetails))
-                .billPayingOfficer(buildBillPayingOfficer(mainPoInfo))
+                .billPayingOfficer(buildBillPayingOfficer(inspectionCall))
                 .consigneeRailway(buildConsigneeRailway(poItems))
                 .consigneeManufacturer(buildConsigneeManufacturer(poHeader))
                 .purchasingAuthority(buildPurchasingAuthority(poHeader, mainPoInfo))
@@ -195,6 +195,16 @@ public class CertificateServiceImpl implements CertificateService {
     }
 
     /* ==================== Helper Methods for Building Certificate Fields ==================== */
+
+    /**
+     * Build Place of Inspection
+     * Format: Company Name + Unit Address
+     */
+    private String buildPlaceOfInspection(InspectionCall inspectionCall) {
+        String companyName = inspectionCall.getCompanyName() != null ? inspectionCall.getCompanyName() : "";
+        String unitAddress = inspectionCall.getUnitAddress() != null ? inspectionCall.getUnitAddress() : "";
+        return companyName + (unitAddress.isBlank() ? "" : ", " + unitAddress);
+    }
 
     /**
      * Generate Certificate Number
@@ -463,13 +473,30 @@ public class CertificateServiceImpl implements CertificateService {
 
     /**
      * Build Bill Paying Officer
-     * Priority: Section A > Empty
+     * Fetches from PoItem based on poNo and itemSrNo extracted from poSerialNo
      */
-    private String buildBillPayingOfficer(MainPoInformation mainPoInfo) {
-        if (mainPoInfo != null && mainPoInfo.getBillPayingOfficer() != null) {
-            return mainPoInfo.getBillPayingOfficer();
+    private String buildBillPayingOfficer(InspectionCall inspectionCall) {
+        if (inspectionCall == null || inspectionCall.getPoNo() == null || inspectionCall.getPoSerialNo() == null) {
+            return "";
         }
-        return "";
+
+        try {
+            // Extract itemSrNo from poSerialNo (e.g., "PO/001" -> "001")
+            String poSerialNo = inspectionCall.getPoSerialNo();
+            String itemSrNo = poSerialNo;
+            if (poSerialNo.contains("/")) {
+                String[] parts = poSerialNo.split("/");
+                itemSrNo = parts[parts.length - 1].trim();
+            }
+
+            // Find matching PoItem
+            return poItemRepository.findByPoHeader_PoNoAndItemSrNo(inspectionCall.getPoNo(), itemSrNo)
+                    .map(item -> item.getBillPayOffDesc() != null ? item.getBillPayOffDesc() : "")
+                    .orElse("");
+        } catch (Exception e) {
+            logger.warn("Error fetching bill paying officer for IC: {}", inspectionCall.getIcNumber(), e);
+            return "";
+        }
     }
 
     /**
@@ -593,7 +620,7 @@ public class CertificateServiceImpl implements CertificateService {
                 .manufacturer(processDetails != null ? processDetails.getManufacturer() : "")
                 .contractRef(buildContractRef(poHeader))
                 .poDetails(buildPoDetails(poHeader))
-                .billPayingOfficer(mainPoInfo != null ? mainPoInfo.getBillPayingOfficer() : "")
+                .billPayingOfficer(buildBillPayingOfficer(inspectionCall))
                 .consigneeRailway(poItem != null ? poItem.getConsigneeDetail() : "")
                 .consigneeManufacturer(inspectionCall.getCompanyName() != null ? inspectionCall.getCompanyName() : "")
                 .purchasingAuthority("")
@@ -789,17 +816,20 @@ public class CertificateServiceImpl implements CertificateService {
                 .passedInstNo(calculatePassedInstallment(inspectionCall))
                 .contractor(buildContractorInfo(poHeader))
                 .placeOfInspection(buildFinalPlaceOfInspection(finalDetails))
-                .contractRef(buildContractRef(poHeader))
-                .billPayingOfficer("") // Display blank for now
+                .contractRef(poHeader != null ? poHeader.getPoNo() : "")
+                .contractRefDate(poHeader != null && poHeader.getPoDate() != null ? formatDate(poHeader.getPoDate().toLocalDate()) : "")
+                .billPayingOfficer(buildBillPayingOfficer(inspectionCall))
                 .consigneeRailway(buildConsigneeRailway(poItems))
-                .purchasingAuthority("") // Display blank for now
-                .itemNo("") // Display blank for now
+                .purchasingAuthority(poHeader != null && poHeader.getPurchaserDetail() != null ? poHeader.getPurchaserDetail() : "")
+                .itemNo(poItems.isEmpty() ? "" : poItems.get(0).getItemSrNo())
                 .description(buildDescription(inspectionCall))
-                .totalLots(finalDetails != null ? finalDetails.getTotalLots() : 0)
-                .totalOfferedQty(finalDetails != null ? finalDetails.getTotalOfferedQty() : 0)
-                .totalAcceptedQty(finalDetails != null ? finalDetails.getTotalAcceptedQty() : 0)
-                .totalRejectedQty(finalDetails != null ? finalDetails.getTotalRejectedQty() : 0)
+                .totalLots(finalDetails != null && finalDetails.getTotalLots() != null ? finalDetails.getTotalLots() : 0)
+                .totalOfferedQty(finalDetails != null && finalDetails.getTotalOfferedQty() != null ? finalDetails.getTotalOfferedQty() : 0)
+                .totalAcceptedQty(finalDetails != null && finalDetails.getTotalAcceptedQty() != null ? finalDetails.getTotalAcceptedQty() : 0)
+                .totalRejectedQty(finalDetails != null && finalDetails.getTotalRejectedQty() != null ? finalDetails.getTotalRejectedQty() : 0)
                 .remarks(buildFinalRemarks(finalDetails))
+                .trRecDate("")
+                .quantityNowPassedText("")
                 .lotDetails(buildFinalLotDetails(lotDetails))
                 .build();
     }
@@ -832,10 +862,10 @@ public class CertificateServiceImpl implements CertificateService {
                         .lotNo(lot.getLotNumber())
                         .heatNo(lot.getHeatNumber())
                         .manufacturer(lot.getManufacturer())
-                        .offeredQty(lot.getOfferedQty())
-                        .acceptedQty(lot.getQtyAccepted())
-                        .rejectedQty(lot.getQtyRejected())
-                        .status(lot.getQtyRejected() > 0 ? "PARTIAL" : "ACCEPTED")
+                        .offeredQty(lot.getOfferedQty() != null ? lot.getOfferedQty() : 0)
+                        .acceptedQty(lot.getQtyAccepted() != null ? lot.getQtyAccepted() : 0)
+                        .rejectedQty(lot.getQtyRejected() != null ? lot.getQtyRejected() : 0)
+                        .status(lot.getQtyRejected() != null && lot.getQtyRejected() > 0 ? "PARTIAL" : "ACCEPTED")
                         .build())
                 .collect(Collectors.toList());
     }

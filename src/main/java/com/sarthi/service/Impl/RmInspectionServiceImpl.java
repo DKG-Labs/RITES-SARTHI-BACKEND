@@ -255,6 +255,7 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             entity.setNoOfBundles(dto.getNoOfBundles());
             entity.setNoOfErcFinished(dto.getNoOfErcFinished());
             entity.setRemarks(dto.getRemarks());
+            entity.setShiftOfInspection(dto.getShift());
             entity.setCreatedBy(dto.getCreatedBy());
             entity.setUpdatedBy(dto.getUpdatedBy());
             entity.setUpdatedAt(LocalDateTime.now());
@@ -555,14 +556,15 @@ public class RmInspectionServiceImpl implements RmInspectionService {
 
             // Set all fields
             entity.setHeatIndex(dto.getHeatIndex());
-            entity.setBundlingSecure(dto.getBundlingSecure());
-            entity.setTagsAttached(dto.getTagsAttached());
-            entity.setLabelsCorrect(dto.getLabelsCorrect());
-            entity.setProtectionAdequate(dto.getProtectionAdequate());
-            entity.setStorageCondition(dto.getStorageCondition());
-            entity.setMoistureProtection(dto.getMoistureProtection());
-            entity.setStackingProper(dto.getStackingProper());
+            entity.setStoredHeatWise(dto.getStoredHeatWise());
+            entity.setSuppliedInBundles(dto.getSuppliedInBundles());
+            entity.setHeatNumberEnds(dto.getHeatNumberEnds());
+            entity.setPackingStripWidth(dto.getPackingStripWidth());
+            entity.setBundleTiedLocations(dto.getBundleTiedLocations());
+            entity.setIdentificationTagBundle(dto.getIdentificationTagBundle());
+            entity.setMetalTagInformation(dto.getMetalTagInformation());
             entity.setRemarks(dto.getRemarks());
+            entity.setShift(dto.getShift());
 
             // Set audit fields
             entity.setCreatedBy(getCurrentUser());
@@ -782,14 +784,15 @@ public class RmInspectionServiceImpl implements RmInspectionService {
             packingDto.setInspectionCallNo(entity.getInspectionCallNo());
             packingDto.setHeatNo(entity.getHeatNo());
             packingDto.setHeatIndex(entity.getHeatIndex());
-            packingDto.setBundlingSecure(entity.getBundlingSecure());
-            packingDto.setTagsAttached(entity.getTagsAttached());
-            packingDto.setLabelsCorrect(entity.getLabelsCorrect());
-            packingDto.setProtectionAdequate(entity.getProtectionAdequate());
-            packingDto.setStorageCondition(entity.getStorageCondition());
-            packingDto.setMoistureProtection(entity.getMoistureProtection());
-            packingDto.setStackingProper(entity.getStackingProper());
+            packingDto.setStoredHeatWise(entity.getStoredHeatWise());
+            packingDto.setSuppliedInBundles(entity.getSuppliedInBundles());
+            packingDto.setHeatNumberEnds(entity.getHeatNumberEnds());
+            packingDto.setPackingStripWidth(entity.getPackingStripWidth());
+            packingDto.setBundleTiedLocations(entity.getBundleTiedLocations());
+            packingDto.setIdentificationTagBundle(entity.getIdentificationTagBundle());
+            packingDto.setMetalTagInformation(entity.getMetalTagInformation());
             packingDto.setRemarks(entity.getRemarks());
+            packingDto.setShift(entity.getShift());
             packingDtos.add(packingDto);
         }
         dto.setPackingStorageData(packingDtos);
