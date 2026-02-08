@@ -58,6 +58,11 @@ public class FinalCertificateDto {
     private String contractRef;
     
     /**
+     * Contract Ref Date: Date of the Purchase Order
+     */
+    private String contractRefDate;
+    
+    /**
      * Bill Paying Officer: From PO Details fetched through API from IREPS (for now display blank)
      */
     private String billPayingOfficer;
@@ -110,6 +115,16 @@ public class FinalCertificateDto {
      * Remarks: Certificate remarks
      */
     private String remarks;
+
+    /**
+     * TR Rec. Dt.: Technical Record Receipt Date (for now display blank)
+     */
+    private String trRecDate;
+
+    /**
+     * Quantity now passed in words and details
+     */
+    private String quantityNowPassedText;
     
     /* ==================== Lot Details ==================== */
     

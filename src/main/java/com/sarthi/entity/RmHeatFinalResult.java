@@ -111,6 +111,9 @@ public class RmHeatFinalResult {
     @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;
 
+    @Column(name = "shift_of_inspection", length = 20)
+    private String shiftOfInspection;
+
     // -------------------------
     // Audit Fields
     // -------------------------
