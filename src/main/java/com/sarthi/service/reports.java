@@ -15,9 +15,9 @@ public interface reports {
 
     public List<PoInspection2ndLevelSerialStatusDto> getSerialStatusByPoNo(String poNo);
 
-    public List<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBy(String serialNo) ;
-
+    public List<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBy(String poNo, String serialNo) ;
     public Page<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBySerialNo(
+            String poNo,
             String serialNo,
             int page,
             int size);

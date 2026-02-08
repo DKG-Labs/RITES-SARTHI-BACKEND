@@ -348,10 +348,10 @@ public class reportsImpl implements reports {
 
 
     @Override
-    public List<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBy(String serialNo) {
+    public List<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBy(String poNo, String serialNo) {
 
         List<InspectionCall> calls =
-                inspectionCallRepository.findBySerialNo(serialNo);
+                inspectionCallRepository.findByPoNoAndSerialNo(poNo, serialNo);
 
         List<PoInspection3rdLevelCallStatusDto> result = new ArrayList<>();
 
@@ -526,6 +526,7 @@ public class reportsImpl implements reports {
 
 @Override
 public Page<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBySerialNo(
+        String poNo,
         String serialNo,
         int page,
         int size) {
@@ -534,7 +535,7 @@ public Page<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBySerialNo(
 
     //  Get paginated calls
     Page<InspectionCall> callPage =
-            inspectionCallRepository.findBySerialNo(serialNo, pageable);
+            inspectionCallRepository.findByPoNoAndSerialNo(poNo, serialNo, pageable);
 
     List<InspectionCall> calls = callPage.getContent();
 
