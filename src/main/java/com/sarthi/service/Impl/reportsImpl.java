@@ -201,6 +201,7 @@ public class reportsImpl implements reports {
 
 
             // ================= RM Summary =================
+            // ================= RM Summary =================
             List<Object[]> rmResultList =
                     rmHeatFinalResultRepository
                             .findRmSummaryByCallNos(callNos);
@@ -213,15 +214,18 @@ public class reportsImpl implements reports {
 
                 Object[] row = rmResultList.get(0);
 
-                if (row[0] != null)
-                    rmAccepted = ((Number) row[0]).doubleValue();
+                // row[0] = callNo (String) → ignore
 
                 if (row[1] != null)
-                    rmRejected = ((Number) row[1]).doubleValue();
+                    rmOffered = ((Number) row[1]).doubleValue();
 
                 if (row[2] != null)
-                    rmOffered = ((Number) row[2]).doubleValue();
+                    rmAccepted = ((Number) row[2]).doubleValue();
+
+                if (row[3] != null)
+                    rmRejected = ((Number) row[3]).doubleValue();
             }
+
 
 
             // ================= Set RM =================
