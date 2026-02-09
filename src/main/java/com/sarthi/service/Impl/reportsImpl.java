@@ -118,16 +118,28 @@ public class reportsImpl implements reports {
             double offered = 0.0;
             double rejected = 0.0;
 
+//            if (resultList != null && !resultList.isEmpty()) {
+//
+//                Object[] result = resultList.get(0);
+//
+//                if (result[0] != null)
+//                    offered = ((Number) result[0]).doubleValue();
+//
+//                if (result[1] != null)
+//                    rejected = ((Number) result[1]).doubleValue();
+//            }
             if (resultList != null && !resultList.isEmpty()) {
 
-                Object[] result = resultList.get(0);
+                for (Object[] result : resultList) {
 
-                if (result[0] != null)
-                    offered = ((Number) result[0]).doubleValue();
+                    if (result[0] != null)
+                        offered += ((Number) result[0]).doubleValue();
 
-                if (result[1] != null)
-                    rejected = ((Number) result[1]).doubleValue();
+                    if (result[1] != null)
+                        rejected += ((Number) result[1]).doubleValue();
+                }
             }
+
 
 
             // ================= Final Accepted =================
@@ -591,12 +603,14 @@ public Page<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBySerialNo(
 
     List<PoInspection3rdLevelCallStatusDto> dtoList =
             new ArrayList<>();
+    System.out.println("RM MAP KEYS = " + rmMap.keySet());
 
     // Build DTO
     for (InspectionCall call : calls) {
 
         String callNo = call.getIcNumber();
         String callType = call.getTypeOfCall();
+        System.out.println("CALL NO = " + callNo);
 
         // ===== Workflow =====
         Date startDate = null;
@@ -634,8 +648,7 @@ public Page<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBySerialNo(
 
         // RAW MATERIAL
         if (callType != null &&
-                (callType.toUpperCase().contains("RM")
-                        || callType.toUpperCase().contains("RAW"))) {
+                callType.toUpperCase().contains("RAW MATERIAL")) {
 
             Object[] row = rmMap.get(callNo);
 
