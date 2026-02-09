@@ -648,6 +648,7 @@ public Page<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBySerialNo(
         Double rejectionPct = null;
 
         // RAW MATERIAL
+        // RAW MATERIAL
         if (callType != null &&
                 callType.toUpperCase().contains("RAW MATERIAL")) {
 
@@ -655,13 +656,13 @@ public Page<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBySerialNo(
 
             if (row != null) {
 
-                double accepted =
+                double offered =
                         row[1] != null ? ((Number) row[1]).doubleValue() : 0;
 
-                double rejected =
+                double accepted =
                         row[2] != null ? ((Number) row[2]).doubleValue() : 0;
 
-                double offered =
+                double rejected =
                         row[3] != null ? ((Number) row[3]).doubleValue() : 0;
 
                 offeredQty = offered;
@@ -673,6 +674,7 @@ public Page<PoInspection3rdLevelCallStatusDto> getCallWiseStatusBySerialNo(
                 }
             }
         }
+
 
         // PROCESS
         else if (callType != null &&
