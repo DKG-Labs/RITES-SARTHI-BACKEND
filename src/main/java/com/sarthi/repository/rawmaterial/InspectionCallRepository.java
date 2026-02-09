@@ -167,11 +167,23 @@ public interface InspectionCallRepository extends JpaRepository<InspectionCall, 
         @Query("""
                             SELECT ic
                             FROM InspectionCall ic
-                            WHERE ic.poSerialNo LIKE CONCAT('%/', :serialNo)
+                            WHERE ic.poNo = :poNo
+                              AND ic.poSerialNo LIKE CONCAT('%/', :serialNo)
                         """)
-        Page<InspectionCall> findBySerialNo(
+        Page<InspectionCall> findByPoNoAndSerialNo(
+                        @Param("poNo") String poNo,
                         @Param("serialNo") String serialNo,
                         Pageable pageable);
+
+        @Query("""
+                            SELECT ic
+                            FROM InspectionCall ic
+                            WHERE ic.poNo = :poNo
+                              AND ic.poSerialNo LIKE CONCAT('%/', :serialNo)
+                        """)
+        List<InspectionCall> findByPoNoAndSerialNo(
+                        @Param("poNo") String poNo,
+                        @Param("serialNo") String serialNo);
 
         /**
          * Check if an inspection call already exists for a given PO Serial No
