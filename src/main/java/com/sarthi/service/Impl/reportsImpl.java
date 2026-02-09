@@ -895,6 +895,10 @@ public List<FourthLevelInspectionDto> getFourthLevelReport(String callId) {
           //  log.warn("Skipping record. lotNo={}, shift={}", lotNo, shift);
             continue;
         }
+
+        LocalDate date = p.getCreatedAt().toLocalDate();
+        LocalDateTime startDate = date.atStartOfDay();
+        LocalDateTime endDate   = date.atTime(23, 59, 59);
         // ================= BASIC =================
         BasicDetailsDto basic = new BasicDetailsDto();
 
@@ -932,18 +936,40 @@ public List<FourthLevelInspectionDto> getFourthLevelReport(String callId) {
 
         dto.setProcessQty(process);
 
+        System.out.println("CALL = " + callId);
+        System.out.println("LOT  = " + p.getLotNumber());
+        System.out.println("SHIFT= " + p.getShift());
+        System.out.println("START= " + startDate);
+        System.out.println("END  = " + endDate);
+
+
 
         // ================= SHEARING DEFECTS =================
 
-        Object[] sums =
+        // Get result list
+        List<Object[]> list =
                 processShearingDataRepository
                         .getShearingSumByDate(
                                 callId,
                                 p.getLotNumber(),
                                 p.getShift(),
-                                p.getCreatedAt().toLocalDate()
+                                startDate,
+                                endDate
                         );
 
+// Extract first row
+        Object[] sums = null;
+
+        if (list != null && !list.isEmpty()) {
+            sums = list.get(0);   //  Get first record
+        }
+
+// Debug
+        if (sums != null) {
+            System.out.println("Shearing = " + Arrays.toString(sums));
+        }
+
+// Map to DTO
         ShearingDefectsDto shearing = new ShearingDefectsDto();
 
         if (sums != null && sums.length == 4) {
@@ -966,15 +992,26 @@ public List<FourthLevelInspectionDto> getFourthLevelReport(String callId) {
 
 
 
+
         // ================= TURNING DEFECTS =================
-        Object[] tSums =
-                processTurningDataRepository
-                        .getTurningSumByDate(
-                                callId,
-                                p.getLotNumber(),
-                                p.getShift(),
-                                p.getCreatedAt().toLocalDate()
-                        );
+        List<Object[]> tList =
+                processTurningDataRepository.getTurningSumByDate(
+                        callId,
+                        p.getLotNumber(),
+                        p.getShift(),
+                        startDate,
+                        endDate
+                );
+
+        Object[] tSums = null;
+
+        if (tList != null && !tList.isEmpty()) {
+            tSums = tList.get(0);
+        }
+
+        System.out.println("Turning = " + Arrays.toString(tSums));
+
+
 
         TurningDefectsDto turning = new TurningDefectsDto();
 
@@ -995,14 +1032,22 @@ public List<FourthLevelInspectionDto> getFourthLevelReport(String callId) {
 
 // ================= FORGING DEFECTS =================
 
-        Object[] fSums =
-                processForgingDataRepository
-                        .getForgingSumByDate(
-                                callId,
-                                p.getLotNumber(),
-                                p.getShift(),
-                                p.getCreatedAt().toLocalDate()
-                        );
+        List<Object[]> fList =
+                processForgingDataRepository.getForgingSumByDate(
+                        callId,
+                        p.getLotNumber(),
+                        p.getShift(),
+                        startDate,
+                        endDate
+                );
+
+        Object[] fSums = null;
+
+        if (fList != null && !fList.isEmpty()) {
+            fSums = fList.get(0);
+        }
+
+        System.out.println("Forging = " + Arrays.toString(fSums));
 
         ForgingDefectsDto forging = new ForgingDefectsDto();
 
@@ -1023,14 +1068,23 @@ public List<FourthLevelInspectionDto> getFourthLevelReport(String callId) {
 
         dto.setForgingDefects(forging);
 
-        Object[] visualSums =
-                processFinalCheckDataRepository
-                        .getVisualDefectsSumByDate(
-                                callId,
-                                p.getLotNumber(),
-                                p.getShift(),
-                                p.getCreatedAt().toLocalDate()
-                        );
+
+        List<Object[]> vList =
+                processFinalCheckDataRepository.getVisualDefectsSumByDate(
+                        callId,
+                        p.getLotNumber(),
+                        p.getShift(),
+                        startDate,
+                        endDate
+                );
+
+        Object[] visualSums = null;
+
+        if (vList != null && !vList.isEmpty()) {
+            visualSums = vList.get(0);
+        }
+
+        System.out.println("Visual = " + Arrays.toString(visualSums));
 
         VisualDefectsDto visual = new VisualDefectsDto();
 
@@ -1042,6 +1096,9 @@ public List<FourthLevelInspectionDto> getFourthLevelReport(String callId) {
             visual.setMarking(
                     ((Number) visualSums[1]).intValue());
         }
+
+        dto.setVisualDefects(visual);
+
 
         Integer forgingEmbossing =
                 processForgingDataRepository
@@ -1082,14 +1139,24 @@ public List<FourthLevelInspectionDto> getFourthLevelReport(String callId) {
                         );
 
 // Testing + Finishing
-        Object[] tfSums =
+        List<Object[]> tfList =
                 processTestingFinishingDataRepository
                         .getTestingFinishingSumByDate(
                                 callId,
                                 p.getLotNumber(),
                                 p.getShift(),
-                                p.getCreatedAt().toLocalDate()
+                                startDate,
+                                endDate
                         );
+
+        Object[] tfSums = null;
+
+        if (tfList != null && !tfList.isEmpty()) {
+            tfSums = tfList.get(0);
+        }
+
+        System.out.println("Testing+Finishing = " + Arrays.toString(tfSums));
+
 
 // ========== Testing ==========
         TestingDefectsDto testing = new TestingDefectsDto();
@@ -1108,6 +1175,8 @@ public List<FourthLevelInspectionDto> getFourthLevelReport(String callId) {
 
         dto.setTestingDefects(testing);
 
+
+// ========== Finishing ==========
         FinishingDefectsDto finishing = new FinishingDefectsDto();
 
         if (tfSums != null && tfSums.length == 4) {
@@ -1120,6 +1189,7 @@ public List<FourthLevelInspectionDto> getFourthLevelReport(String callId) {
         }
 
         dto.setFinishingDefects(finishing);
+
 // ===== BOX GAUGE =====
         Integer quenchingBox =
                 processQuenchingDataRepository
