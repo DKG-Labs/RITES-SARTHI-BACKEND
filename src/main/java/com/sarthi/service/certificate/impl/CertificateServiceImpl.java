@@ -157,18 +157,23 @@ public class CertificateServiceImpl implements CertificateService {
             logger.warn("⚠️ Section A data NOT found for IC: {}", inspectionCall.getIcNumber());
         }
 
-        // 7. Build Certificate DTO
+        // 7. Load Sections Pre-calculated
+        String poNo = inspectionCall.getPoNo();
+        String offeredInst = calculateOfferedInstallment(poNo);
+        String passedInst = calculatePassedInstallment(poNo);
+
+        // 8. Build Certificate DTO
         return RawMaterialCertificateDto.builder()
                 .certificateNo(generateCertificateNumber(inspectionCall))
                 .certificateDate(formatDate(LocalDate.now()))
-                .offeredInstNo(calculateOfferedInstallment(inspectionCall))
-                .passedInstNo(calculatePassedInstallment(inspectionCall))
+                .offeredInstNo(offeredInst)
+                .passedInstNo(passedInst)
                 .contractor(buildContractorInfo(poHeader))
                 .manufacturer(buildManufacturerInfo(heatQuantities))
                 .placeOfInspection(buildPlaceOfInspection(inspectionCall))
                 .contractRef(buildContractRef(poHeader))
                 .contractorPo(buildContractorPo(rmDetails))
-                .billPayingOfficer(buildBillPayingOfficer(inspectionCall))
+                .billPayingOfficer(buildBillPayingOfficer(inspectionCall, poItems))
                 .consigneeRailway(buildConsigneeRailway(poItems))
                 .consigneeManufacturer(buildConsigneeManufacturer(poHeader))
                 .purchasingAuthority(buildPurchasingAuthority(poHeader, mainPoInfo))
@@ -215,31 +220,24 @@ public class CertificateServiceImpl implements CertificateService {
      * Falls back to IC number if not found in inspection_complete_details
      */
     private String generateCertificateNumber(InspectionCall inspectionCall) {
-        // Try to fetch from inspection_complete_details table
-        return inspectionCompleteDetailsRepository.findByCallNo(inspectionCall.getIcNumber())
-                .map(InspectionCompleteDetails::getCertificateNo)
-                .orElse(inspectionCall.getIcNumber() != null ? inspectionCall.getIcNumber() : "");
+        String certNo = inspectionCompleteDetailsRepository.findCertificateNoByCallNo(inspectionCall.getIcNumber());
+        return certNo != null ? certNo : (inspectionCall.getIcNumber() != null ? inspectionCall.getIcNumber() : "");
     }
 
     /**
      * Calculate Offered Installment Number
      * Count of all inspection calls for this PO
      */
-    private String calculateOfferedInstallment(InspectionCall inspectionCall) {
-        long count = inspectionCallRepository.findByPoNoOrderByCreatedAtDesc(inspectionCall.getPoNo()).size();
-        return String.valueOf(count);
+    private String calculateOfferedInstallment(String poNo) {
+        return String.valueOf(inspectionCallRepository.countByPoNo(poNo));
     }
 
     /**
      * Calculate Passed Installment Number
      * Count of accepted ICs for this PO
      */
-    private String calculatePassedInstallment(InspectionCall inspectionCall) {
-        long count = inspectionCallRepository.findByPoNoOrderByCreatedAtDesc(inspectionCall.getPoNo())
-                .stream()
-                .filter(ic -> "ACCEPTED".equalsIgnoreCase(ic.getStatus()) || "COMPLETED".equalsIgnoreCase(ic.getStatus()))
-                .count();
-        return String.valueOf(count);
+    private String calculatePassedInstallment(String poNo) {
+        return String.valueOf(inspectionCallRepository.countByPoNoAndStatusIn(poNo, List.of("ACCEPTED", "COMPLETED")));
     }
 
     /**
@@ -475,8 +473,8 @@ public class CertificateServiceImpl implements CertificateService {
      * Build Bill Paying Officer
      * Fetches from PoItem based on poNo and itemSrNo extracted from poSerialNo
      */
-    private String buildBillPayingOfficer(InspectionCall inspectionCall) {
-        if (inspectionCall == null || inspectionCall.getPoNo() == null || inspectionCall.getPoSerialNo() == null) {
+    private String buildBillPayingOfficer(InspectionCall inspectionCall, List<PoItem> poItems) {
+        if (inspectionCall == null || inspectionCall.getPoSerialNo() == null || poItems == null) {
             return "";
         }
 
@@ -489,12 +487,15 @@ public class CertificateServiceImpl implements CertificateService {
                 itemSrNo = parts[parts.length - 1].trim();
             }
 
-            // Find matching PoItem
-            return poItemRepository.findByPoHeader_PoNoAndItemSrNo(inspectionCall.getPoNo(), itemSrNo)
+            final String targetSrNo = itemSrNo;
+            // Use pre-fetched items to avoid extra DB call
+            return poItems.stream()
+                    .filter(item -> targetSrNo.equals(item.getItemSrNo()))
                     .map(item -> item.getBillPayOffDesc() != null ? item.getBillPayOffDesc() : "")
+                    .findFirst()
                     .orElse("");
         } catch (Exception e) {
-            logger.warn("Error fetching bill paying officer for IC: {}", inspectionCall.getIcNumber(), e);
+            logger.warn("Error processing bill paying officer for IC: {}", inspectionCall.getIcNumber(), e);
             return "";
         }
     }
@@ -610,17 +611,22 @@ public class CertificateServiceImpl implements CertificateService {
         // 6. Build Lot Details
         List<ProcessMaterialCertificateDto.LotDetailDto> lots = buildProcessLotDetails(lineFinalResults);
 
+        // 6. Load Sections Pre-calculated
+        String poNo = inspectionCall.getPoNo();
+        String offeredInst = calculateOfferedInstallment(poNo);
+        String passedInst = calculatePassedInstallment(poNo);
+
         // 7. Build Certificate DTO
         return ProcessMaterialCertificateDto.builder()
-                .certificateNo(completeDetails != null ? completeDetails.getCertificateNo() : "")
+                .certificateNo(generateCertificateNumber(inspectionCall))
                 .certificateDate(formatDate(LocalDate.now()))
-                .offeredInstNo(calculateOfferedInstallment(inspectionCall))
-                .passedInstNo(calculatePassedInstallment(inspectionCall))
+                .offeredInstNo(offeredInst)
+                .passedInstNo(passedInst)
                 .contractor(inspectionCall.getCompanyName() != null ? inspectionCall.getCompanyName() : "")
                 .manufacturer(processDetails != null ? processDetails.getManufacturer() : "")
                 .contractRef(buildContractRef(poHeader))
                 .poDetails(buildPoDetails(poHeader))
-                .billPayingOfficer(buildBillPayingOfficer(inspectionCall))
+                .billPayingOfficer(buildBillPayingOfficer(inspectionCall, poItems))
                 .consigneeRailway(poItem != null ? poItem.getConsigneeDetail() : "")
                 .consigneeManufacturer(inspectionCall.getCompanyName() != null ? inspectionCall.getCompanyName() : "")
                 .purchasingAuthority("")
@@ -762,11 +768,20 @@ public class CertificateServiceImpl implements CertificateService {
     public FinalCertificateDto generateFinalCertificate(String icNumber) {
         logger.info("Generating Final Material Certificate for IC Number: {}", icNumber);
 
-        // 1. Fetch Inspection Call
-        InspectionCall inspectionCall = inspectionCallRepository.findByIcNumber(icNumber)
-                .orElseThrow(() -> new IllegalArgumentException("Final inspection call not found: " + icNumber));
+        // 1. Fetch Final Inspection Details with Call (Joined) - ELIMINATES N+1
+        FinalInspectionDetails finalDetails = finalInspectionDetailsRepository.findByIcNumberWithCall(icNumber)
+                .orElse(null);
 
-        return buildFinalCertificateDto(inspectionCall);
+        InspectionCall inspectionCall;
+        if (finalDetails != null) {
+            inspectionCall = finalDetails.getInspectionCall();
+        } else {
+            // Fallback if not found in final_inspection_details
+            inspectionCall = inspectionCallRepository.findByIcNumber(icNumber)
+                    .orElseThrow(() -> new IllegalArgumentException("Final inspection call not found: " + icNumber));
+        }
+
+        return buildFinalCertificateDto(inspectionCall, finalDetails);
     }
 
     @Override
@@ -777,50 +792,55 @@ public class CertificateServiceImpl implements CertificateService {
         InspectionCall inspectionCall = inspectionCallRepository.findById(Math.toIntExact(callId))
                 .orElseThrow(() -> new IllegalArgumentException("Inspection call not found with ID: " + callId));
 
-        return buildFinalCertificateDto(inspectionCall);
+        // 2. Fetch Final Details
+        FinalInspectionDetails finalDetails = finalInspectionDetailsRepository.findByIcId(callId)
+                .orElse(null);
+
+        return buildFinalCertificateDto(inspectionCall, finalDetails);
     }
 
     /**
      * Build the complete final certificate DTO from inspection call data
      */
-    private FinalCertificateDto buildFinalCertificateDto(InspectionCall inspectionCall) {
+    private FinalCertificateDto buildFinalCertificateDto(InspectionCall inspectionCall, FinalInspectionDetails finalDetails) {
         logger.info("Building final certificate DTO for IC: {}", inspectionCall.getIcNumber());
 
-        // 2. Fetch Final Inspection Details
-        FinalInspectionDetails finalDetails = finalInspectionDetailsRepository.findByIcId(inspectionCall.getId())
-                .orElse(null);
-
-        // 3. Fetch Final Inspection Lot Details
+        // 2. Fetch Final Inspection Lot Details
         List<FinalInspectionLotDetails> lotDetails = new ArrayList<>();
         if (finalDetails != null) {
             lotDetails = finalInspectionLotDetailsRepository.findByFinalDetailId(finalDetails.getId());
         }
 
-        // 4. Fetch PO Header and Items
+        // 3. Fetch PO Header and Items
         PoHeader poHeader = poHeaderRepository.findByPoNo(inspectionCall.getPoNo()).orElse(null);
         List<PoItem> poItems = new ArrayList<>();
         if (poHeader != null) {
             poItems = poItemRepository.findByPoHeader_Id(poHeader.getId());
         }
 
-        // 5. Fetch Section A data (Main PO Information)
+        // 4. Fetch Section A data (Main PO Information) for Bill Paying Officer / Purchasing Authority fallback
         MainPoInformation mainPoInfo = mainPoInformationRepository
                 .findByInspectionCallNo(inspectionCall.getIcNumber())
                 .orElse(null);
+
+        // 5. Load Sections Pre-calculated
+        String poNo = inspectionCall.getPoNo();
+        String offeredInst = calculateOfferedInstallment(poNo);
+        String passedInst = calculatePassedInstallment(poNo);
 
         // 6. Build Certificate DTO
         return FinalCertificateDto.builder()
                 .certificateNo(generateCertificateNumber(inspectionCall))
                 .certificateDate(formatDate(LocalDate.now()))
-                .offeredInstNo(calculateOfferedInstallment(inspectionCall))
-                .passedInstNo(calculatePassedInstallment(inspectionCall))
+                .offeredInstNo(offeredInst)
+                .passedInstNo(passedInst)
                 .contractor(buildContractorInfo(poHeader))
                 .placeOfInspection(buildFinalPlaceOfInspection(finalDetails))
                 .contractRef(poHeader != null ? poHeader.getPoNo() : "")
                 .contractRefDate(poHeader != null && poHeader.getPoDate() != null ? formatDate(poHeader.getPoDate().toLocalDate()) : "")
-                .billPayingOfficer(buildBillPayingOfficer(inspectionCall))
+                .billPayingOfficer(buildBillPayingOfficer(inspectionCall, poItems))
                 .consigneeRailway(buildConsigneeRailway(poItems))
-                .purchasingAuthority(poHeader != null && poHeader.getPurchaserDetail() != null ? poHeader.getPurchaserDetail() : "")
+                .purchasingAuthority(buildPurchasingAuthority(poHeader, mainPoInfo))
                 .itemNo(poItems.isEmpty() ? "" : poItems.get(0).getItemSrNo())
                 .description(buildDescription(inspectionCall))
                 .totalLots(finalDetails != null && finalDetails.getTotalLots() != null ? finalDetails.getTotalLots() : 0)

@@ -36,6 +36,9 @@ public class TransitionActionReqDto {
 
    private Integer assignUserId; // only when cm re route inspection call  rio user
 
+    private String updatedBy; // User ID who is updating the inspection
+    private String shiftCode;
+
     private String sbuHeadDecision;
 
     private int inspectedQty;
@@ -48,8 +51,6 @@ public class TransitionActionReqDto {
 
     private String heatNo;
     private BigDecimal rejectedQty;
-
-
 }
 
 

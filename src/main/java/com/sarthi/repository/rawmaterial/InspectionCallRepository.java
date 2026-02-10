@@ -198,4 +198,10 @@ public interface InspectionCallRepository extends JpaRepository<InspectionCall, 
                         """)
         boolean existsByPoSerialNo(@Param("poSerialNo") String poSerialNo);
 
+        @Query("SELECT COUNT(ic) FROM InspectionCall ic WHERE ic.poNo = :poNo")
+        long countByPoNo(@Param("poNo") String poNo);
+
+        @Query("SELECT COUNT(ic) FROM InspectionCall ic WHERE ic.poNo = :poNo AND UPPER(ic.status) IN :statuses")
+        long countByPoNoAndStatusIn(@Param("poNo") String poNo, @Param("statuses") List<String> statuses);
+
 }
