@@ -20,8 +20,10 @@ public class PoDataForSectionsDto {
     private String poSerialNo;        // PO Serial Number (from inspection_calls table)
     private String poDate;            // PO Date (dd/MM/yyyy format)
     private Integer poQty;            // Total PO Quantity (from po_item)
+    private Integer poSrQty;          // Specific PO Serial Qty (from po_item)
 
     private String inspPlace;         // Inspection Place (from inspection_calls table)
+    private String placeOfInspection; // Formatted Place of Inspection (Company Name + Address)
     private String vendorName;        // Vendor Name (extracted from vendorDetails)
     private String vendorCode;        // Vendor Code
     private String vendorDetails;     // Full vendor details
