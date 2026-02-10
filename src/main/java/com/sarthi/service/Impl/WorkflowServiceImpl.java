@@ -558,7 +558,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                             || "INSPECTION_COMPLETE_CONFIRM".equalsIgnoreCase(last.getAction()))) {
                 ProcessIeQty qty = new ProcessIeQty();
                 qty.setRequestId(req.getRequestId());
-                qty.setSwiftCode("A");
+                qty.setSwiftCode(req.getShiftCode() != null ? req.getShiftCode() : "A");
                 qty.setIeUserId(req.getActionBy());
                 qty.setInspectedQty(req.getInspectedQty());
                 qty.setOfferedQty(req.getOfferedQty());
@@ -732,7 +732,11 @@ public class WorkflowServiceImpl implements WorkflowService {
                                 ));
 
                 if(ic.getTypeOfCall().equalsIgnoreCase("Process")) {
-                    String swift = current.getSwiftCode(); // A / B / C / G
+                    String swift = req.getShiftCode(); // Use shiftCode from request first
+
+                    if (swift == null || swift.isBlank()) {
+                        swift = current.getSwiftCode(); // Fallback to current transition swift
+                    }
 
                     if (swift == null || swift.isBlank()) {
                        swift="G";
@@ -1115,7 +1119,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
                     ProcessIeQty qty = new ProcessIeQty();
                     qty.setRequestId(req.getRequestId());
-                    qty.setSwiftCode("A");
+                    qty.setSwiftCode(req.getShiftCode() != null ? req.getShiftCode() : "A");
                     qty.setIeUserId(req.getActionBy());
                     qty.setInspectedQty(req.getInspectedQty());
                     qty.setOfferedQty(req.getOfferedQty());

@@ -29,5 +29,8 @@ public interface FinalInspectionDetailsRepository extends JpaRepository<FinalIns
      * Find Final Inspection Details by Process IC Number
      */
     Optional<FinalInspectionDetails> findByProcessIcNumber(String processIcNumber);
+
+    @Query("SELECT fd FROM FinalInspectionDetails fd JOIN FETCH fd.inspectionCall WHERE fd.inspectionCall.icNumber = :icNumber")
+    Optional<FinalInspectionDetails> findByIcNumberWithCall(@Param("icNumber") String icNumber);
 }
 
