@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,21 +27,23 @@ public interface ProcessTestingFinishingDataRepository extends JpaRepository<Pro
     void deleteByInspectionCallNo(String inspectionCallNo);
 
     @Query("""
-            SELECT
-            COALESCE(SUM(p.toeLoadRejected),0),
-            COALESCE(SUM(p.weightRejected),0),
-            COALESCE(SUM(p.paintIdentificationRejected),0),
-            COALESCE(SUM(p.ercCoatingRejected),0)
-            FROM ProcessTestingFinishingData p
-            WHERE p.inspectionCallNo = :callNo
-            AND p.lotNo = :lotNo
-            AND p.shift = :shift
-            AND DATE(p.createdAt) = :date
-            """)
-    Object[] getTestingFinishingSumByDate(
+SELECT
+COALESCE(SUM(p.toeLoadRejected),0),
+COALESCE(SUM(p.weightRejected),0),
+COALESCE(SUM(p.paintIdentificationRejected),0),
+COALESCE(SUM(p.ercCoatingRejected),0)
+FROM ProcessTestingFinishingData p
+WHERE p.inspectionCallNo = :callNo
+AND p.lotNo = :lotNo
+AND p.shift = :shift
+AND p.createdAt BETWEEN :startDate AND :endDate
+""")
+    List<Object[]> getTestingFinishingSumByDate(
             @Param("callNo") String callNo,
             @Param("lotNo") String lotNo,
             @Param("shift") String shift,
-            @Param("date") LocalDate date
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate")   LocalDateTime endDate
     );
+
 }

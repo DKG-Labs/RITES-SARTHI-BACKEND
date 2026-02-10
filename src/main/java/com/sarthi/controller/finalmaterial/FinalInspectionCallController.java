@@ -80,18 +80,19 @@ public class FinalInspectionCallController {
         InspectionCall ic = finalInspectionCallService.createFinalInspectionCall(
                 request.getInspectionCall(),
                 request.getFinalInspectionDetails(),
-                request.getFinalLotDetails()
-        );
+                request.getFinalLotDetails());
 
         // 2️⃣ Trigger workflow ONLY on success
         String workflowName = "INSPECTION CALL";
         try {
-            // Try to parse createdBy as Integer, if it fails, use a default value or skip workflow
+            // Try to parse createdBy as Integer, if it fails, use a default value or skip
+            // workflow
             Integer createdByUserId = null;
             try {
                 createdByUserId = Integer.valueOf(ic.getCreatedBy());
             } catch (NumberFormatException e) {
-                logger.warn("⚠️ createdBy is not a valid integer: {}. Skipping workflow initiation.", ic.getCreatedBy());
+                logger.warn("⚠️ createdBy is not a valid integer: {}. Skipping workflow initiation.",
+                        ic.getCreatedBy());
             }
 
             if (createdByUserId != null) {
@@ -99,8 +100,7 @@ public class FinalInspectionCallController {
                         ic.getIcNumber(),
                         createdByUserId,
                         workflowName,
-                        "560001"
-                );
+                        "560001");
                 logger.info("✅ Workflow initiated for IC: {}", ic.getIcNumber());
             }
         } catch (Exception workflowEx) {
@@ -112,8 +112,7 @@ public class FinalInspectionCallController {
         InspectionCallResponse responseData = new InspectionCallResponse(
                 ic.getId(),
                 ic.getIcNumber(),
-                "Final Inspection Call created successfully"
-        );
+                "Final Inspection Call created successfully");
 
         logger.info("✅ Final Inspection Call created successfully: {}", ic.getIcNumber());
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(responseData), HttpStatus.CREATED);
@@ -140,8 +139,7 @@ public class FinalInspectionCallController {
                     AppConstant.ERROR_CODE_RESOURCE,
                     AppConstant.ERROR_TYPE_CODE_RESOURCE,
                     AppConstant.ERROR_TYPE_RESOURCE,
-                    "Inspection call not found for callNo: " + callNo
-            );
+                    "Inspection call not found for callNo: " + callNo);
             return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.NOT_FOUND);
         }
 
@@ -157,7 +155,8 @@ public class FinalInspectionCallController {
 
         mappings = finalProcessIcMappingRepository.findByFinalIcId(ic.getId().longValue());
 
-        // Fetch PO data from po_header and po_ma_header tables (similar to Raw Material)
+        // Fetch PO data from po_header and po_ma_header tables (similar to Raw
+        // Material)
         PoDataForSectionsDto poData = null;
         if (ic.getPoNo() != null && !ic.getPoNo().trim().isEmpty()) {
             try {
@@ -204,8 +203,7 @@ public class FinalInspectionCallController {
                         AppConstant.ERROR_CODE_RESOURCE,
                         AppConstant.ERROR_TYPE_CODE_RESOURCE,
                         AppConstant.ERROR_TYPE_RESOURCE,
-                        "Inspection call not found for callNo: " + callNo
-                );
+                        "Inspection call not found for callNo: " + callNo);
                 return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.NOT_FOUND);
             }
 
@@ -248,9 +246,9 @@ public class FinalInspectionCallController {
                     AppConstant.ERROR_CODE_RESOURCE,
                     AppConstant.ERROR_TYPE_CODE_RESOURCE,
                     AppConstant.ERROR_TYPE_RESOURCE,
-                    "Error fetching dashboard data: " + e.getMessage()
-            );
-            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails), HttpStatus.INTERNAL_SERVER_ERROR);
+                    "Error fetching dashboard data: " + e.getMessage());
+            return new ResponseEntity<>(ResponseBuilder.getErrorResponse(errorDetails),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -293,32 +291,35 @@ public class FinalInspectionCallController {
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(lotNumbers), HttpStatus.OK);
     }
 
-    // ==================== NEW ENDPOINTS FOR REVERSED DROPDOWN FLOW ====================
+    // ==================== NEW ENDPOINTS FOR REVERSED DROPDOWN FLOW
+    // ====================
 
     /**
      * Get RM IC certificate numbers for Final Inspection Call dropdown
      * Returns CERTIFICATE_NO (e.g., "N/ER-01120005/RAJK") for display
-     * GET /api/final-material/rm-ic-certificates?vendorId=xxx
+     * GET /api/final-material/rm-ic-certificates?poSerialNo=xxx
      */
     @GetMapping("/rm-ic-certificates")
-    @Operation(summary = "Get RM IC certificate numbers", description = "Get RM IC certificate numbers from completed inspections, filtered by vendor")
-    public ResponseEntity<Object> getRmIcCertificates(@RequestParam String vendorId) {
-        logger.info("Fetching RM IC certificate numbers for vendor: {}", vendorId);
-        List<String> certificateNumbers = finalInspectionCallService.getRmIcCertificateNumbers(vendorId);
+    @Operation(summary = "Get RM IC certificate numbers", description = "Get RM IC certificate numbers from completed inspections, filtered by PO Serial Number")
+    public ResponseEntity<Object> getRmIcCertificates(@RequestParam String poSerialNo) {
+        logger.info("Fetching RM IC certificate numbers for PO Serial No: {}", poSerialNo);
+        List<String> certificateNumbers = finalInspectionCallService.getRmIcCertificateNumbers(poSerialNo);
         logger.info("Found {} RM IC certificate numbers", certificateNumbers.size());
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(certificateNumbers), HttpStatus.OK);
     }
 
     /**
      * Get Process IC certificate numbers by RM IC certificate
-     * Returns CERTIFICATE_NO (e.g., "N/EP-01170002/RAJK") for Process ICs that used the specified RM IC
+     * Returns CERTIFICATE_NO (e.g., "N/EP-01170002/RAJK") for Process ICs that used
+     * the specified RM IC
      * GET /api/final-material/process-ic-by-rm?rmCertificateNo=xxx
      */
     @GetMapping("/process-ic-by-rm")
     @Operation(summary = "Get Process IC certificates by RM IC", description = "Get Process IC certificate numbers that used the given RM IC certificate")
     public ResponseEntity<Object> getProcessIcByRmCertificate(@RequestParam String rmCertificateNo) {
         logger.info("Fetching Process IC certificate numbers for RM certificate: {}", rmCertificateNo);
-        List<String> certificateNumbers = finalInspectionCallService.getProcessIcCertificateNumbersByRmCertificate(rmCertificateNo);
+        List<String> certificateNumbers = finalInspectionCallService
+                .getProcessIcCertificateNumbersByRmCertificate(rmCertificateNo);
         logger.info("Found {} Process IC certificate numbers", certificateNumbers.size());
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(certificateNumbers), HttpStatus.OK);
     }
@@ -326,15 +327,18 @@ public class FinalInspectionCallController {
     /**
      * Get Lot numbers by RM IC and Process IC certificate numbers
      * Converts certificates to IC numbers internally, then finds lots
-     * GET /api/final-material/lot-numbers-by-certificates?rmCertificateNo=xxx&processCertificateNo=yyy
+     * GET
+     * /api/final-material/lot-numbers-by-certificates?rmCertificateNo=xxx&processCertificateNo=yyy
      */
     @GetMapping("/lot-numbers-by-certificates")
     @Operation(summary = "Get Lot numbers by RM and Process IC certificates", description = "Get lot numbers for given RM IC and Process IC certificate numbers")
     public ResponseEntity<Object> getLotNumbersByCertificates(
             @RequestParam String rmCertificateNo,
             @RequestParam String processCertificateNo) {
-        logger.info("Fetching lot numbers for RM certificate: {} and Process certificate: {}", rmCertificateNo, processCertificateNo);
-        List<String> lotNumbers = finalInspectionCallService.getLotNumbersByRmAndProcessCertificates(rmCertificateNo, processCertificateNo);
+        logger.info("Fetching lot numbers for RM certificate: {} and Process certificate: {}", rmCertificateNo,
+                processCertificateNo);
+        List<String> lotNumbers = finalInspectionCallService.getLotNumbersByRmAndProcessCertificates(rmCertificateNo,
+                processCertificateNo);
         logger.info("Found {} lot numbers", lotNumbers.size());
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(lotNumbers), HttpStatus.OK);
     }
@@ -356,29 +360,34 @@ public class FinalInspectionCallController {
 
     /**
      * Get Process IC certificate numbers for multiple RM IC certificates
-     * GET /api/final-material/process-ic-by-multiple-rm?rmCertificateNos=xxx,yyy,zzz
+     * GET
+     * /api/final-material/process-ic-by-multiple-rm?rmCertificateNos=xxx,yyy,zzz
      */
     @GetMapping("/process-ic-by-multiple-rm")
     @Operation(summary = "Get Process IC certificates by multiple RM ICs", description = "Get Process IC certificate numbers for multiple RM IC certificates")
     public ResponseEntity<Object> getProcessIcByMultipleRmCertificates(
             @RequestParam List<String> rmCertificateNos) {
         logger.info("Fetching Process IC certificate numbers for multiple RM certificates: {}", rmCertificateNos);
-        List<String> certificateNumbers = finalInspectionCallService.getProcessIcCertificateNumbersByMultipleRmCertificates(rmCertificateNos);
+        List<String> certificateNumbers = finalInspectionCallService
+                .getProcessIcCertificateNumbersByMultipleRmCertificates(rmCertificateNos);
         logger.info("Found {} Process IC certificate numbers", certificateNumbers.size());
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(certificateNumbers), HttpStatus.OK);
     }
 
     /**
      * Get Lot numbers for multiple RM IC and Process IC certificates
-     * GET /api/final-material/lot-numbers-by-multiple-certificates?rmCertificateNos=xxx,yyy&processCertificateNos=aaa,bbb
+     * GET
+     * /api/final-material/lot-numbers-by-multiple-certificates?rmCertificateNos=xxx,yyy&processCertificateNos=aaa,bbb
      */
     @GetMapping("/lot-numbers-by-multiple-certificates")
     @Operation(summary = "Get Lot numbers by multiple RM and Process IC certificates", description = "Get lot numbers for multiple RM IC and Process IC certificate combinations")
     public ResponseEntity<Object> getLotNumbersByMultipleCertificates(
             @RequestParam List<String> rmCertificateNos,
             @RequestParam List<String> processCertificateNos) {
-        logger.info("Fetching lot numbers for multiple RM certificates: {} and Process certificates: {}", rmCertificateNos, processCertificateNos);
-        List<String> lotNumbers = finalInspectionCallService.getLotNumbersByMultipleRmAndProcessCertificates(rmCertificateNos, processCertificateNos);
+        logger.info("Fetching lot numbers for multiple RM certificates: {} and Process certificates: {}",
+                rmCertificateNos, processCertificateNos);
+        List<String> lotNumbers = finalInspectionCallService
+                .getLotNumbersByMultipleRmAndProcessCertificates(rmCertificateNos, processCertificateNos);
         logger.info("Found {} lot numbers", lotNumbers.size());
         return new ResponseEntity<>(ResponseBuilder.getSuccessResponse(lotNumbers), HttpStatus.OK);
     }
@@ -398,4 +407,3 @@ public class FinalInspectionCallController {
         }
     }
 }
-

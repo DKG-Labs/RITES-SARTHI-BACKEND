@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,14 +38,16 @@ FROM ProcessForgingData p
 WHERE p.inspectionCallNo = :callNo
 AND p.lotNo = :lotNo
 AND p.shift = :shift
-AND FUNCTION('DATE', p.createdAt) = :date
+AND p.createdAt BETWEEN :startDate AND :endDate
 """)
-    Object[] getForgingSumByDate(
+    List<Object[]> getForgingSumByDate(
             @Param("callNo") String callNo,
             @Param("lotNo") String lotNo,
             @Param("shift") String shift,
-            @Param("date") LocalDate date
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate")   LocalDateTime endDate
     );
+
 
 
 

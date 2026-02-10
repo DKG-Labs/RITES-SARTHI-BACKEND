@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,21 +27,23 @@ public interface ProcessFinalCheckDataRepository extends JpaRepository<ProcessFi
     void deleteByInspectionCallNo(String inspectionCallNo);
 
     @Query("""
-            SELECT
-            COALESCE(SUM(p.surfaceDefectRejected),0),
-            COALESCE(SUM(p.markingRejected),0)
-            FROM ProcessFinalCheckData p
-            WHERE p.inspectionCallNo = :callNo
-            AND p.lotNo = :lotNo
-            AND p.shift = :shift
-            AND DATE(p.createdAt) = :date
-            """)
-    Object[] getVisualDefectsSumByDate(
+SELECT
+COALESCE(SUM(p.surfaceDefectRejected),0),
+COALESCE(SUM(p.markingRejected),0)
+FROM ProcessFinalCheckData p
+WHERE p.inspectionCallNo = :callNo
+AND p.lotNo = :lotNo
+AND p.shift = :shift
+AND p.createdAt BETWEEN :startDate AND :endDate
+""")
+    List<Object[]> getVisualDefectsSumByDate(
             @Param("callNo") String callNo,
             @Param("lotNo") String lotNo,
             @Param("shift") String shift,
-            @Param("date") LocalDate date
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate")   LocalDateTime endDate
     );
+
 
 
     @Query("""

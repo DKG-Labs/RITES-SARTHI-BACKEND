@@ -60,8 +60,7 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
     public InspectionCall createFinalInspectionCall(
             InspectionCallRequestDto icRequest,
             FinalInspectionDetailsRequestDto finalDetails,
-            List<FinalInspectionLotDetailsRequestDto> lotDetailsList
-    ) {
+            List<FinalInspectionLotDetailsRequestDto> lotDetailsList) {
         logger.info("========== CREATE FINAL INSPECTION CALL ==========");
         logger.info("IC Request: {}", icRequest);
         logger.info("Final Details: {}", finalDetails);
@@ -88,13 +87,11 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
         inspectionCall.setVendorId(icRequest.getVendorId());
 
         inspectionCall.setDesiredInspectionDate(
-                LocalDate.parse(icRequest.getDesiredInspectionDate())
-        );
+                LocalDate.parse(icRequest.getDesiredInspectionDate()));
 
         if (icRequest.getActualInspectionDate() != null) {
             inspectionCall.setActualInspectionDate(
-                    LocalDate.parse(icRequest.getActualInspectionDate())
-            );
+                    LocalDate.parse(icRequest.getActualInspectionDate()));
         }
 
         inspectionCall.setCompanyId(icRequest.getCompanyId());
@@ -119,7 +116,8 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
 
         // Get RM IC and Process IC IDs from IC numbers
         Optional<InspectionCall> rmIcOpt = inspectionCallRepository.findByIcNumber(finalDetails.getRmIcNumber());
-        Optional<InspectionCall> processIcOpt = inspectionCallRepository.findByIcNumber(finalDetails.getProcessIcNumber());
+        Optional<InspectionCall> processIcOpt = inspectionCallRepository
+                .findByIcNumber(finalDetails.getProcessIcNumber());
 
         if (rmIcOpt.isPresent()) {
             finalInspectionDetails.setRmIcId(rmIcOpt.get().getId().longValue());
@@ -162,7 +160,8 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
 
                 // Set Process IC reference if available
                 if (lotDto.getProcessIcNumber() != null) {
-                    Optional<InspectionCall> processIcForLot = inspectionCallRepository.findByIcNumber(lotDto.getProcessIcNumber());
+                    Optional<InspectionCall> processIcForLot = inspectionCallRepository
+                            .findByIcNumber(lotDto.getProcessIcNumber());
                     if (processIcForLot.isPresent()) {
                         lotDetails.setProcessIcId(processIcForLot.get().getId().longValue());
                     }
@@ -206,7 +205,8 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
     @Override
     public List<String> getProcessIcCertificateNumbers(String vendorId) {
         logger.info("Fetching Process IC certificate numbers for vendor: {}", vendorId);
-        List<String> certificateNumbers = inspectionCompleteDetailsRepository.findProcessIcCertificateNumbersByVendor(vendorId);
+        List<String> certificateNumbers = inspectionCompleteDetailsRepository
+                .findProcessIcCertificateNumbersByVendor(vendorId);
         logger.info("Found {} certificate numbers", certificateNumbers.size());
         return certificateNumbers;
     }
@@ -227,12 +227,14 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
         return lotNumbers;
     }
 
-    // ==================== NEW METHODS FOR REVERSED DROPDOWN FLOW ====================
+    // ==================== NEW METHODS FOR REVERSED DROPDOWN FLOW
+    // ====================
 
     @Override
-    public List<String> getRmIcCertificateNumbers(String vendorId) {
-        logger.info("Fetching RM IC certificate numbers for vendor: {}", vendorId);
-        List<String> certificateNumbers = inspectionCompleteDetailsRepository.findRmIcNumbersByVendor(vendorId);
+    public List<String> getRmIcCertificateNumbers(String poSerialNo) {
+        logger.info("Fetching RM IC certificate numbers for PO Serial No: {}", poSerialNo);
+        List<String> certificateNumbers = inspectionCompleteDetailsRepository
+                .findCompletedRmIcCertificateNumbersByPoSerialNo(poSerialNo);
         logger.info("Found {} RM IC certificate numbers", certificateNumbers.size());
         return certificateNumbers;
     }
@@ -240,15 +242,18 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
     @Override
     public List<String> getProcessIcCertificateNumbersByRmCertificate(String rmCertificateNo) {
         logger.info("Fetching Process IC certificate numbers for RM certificate: {}", rmCertificateNo);
-        List<String> certificateNumbers = inspectionCompleteDetailsRepository.findProcessIcNumbersByRmIcNumber(rmCertificateNo);
+        List<String> certificateNumbers = inspectionCompleteDetailsRepository
+                .findProcessIcNumbersByRmIcNumber(rmCertificateNo);
         logger.info("Found {} Process IC certificate numbers", certificateNumbers.size());
         return certificateNumbers;
     }
 
     @Override
     public List<String> getLotNumbersByRmAndProcessCertificates(String rmCertificateNo, String processCertificateNo) {
-        logger.info("Fetching lot numbers for RM certificate: {} and Process certificate: {}", rmCertificateNo, processCertificateNo);
-        List<String> lotNumbers = processInspectionDetailsRepository.findLotNumbersByRmAndProcessIcNumbers(rmCertificateNo, processCertificateNo);
+        logger.info("Fetching lot numbers for RM certificate: {} and Process certificate: {}", rmCertificateNo,
+                processCertificateNo);
+        List<String> lotNumbers = processInspectionDetailsRepository
+                .findLotNumbersByRmAndProcessIcNumbers(rmCertificateNo, processCertificateNo);
         logger.info("Found {} lot numbers", lotNumbers.size());
         return lotNumbers;
     }
@@ -256,7 +261,8 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
     @Override
     public List<String> getHeatNumbersByLotNumber(String lotNumber, String rmCertificateNo) {
         logger.info("Fetching heat numbers for lot number: {} and RM certificate: {}", lotNumber, rmCertificateNo);
-        List<String> heatNumbers = processInspectionDetailsRepository.findHeatNumbersByLotNumber(lotNumber, rmCertificateNo);
+        List<String> heatNumbers = processInspectionDetailsRepository.findHeatNumbersByLotNumber(lotNumber,
+                rmCertificateNo);
         logger.info("Found {} heat numbers", heatNumbers.size());
         return heatNumbers;
     }
@@ -264,17 +270,20 @@ public class FinalInspectionCallServiceImpl implements FinalInspectionCallServic
     @Override
     public List<String> getProcessIcCertificateNumbersByMultipleRmCertificates(List<String> rmCertificateNos) {
         logger.info("Fetching Process IC certificate numbers for multiple RM certificates: {}", rmCertificateNos);
-        List<String> certificateNumbers = inspectionCompleteDetailsRepository.findProcessIcNumbersByMultipleRmIcNumbers(rmCertificateNos);
+        List<String> certificateNumbers = inspectionCompleteDetailsRepository
+                .findProcessIcNumbersByMultipleRmIcNumbers(rmCertificateNos);
         logger.info("Found {} Process IC certificate numbers", certificateNumbers.size());
         return certificateNumbers;
     }
 
     @Override
-    public List<String> getLotNumbersByMultipleRmAndProcessCertificates(List<String> rmCertificateNos, List<String> processCertificateNos) {
-        logger.info("Fetching lot numbers for multiple RM certificates: {} and Process certificates: {}", rmCertificateNos, processCertificateNos);
-        List<String> lotNumbers = processInspectionDetailsRepository.findLotNumbersByMultipleRmAndProcessIcNumbers(rmCertificateNos, processCertificateNos);
+    public List<String> getLotNumbersByMultipleRmAndProcessCertificates(List<String> rmCertificateNos,
+            List<String> processCertificateNos) {
+        logger.info("Fetching lot numbers for multiple RM certificates: {} and Process certificates: {}",
+                rmCertificateNos, processCertificateNos);
+        List<String> lotNumbers = processInspectionDetailsRepository
+                .findLotNumbersByMultipleRmAndProcessIcNumbers(rmCertificateNos, processCertificateNos);
         logger.info("Found {} lot numbers", lotNumbers.size());
         return lotNumbers;
     }
 }
-

@@ -65,7 +65,7 @@ public interface PoHeaderRepository extends JpaRepository<PoHeader, Long> {
             ph.poStatus
     """)
     List<PoInspection1stLevelStatusDto> fetchPoInspectionStatus();*/
-
+/*
     @Query("""
     SELECT new com.sarthi.dto.reports.PoInspection1stLevelStatusDto(
         0,
@@ -93,6 +93,47 @@ public interface PoHeaderRepository extends JpaRepository<PoHeader, Long> {
         ph.poStatus
 """)
     List<PoInspection1stLevelStatusDto> fetchPoInspectionStatus();
+*/
+  @Query("""
+SELECT new com.sarthi.dto.reports.PoInspection1stLevelStatusDto(
+    0,
+    ph.rlyShortName,
+    ph.poNo,
+    ph.poDate,
+    ph.vendorDetails,
+
+    COALESCE(ie.rio, ph.inspectingAgency),
+
+    SUM(pi.qty),
+    null,
+    null,
+    null,
+    null,
+    null,
+    ph.poStatus
+)
+FROM PoHeader ph
+JOIN ph.items pi
+
+LEFT JOIN PincodePoIMapping ppm
+    ON ppm.vendorCode = ph.vendorCode
+
+LEFT JOIN IEFieldsMapping ie
+    ON ie.pinCode = ppm.pinCode
+
+GROUP BY
+    ph.rlyShortName,
+    ph.poNo,
+    ph.poDate,
+    ph.vendorDetails,
+    COALESCE(ie.rio, ph.inspectingAgency),
+    ph.poStatus
+""")
+  List<PoInspection1stLevelStatusDto> fetchPoInspectionStatus();
+
+
+
+
 
 
 }
