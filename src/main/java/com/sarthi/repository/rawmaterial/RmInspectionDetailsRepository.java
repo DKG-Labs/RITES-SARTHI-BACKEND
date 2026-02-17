@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-
 @Repository
 public interface RmInspectionDetailsRepository
         extends JpaRepository<RmInspectionDetails, Long> {
@@ -17,10 +16,10 @@ public interface RmInspectionDetailsRepository
     /* ==================== Find by Inspection Call ID ==================== */
 
     @Query("""
-        SELECT rd
-        FROM RmInspectionDetails rd
-        WHERE rd.inspectionCall.id = :icId
-    """)
+                SELECT rd
+                FROM RmInspectionDetails rd
+                WHERE rd.inspectionCall.id = :icId
+            """)
     Optional<RmInspectionDetails> findByIcId(@Param("icId") Long icId);
 
     /* ==================== Find by TC Number ==================== */
@@ -34,21 +33,27 @@ public interface RmInspectionDetailsRepository
     /* ==================== Find with Heat Quantities ==================== */
 
     @Query("""
-        SELECT DISTINCT rd
-        FROM RmInspectionDetails rd
-        LEFT JOIN FETCH rd.heatQuantities
-        WHERE rd.id = :id
-    """)
+                SELECT DISTINCT rd
+                FROM RmInspectionDetails rd
+                LEFT JOIN FETCH rd.heatQuantities
+                WHERE rd.id = :id
+            """)
     Optional<RmInspectionDetails> findByIdWithHeatQuantities(@Param("id") Long id);
 
     /* ==================== Find with Inspection Call ==================== */
 
     @Query("""
-        SELECT rd
-        FROM RmInspectionDetails rd
-        JOIN FETCH rd.inspectionCall
-        WHERE rd.id = :id
-    """)
+                SELECT rd
+                FROM RmInspectionDetails rd
+                JOIN FETCH rd.inspectionCall
+                WHERE rd.id = :id
+            """)
     Optional<RmInspectionDetails> findByIdWithInspectionCall(@Param("id") Long id);
-}
 
+    /*
+     * ==================== Find by List of Inspection Call IDs ====================
+     */
+
+    @Query("SELECT rd FROM RmInspectionDetails rd WHERE rd.inspectionCall.id IN :icIds")
+    List<RmInspectionDetails> findByInspectionCallIdIn(@Param("icIds") List<Long> icIds);
+}

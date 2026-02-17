@@ -17,10 +17,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -52,104 +59,133 @@ public class VendorInspectionCallServiceImpl implements VendorInspectionCallServ
     public List<VendorInspectionCallStatusDto> getVendorInspectionCallsWithStatus(String vendorId) {
         logger.info("Fetching inspection calls with workflow status for vendor: {}", vendorId);
 
-       Long t1 =System.currentTimeMillis();
-        System.out.println(t1);
-        // Fetch all inspection calls for the vendor
-        List<InspectionCall> inspectionCalls = inspectionCallRepository.findByVendorIdOrderByCreatedAtDesc(vendorId);
-        Long t2 =System.currentTimeMillis();
+        Long t1 = System.currentTimeMillis();
 
-        System.out.println( t1-t2);
+        // 1. Fetch recent inspection calls for the vendor (Limit to 1000 to accommodate
+        // larger datasets)
+        List<InspectionCall> inspectionCalls = inspectionCallRepository.findByVendorIdOrderByCreatedAtDesc(vendorId,
+                PageRequest.of(0, 1000));
+
+        if (inspectionCalls.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         logger.info("Found {} inspection calls for vendor: {}", inspectionCalls.size(), vendorId);
 
-        // Map each inspection call to DTO with workflow status
-        return inspectionCalls.stream()
-                .map(this::mapToVendorInspectionCallStatusDto)
-                .collect(Collectors.toList());
-    }
+        // 2. Collect IDs for bulk fetching
+        List<String> requestIds = new ArrayList<>();
+        List<Long> rmIcIds = new ArrayList<>();
+        List<Long> processIcIds = new ArrayList<>();
+        List<Long> finalIcIds = new ArrayList<>();
 
-    /**
-     * Map InspectionCall entity to VendorInspectionCallStatusDto with workflow status
-     */
-    private VendorInspectionCallStatusDto mapToVendorInspectionCallStatusDto(InspectionCall ic) {
-        // Get latest workflow transition for this IC
-        WorkflowTransition latestTransition = workflowTransitionRepository
-                .findTopByRequestIdOrderByWorkflowTransitionIdDesc(ic.getIcNumber());
+        for (InspectionCall ic : inspectionCalls) {
+            requestIds.add(ic.getIcNumber());
 
-        // Get item name and quantity based on type of call
-        String itemName = getItemName(ic);
-        Integer quantityOffered = getQuantityOffered(ic);
-
-        return VendorInspectionCallStatusDto.builder()
-                .icNumber(ic.getIcNumber())
-                .poNo(ic.getPoNo())
-                .poSerialNo(ic.getPoSerialNo())
-                .typeOfCall(ic.getTypeOfCall())
-                .desiredInspectionDate(ic.getDesiredInspectionDate() != null ? 
-                        ic.getDesiredInspectionDate().format(DATE_FORMATTER) : null)
-                .placeOfInspection(ic.getPlaceOfInspection())
-                .itemName(itemName)
-                .quantityOffered(quantityOffered)
-                .workflowStatus(latestTransition != null ? latestTransition.getStatus() : ic.getStatus())
-                .currentRoleName(latestTransition != null ? latestTransition.getCurrentRoleName() : null)
-                .nextRoleName(latestTransition != null ? latestTransition.getNextRoleName() : null)
-                .jobStatus(latestTransition != null ? latestTransition.getJobStatus() : null)
-                .companyName(ic.getCompanyName())
-                .unitName(ic.getUnitName())
-                .createdAt(ic.getCreatedAt() != null ? ic.getCreatedAt().format(DATE_FORMATTER) : null)
-                .updatedAt(ic.getUpdatedAt() != null ? ic.getUpdatedAt().format(DATE_FORMATTER) : null)
-                .build();
-    }
-
-    /**
-     * Get item name based on inspection type
-     */
-    private String getItemName(InspectionCall ic) {
-        try {
             if ("Raw Material".equalsIgnoreCase(ic.getTypeOfCall())) {
-                return rmInspectionDetailsRepository.findByIcId(ic.getId())
-                        .map(RmInspectionDetails::getItemDescription)
-                        .orElse("N/A");
+                rmIcIds.add(ic.getId());
             } else if ("Process".equalsIgnoreCase(ic.getTypeOfCall())) {
-                List<ProcessInspectionDetails> processList = processInspectionDetailsRepository.findByIcId(ic.getId());
-                if (!processList.isEmpty()) {
-                    return "Process Inspection - Lot: " + processList.get(0).getLotNumber();
-                }
-                return "N/A";
+                processIcIds.add(ic.getId());
             } else if ("Final".equalsIgnoreCase(ic.getTypeOfCall())) {
-                return finalInspectionDetailsRepository.findByIcId(ic.getId())
-                        .map(details -> "Final Inspection - " + details.getTotalLots() + " lots")
-                        .orElse("N/A");
+                finalIcIds.add(ic.getId());
             }
-        } catch (Exception e) {
-            logger.warn("Error fetching item name for IC: {}", ic.getIcNumber(), e);
         }
-        return "N/A";
-    }
 
-    /**
-     * Get quantity offered based on inspection type
-     */
-    private Integer getQuantityOffered(InspectionCall ic) {
-        try {
-            if ("Raw Material".equalsIgnoreCase(ic.getTypeOfCall())) {
-                return rmInspectionDetailsRepository.findByIcId(ic.getId())
-                        .map(RmInspectionDetails::getOfferedQtyErc)
-                        .orElse(0);
-            } else if ("Process".equalsIgnoreCase(ic.getTypeOfCall())) {
-                List<ProcessInspectionDetails> processList = processInspectionDetailsRepository.findByIcId(ic.getId());
-                if (!processList.isEmpty()) {
-                    return processList.get(0).getOfferedQty();
-                }
-                return 0;
-            } else if ("Final".equalsIgnoreCase(ic.getTypeOfCall())) {
-                return finalInspectionDetailsRepository.findByIcId(ic.getId())
-                        .map(FinalInspectionDetails::getTotalOfferedQty)
-                        .orElse(0);
+        // 3. Bulk Fetch Workflow Transitions
+        Map<String, WorkflowTransition> transitionMap = new HashMap<>();
+        if (!requestIds.isEmpty()) {
+            // Fetch in chunks if too many, but for now assuming reasonable size (< 2000)
+            List<WorkflowTransition> transitions = workflowTransitionRepository
+                    .findLatestTransitionsForRequestIds(requestIds);
+            for (WorkflowTransition wt : transitions) {
+                transitionMap.put(wt.getRequestId(), wt);
             }
-        } catch (Exception e) {
-            logger.warn("Error fetching quantity for IC: {}", ic.getIcNumber(), e);
         }
-        return 0;
+
+        // 4. Bulk Fetch Details by Type
+        Map<Long, RmInspectionDetails> rmDetailsMap = new HashMap<>();
+        if (!rmIcIds.isEmpty()) {
+            List<RmInspectionDetails> details = rmInspectionDetailsRepository.findByInspectionCallIdIn(rmIcIds);
+            for (RmInspectionDetails d : details) {
+                rmDetailsMap.put(d.getInspectionCall().getId(), d);
+            }
+        }
+
+        Map<Long, List<ProcessInspectionDetails>> processDetailsGrouped = new HashMap<>();
+        if (!processIcIds.isEmpty()) {
+            List<ProcessInspectionDetails> pDetails = processInspectionDetailsRepository
+                    .findByInspectionCallIdIn(processIcIds);
+            processDetailsGrouped = pDetails.stream()
+                    .collect(Collectors.groupingBy(d -> d.getInspectionCall().getId()));
+        }
+
+        Map<Long, FinalInspectionDetails> finalDetailsMap = new HashMap<>();
+        if (!finalIcIds.isEmpty()) {
+            List<FinalInspectionDetails> fDetails = finalInspectionDetailsRepository
+                    .findByInspectionCallIdIn(finalIcIds);
+            for (FinalInspectionDetails d : fDetails) {
+                finalDetailsMap.put(d.getInspectionCall().getId(), d);
+            }
+        }
+
+        Long t2 = System.currentTimeMillis();
+        logger.info("Bulk fetching took {} ms", (t2 - t1));
+
+        // 5. Map to DTOs
+        List<VendorInspectionCallStatusDto> dtos = new ArrayList<>();
+        for (InspectionCall ic : inspectionCalls) {
+            WorkflowTransition latestTransition = transitionMap.get(ic.getIcNumber());
+
+            // Resolve Item Name and Qty
+            String itemName = "N/A";
+            Integer quantityOffered = 0;
+
+            if ("Raw Material".equalsIgnoreCase(ic.getTypeOfCall())) {
+                RmInspectionDetails rm = rmDetailsMap.get(ic.getId());
+                if (rm != null) {
+                    itemName = rm.getItemDescription();
+                    quantityOffered = rm.getOfferedQtyErc();
+                }
+            } else if ("Process".equalsIgnoreCase(ic.getTypeOfCall())) {
+                List<ProcessInspectionDetails> pList = processDetailsGrouped.get(ic.getId());
+                if (pList != null && !pList.isEmpty()) {
+                    itemName = "Process Inspection - Lot: " + pList.get(0).getLotNumber();
+                    quantityOffered = pList.stream().mapToInt(ProcessInspectionDetails::getOfferedQty).sum();
+                    // Or pList.get(0).getOfferedQty() if typical logic matches existing code
+                    // Existing code: return processList.get(0).getOfferedQty();
+                    // But sumOfferedQtyByIcId exists in repo.
+                    // Let's match existing logic: processList.get(0).getOfferedQty()
+                    quantityOffered = pList.get(0).getOfferedQty();
+                }
+            } else if ("Final".equalsIgnoreCase(ic.getTypeOfCall())) {
+                FinalInspectionDetails fd = finalDetailsMap.get(ic.getId());
+                if (fd != null) {
+                    itemName = "Final Inspection - " + fd.getTotalLots() + " lots";
+                    quantityOffered = fd.getTotalOfferedQty();
+                }
+            }
+
+            dtos.add(VendorInspectionCallStatusDto.builder()
+                    .icNumber(ic.getIcNumber())
+                    .poNo(ic.getPoNo())
+                    .poSerialNo(ic.getPoSerialNo())
+                    .typeOfCall(ic.getTypeOfCall())
+                    .desiredInspectionDate(
+                            ic.getDesiredInspectionDate() != null ? ic.getDesiredInspectionDate().format(DATE_FORMATTER)
+                                    : null)
+                    .placeOfInspection(ic.getPlaceOfInspection())
+                    .itemName(itemName)
+                    .quantityOffered(quantityOffered)
+                    .workflowStatus(latestTransition != null ? latestTransition.getStatus() : ic.getStatus())
+                    .currentRoleName(latestTransition != null ? latestTransition.getCurrentRoleName() : null)
+                    .nextRoleName(latestTransition != null ? latestTransition.getNextRoleName() : null)
+                    .jobStatus(latestTransition != null ? latestTransition.getJobStatus() : null)
+                    .companyName(ic.getCompanyName())
+                    .unitName(ic.getUnitName())
+                    .createdAt(ic.getCreatedAt() != null ? ic.getCreatedAt().format(DATE_FORMATTER) : null)
+                    .updatedAt(ic.getUpdatedAt() != null ? ic.getUpdatedAt().format(DATE_FORMATTER) : null)
+                    .build());
+        }
+
+        return dtos;
     }
 }
-

@@ -28,7 +28,6 @@ public class InspectionCall {
     private String poNo;
     private String poSerialNo;
 
-
     private String typeOfCall;
 
     private String ercType;
@@ -59,17 +58,16 @@ public class InspectionCall {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    @OneToOne(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "inspectionCall", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @ToString.Exclude
     private RmInspectionDetails rmInspectionDetails;
 
-//    @OneToOne(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
-//    @ToString.Exclude
-//    private ProcessInspectionDetails processInspectionDetails;
+    // @OneToOne(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
+    // @ToString.Exclude
+    // private ProcessInspectionDetails processInspectionDetails;
 
     @OneToMany(mappedBy = "inspectionCall", cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<ProcessInspectionDetails> processInspectionDetails = new ArrayList<>();
 
 }
-

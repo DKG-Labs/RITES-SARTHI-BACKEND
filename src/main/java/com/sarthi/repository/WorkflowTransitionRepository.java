@@ -13,60 +13,60 @@ import java.util.List;
 public interface WorkflowTransitionRepository extends JpaRepository<WorkflowTransition, Integer> {
     WorkflowTransition findByWorkflowIdAndRequestId(Integer workflowId, String requestId);
 
-//    @Query("SELECT COUNT(w) FROM WorkflowTransition w " +
-//            "WHERE w.assignedToUser = :ieUserId AND w.status IN ('VERIFIED','ASSIGNED','INITIATED')")
-//    int countActiveCallsForIE(@Param("ieUserId") Integer ieUserId);
+    // @Query("SELECT COUNT(w) FROM WorkflowTransition w " +
+    // "WHERE w.assignedToUser = :ieUserId AND w.status IN
+    // ('VERIFIED','ASSIGNED','INITIATED')")
+    // int countActiveCallsForIE(@Param("ieUserId") Integer ieUserId);
     @Query("SELECT COUNT(w) FROM WorkflowTransition w " +
-        "WHERE w.workflowTransitionId IN (" +
-        "   SELECT MAX(w2.workflowTransitionId) FROM WorkflowTransition w2 " +
-        "   WHERE w2.assignedToUser = :ieUserId GROUP BY w2.requestId" +
-        ") AND w.jobStatus IN ('ASSIGNED','IN_PROGRESS','VERIFIED','INITIATED')")
+            "WHERE w.workflowTransitionId IN (" +
+            "   SELECT MAX(w2.workflowTransitionId) FROM WorkflowTransition w2 " +
+            "   WHERE w2.assignedToUser = :ieUserId GROUP BY w2.requestId" +
+            ") AND w.jobStatus IN ('ASSIGNED','IN_PROGRESS','VERIFIED','INITIATED')")
     int countActiveCallsForIE(@Param("ieUserId") Integer ieUserId);
 
-
     WorkflowTransition findTopByRequestIdOrderByWorkflowTransitionIdDesc(String requestId);
-/*
+
+    /*
+     * @Query("SELECT wt FROM WorkflowTransition wt " +
+     * "WHERE wt.workflowTransitionId IN (" +
+     * "    SELECT MAX(wt2.workflowTransitionId) " +
+     * "    FROM WorkflowTransition wt2 " +
+     * "    GROUP BY wt2.requestId" +
+     * ") " +
+     * "AND wt.nextRoleName = :roleName " +
+     * "AND wt.jobStatus IN ('IN_PROGRESS','VERIFIED','APPROVED','REGISTERED','Created','ASSIGNED','REJECTED','PAUSED')"
+     * )
+     * List<WorkflowTransition> findPendingByRole(@Param("roleName") String
+     * roleName);
+     * 
+     */
     @Query("SELECT wt FROM WorkflowTransition wt " +
             "WHERE wt.workflowTransitionId IN (" +
-            "    SELECT MAX(wt2.workflowTransitionId) " +
-            "    FROM WorkflowTransition wt2 " +
-            "    GROUP BY wt2.requestId" +
+            "   SELECT MAX(wt2.workflowTransitionId) " +
+            "   FROM WorkflowTransition wt2 " +
+            "   WHERE wt2.transitionId NOT IN (42,44,45) " + // Exclude qty edit transitions
+            "   GROUP BY wt2.requestId" +
             ") " +
             "AND wt.nextRoleName = :roleName " +
             "AND wt.jobStatus IN ('IN_PROGRESS','VERIFIED','APPROVED','REGISTERED','Created','ASSIGNED','REJECTED','PAUSED')")
     List<WorkflowTransition> findPendingByRole(@Param("roleName") String roleName);
 
-    */
-  @Query("SELECT wt FROM WorkflowTransition wt " +
-          "WHERE wt.workflowTransitionId IN (" +
-          "   SELECT MAX(wt2.workflowTransitionId) " +
-          "   FROM WorkflowTransition wt2 " +
-          "   WHERE wt2.transitionId NOT IN (42,44,45) " +   // Exclude qty edit transitions
-          "   GROUP BY wt2.requestId" +
-          ") " +
-          "AND wt.nextRoleName = :roleName " +
-          "AND wt.jobStatus IN ('IN_PROGRESS','VERIFIED','APPROVED','REGISTERED','Created','ASSIGNED','REJECTED','PAUSED')")
-  List<WorkflowTransition> findPendingByRole(@Param("roleName") String roleName);
-
     @Query("""
-SELECT wt FROM WorkflowTransition wt
-WHERE wt.workflowTransitionId IN (
-    SELECT MAX(wt2.workflowTransitionId)
-    FROM WorkflowTransition wt2
-    WHERE wt2.transitionId NOT IN (42,44,45)
-    GROUP BY wt2.requestId
-)
-AND wt.nextRoleName IN :roleNames
-AND wt.jobStatus IN (
-    'IN_PROGRESS','VERIFIED','APPROVED','REGISTERED',
-    'Created','ASSIGNED','REJECTED','PAUSED'
-)
-""")
+            SELECT wt FROM WorkflowTransition wt
+            WHERE wt.workflowTransitionId IN (
+                SELECT MAX(wt2.workflowTransitionId)
+                FROM WorkflowTransition wt2
+                WHERE wt2.transitionId NOT IN (42,44,45)
+                GROUP BY wt2.requestId
+            )
+            AND wt.nextRoleName IN :roleNames
+            AND wt.jobStatus IN (
+                'IN_PROGRESS','VERIFIED','APPROVED','REGISTERED',
+                'Created','ASSIGNED','REJECTED','PAUSED'
+            )
+            """)
     List<WorkflowTransition> findPendingByRoles(
-            @Param("roleNames") List<String> roleNames
-    );
-
-
+            @Param("roleNames") List<String> roleNames);
 
     @Query("SELECT wt FROM WorkflowTransition wt " +
             "WHERE wt.workflowTransitionId IN (" +
@@ -88,76 +88,82 @@ AND wt.jobStatus IN (
     WorkflowTransition findByStatusRequestIdAndCurrentRoleName(
             @Param("status") String status,
             @Param("requestId") String requestId,
-            @Param("roleName") String roleName
-    );
+            @Param("roleName") String roleName);
 
     WorkflowTransition findTopByRequestIdAndStatus(String requestId, String initiateInspection);
 
-    WorkflowTransition findTopByRequestIdAndStatusOrderByWorkflowTransitionIdDesc(String requestId, String callRegistered);
+    WorkflowTransition findTopByRequestIdAndStatusOrderByWorkflowTransitionIdDesc(String requestId,
+            String callRegistered);
 
     @Query("SELECT w FROM WorkflowTransition w WHERE w.status = 'BLOCKED'")
     List<WorkflowTransition> findBlockedTransitions();
 
     List<WorkflowTransition> findAllByStatusAndCreatedBy(String status, Integer createdBy);
 
-  @Query("""
-SELECT DISTINCT wt
-FROM WorkflowTransition wt
-LEFT JOIN ProcessIeUsers pm
-       ON wt.processIeUserId = pm.processUserId
-WHERE wt.status = 'INSPECTION_COMPLETE_CONFIRM'
-  AND (
-       (wt.requestId LIKE 'EP%' AND
-           (pm.ieUserId = :userId
-            OR wt.processIeUserId = :userId
-            OR wt.createdBy = :userId)
-       )
-       OR
-       (wt.requestId NOT LIKE 'EP%'
-            AND wt.createdBy = :userId
-       )
-  )
-""")
-  List<WorkflowTransition> findCompletedByUserRule(
-          @Param("userId") Long userId
-  );
+    @Query("""
+            SELECT DISTINCT wt
+            FROM WorkflowTransition wt
+            LEFT JOIN ProcessIeUsers pm
+                   ON wt.processIeUserId = pm.processUserId
+            WHERE wt.status = 'INSPECTION_COMPLETE_CONFIRM'
+              AND (
+                   (wt.requestId LIKE 'EP%' AND
+                       (pm.ieUserId = :userId
+                        OR wt.processIeUserId = :userId
+                        OR wt.createdBy = :userId)
+                   )
+                   OR
+                   (wt.requestId NOT LIKE 'EP%'
+                        AND wt.createdBy = :userId
+                   )
+              )
+            """)
+    List<WorkflowTransition> findCompletedByUserRule(
+            @Param("userId") Long userId);
 
+    @Query("""
+                SELECT
+                    MIN(w.createdDate),
+                    MAX(
+                        CASE
+                            WHEN w.status = 'INSPECTION_COMPLETE_CONFIRM'
+                            THEN w.createdDate
+                            ELSE NULL
+                        END
+                    )
+                FROM WorkflowTransition w
+                WHERE w.requestId = :requestId
+            """)
+    List<Object[]> findStartAndEndDateByRequestId(
+            @Param("requestId") String requestId);
 
+    @Query("""
+                SELECT
+                    w.requestId,
+                    MIN(w.createdDate),
+                    MAX(
+                        CASE
+                            WHEN w.status = 'INSPECTION_COMPLETE_CONFIRM'
+                            THEN w.createdDate
+                        END
+                    )
+                FROM WorkflowTransition w
+                WHERE w.requestId IN :requestIds
+                GROUP BY w.requestId
+            """)
+    List<Object[]> findStartAndEndDateByRequestIds(
+            @Param("requestIds") List<String> requestIds);
 
-
-  @Query("""
-    SELECT
-        MIN(w.createdDate),
-        MAX(
-            CASE
-                WHEN w.status = 'INSPECTION_COMPLETE_CONFIRM'
-                THEN w.createdDate
-                ELSE NULL
-            END
-        )
-    FROM WorkflowTransition w
-    WHERE w.requestId = :requestId
-""")
-  List<Object[]> findStartAndEndDateByRequestId(
-          @Param("requestId") String requestId);
-
-
-  @Query("""
-    SELECT
-        w.requestId,
-        MIN(w.createdDate),
-        MAX(
-            CASE
-                WHEN w.status = 'INSPECTION_COMPLETE_CONFIRM'
-                THEN w.createdDate
-            END
-        )
-    FROM WorkflowTransition w
-    WHERE w.requestId IN :requestIds
-    GROUP BY w.requestId
-""")
-  List<Object[]> findStartAndEndDateByRequestIds(
-          @Param("requestIds") List<String> requestIds
-  );
+    @Query("""
+                SELECT wt FROM WorkflowTransition wt
+                WHERE wt.workflowTransitionId IN (
+                    SELECT MAX(wt2.workflowTransitionId)
+                    FROM WorkflowTransition wt2
+                    WHERE wt2.requestId IN :requestIds
+                    GROUP BY wt2.requestId
+                )
+            """)
+    List<WorkflowTransition> findLatestTransitionsForRequestIds(
+            @Param("requestIds") List<String> requestIds);
 
 }

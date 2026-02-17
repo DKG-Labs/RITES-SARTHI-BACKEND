@@ -21,7 +21,7 @@ public class ProcessInspectionDetails {
 
     // ---- RELATION TO INSPECTION CALL ----
     // Changed from @OneToOne to @ManyToOne to allow multiple lots per IC
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ic_id", nullable = false)
     @JsonIgnore
     @ToString.Exclude
@@ -74,4 +74,3 @@ public class ProcessInspectionDetails {
         updatedAt = LocalDateTime.now();
     }
 }
-

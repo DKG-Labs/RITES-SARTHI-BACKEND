@@ -25,7 +25,7 @@ public class FinalInspectionDetails {
     private Long id;
 
     // ---- RELATION TO INSPECTION CALL ----
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ic_id", nullable = false, unique = true)
     @JsonIgnore
     @ToString.Exclude
@@ -69,4 +69,3 @@ public class FinalInspectionDetails {
         updatedAt = LocalDateTime.now();
     }
 }
-

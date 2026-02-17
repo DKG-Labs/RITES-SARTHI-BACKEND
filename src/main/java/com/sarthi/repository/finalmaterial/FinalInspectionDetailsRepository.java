@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
 
 /**
  * Repository for Final Inspection Details
@@ -32,5 +33,11 @@ public interface FinalInspectionDetailsRepository extends JpaRepository<FinalIns
 
     @Query("SELECT fd FROM FinalInspectionDetails fd JOIN FETCH fd.inspectionCall WHERE fd.inspectionCall.icNumber = :icNumber")
     Optional<FinalInspectionDetails> findByIcNumberWithCall(@Param("icNumber") String icNumber);
-}
 
+    /*
+     * ==================== Find by List of Inspection Call IDs ====================
+     */
+
+    @Query("SELECT fd FROM FinalInspectionDetails fd WHERE fd.inspectionCall.id IN :icIds")
+    List<FinalInspectionDetails> findByInspectionCallIdIn(@Param("icIds") List<Long> icIds);
+}
