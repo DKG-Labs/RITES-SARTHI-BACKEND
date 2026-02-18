@@ -94,6 +94,7 @@ public class PoDataServiceImpl implements PoDataService {
 
         // Section A: PO Header fields (from po_header table)
         dto.setRlyCd(poHeader.getRlyCd());
+        dto.setRlyShortName(poHeader.getRlyShortName());
         dto.setPoNo(poHeader.getPoNo());
 
         // Set PO Serial Number and formatted fields from inspection call if available
